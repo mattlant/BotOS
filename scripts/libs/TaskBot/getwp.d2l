@@ -1,0 +1,22 @@
+var Waypoints = new oWPLib();
+
+function plugWPs(instname) {
+	this.temp = oPlugin;
+	this.temp("GetWP", mlPLUGINBYTIME, 2000,"GetWP", "0.0.1", "Hellek", instname);
+	delete this.temp;
+	
+
+	var gettingwp = false;
+	var wp1 = null;
+
+	this.GetWP = function () {
+		if(gettingwp) return;
+		Waypoints.update();
+		wp1 = Waypoints.getWPbyArea(me.area);
+		if(wp1 && !wp1.available) {
+			Log.Write(mlLOGGENERAL, "Getting Waypoint", boLOGCRITICALINFO);
+			new oGoalMove(350, "PathToWarp", {sx:me.x, sy:me.y, WarpType:mlWARPWAYPOINT}, new Array(new oTaskInteract(0, "InteractObject", {ObjectName:"Waypoint"}), new oTaskCommon(0, "SetVariable", {Var:"gettingwp", Val:"false"}))).Insert();
+			gettingwp = true;
+		}
+	}
+}

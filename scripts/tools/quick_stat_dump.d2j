@@ -1,0 +1,25 @@
+// quick stat dumper by njaguar, v1.0
+
+include("base_items.d2l");
+include("base_objects.d2l");
+include("base_monstats.d2l");
+
+var units = ["Player","NPC","Object","Missile","Item","Tile"];
+var objects_arr = [null, D2JSP_BASE_MONSTATS_NAMES, D2JSP_BASE_OBJECTS_NAMES, null, D2JSP_BASE_ITEMS_NAMES, null];
+var basestat_lookup = [-1, 1, 4, -1, 0, -1];
+
+function main() {
+	x=getUnit(100);
+	if(x) {
+		f=fileOpen("output/_base_" + units[x.type] + "_" + x.name + ".txt",1);
+		if(f) {
+			print("Dumping " + units[x.type] + " stats to file.");
+			f.writeLine(x.name + " (" + x.classid + ")");
+			loop_array = objects_arr[x.type];
+			if(objects_arr[x.type]) {
+				for(i=0;i<objects_arr[x.type].length;i++) f.writeLine(objects_arr[x.type][i]+": "+getBaseStat(basestat_lookup[x.type],x.classid,i));
+			}
+		}
+		f.close();
+	}
+}

@@ -1,0 +1,137 @@
+
+include("BotOS/Pathing/BotOS.Pathing.d2l");
+include("BotOS/Pathing/BotOS.Pathing.MapLow2.d2l");
+//print("Done include");
+
+var TestLogger = new BotOS.Logging.Log("output/maptest.log", 0, 0);
+TestLogger.InitializeLog();
+
+
+
+
+function main()
+{
+	try{
+		
+//         t = new testmap();
+//         t.test();
+//         stop();
+
+		//print("starting");
+		//var mldate = new Date();
+		//runGC();
+
+		//var myarea = new Area();
+
+
+		var mldate = new Date();
+		var myarealow = new BotOS.Pathing.MapLow2({Area:me.area, Name:"MATTSMAPLOW"/*, Logger:TestLogger*/});
+		myarealow.Initialize();
+		TestLogger.Write("Done init Low: " + (new Date() - mldate));
+		//var mldate = new Date();
+		//var myarea = new BotOS.Pathing.Map({Area:me.area, Name:"MATTSMAP"/*, Logger:TestLogger*/});
+		//myarea.Initialize();
+		//TestLogger.Write("Done init High: " + (new Date() - mldate));
+		//myarealow.Dump(1, 0);
+	    //myarea.Dump(1, 0);
+
+		//delay(5000);
+		//vmldate = new Date();
+
+//         for(var i = 0; i < 1; i++) {
+//             myarea.SetExits();
+//         }
+//
+//         if(myarea.NorthExit)
+//             TestLogger.Write("North Exit: " + myarea.NorthExit.x + ", " + myarea.NorthExit.y);
+//         if(myarea.EastExit)
+//             TestLogger.Write("East Exit: " + myarea.EastExit.x + ", " + myarea.EastExit.y);
+//         if(myarea.SouthExit)
+//             TestLogger.Write("South Exit: " + myarea.SouthExit.x + ", " +  myarea.SouthExit.y);
+//         if(myarea.WestExit)
+//             TestLogger.Write("West Exit: " + myarea.WestExit.x + ", " + myarea.WestExit.y);
+	
+		//myarea.Areas[me.area].Rooms[0].Dump(1, 0);
+		var mypather = new BotOS.Pathing.Pather({Pathable:myarealow, PathToMap:true});
+		//var mldate = new Date();
+		//mypather.FindPathToArea(D2JSP_AREA_DURANCE_OF_HATE_LEVEL_3, me.x, me.y, 5, mlASTAR, mlREDUCEWALK, mlFHEUCLIDIANNOSQRT, 5);
+		//TestLogger.Write("Done path Low: " + (new Date() - mldate));
+		
+		//mypather = new BotOS.Pathing.Pather({Pathable:myarea, PathToMap:true});
+		//var mldate = new Date();
+		//mypather.FindPathToArea(D2JSP_AREA_DURANCE_OF_HATE_LEVEL_3, me.x, me.y, 5, mlASTAR, mlREDUCEWALK, mlFHEUCLIDIANNOSQRT, 5);
+		//TestLogger.Write("Done path High: " + (new Date() - mldate));
+		var mldate = new Date();
+
+		print("Starting");
+		mypather.FindPath(me.x, me.y, me.x+5, me.y+5, 5, mlASTAR, mlREDUCEWALK, mlFHDIAGSHORTCUT, 5);
+
+		print("Took: " + (new Date() - mldate));
+		//mypather.FindPath(me.x, me.y, 4825, 5661, 5, mlASTAR, mlREDUCEWALK, mlFHMANHATTAN, 2);
+		//mypather.FindPathToArea(D2JSP_AREA_BLOOD_MOOR, me.x, me.y, 5, mlASTAR, mlREDUCEWALK, mlFHDIAGSHORTCUT, 1, 1);
+		//TestLogger.Write("Done path: " + (new Date() - mldate));
+		//var mymover = new BotOS.Linear.Mover({Pather:mypather, Callback:myfunc/*, Logger:TestLogger*/});
+		//mymover.PathMove();
+	
+	
+//		TestLogger.Write("Area: " + myarea.Number);
+		//print(myarea.x);
+		//myarealow.Dump(1, 0);
+		//myarea.Dump(1, 0);
+		//delay(20000);
+		print("Done execution");
+	
+	}
+	catch(e) {
+		BotOS.Exception.Last = e;
+		TestLogger.WriteException(e, 5);
+		//myarealow.Dump(1, 0);
+	}
+}
+
+function myfunc (x, y, p) {
+	print("At Point: " + p);
+}
+function matt() {
+	print("hello");
+}
+
+function print1(x) { x+="."; print2(x);}
+function print2(x)  {
+  print("stacktrace: " + stacktrace())
+}
+
+function funcname(f) {
+ var s = f.toString().match(/function (\w*)/)[1];
+ if ((s == null) || (s.length==0)) return "anonymous";
+ return s;
+}
+function stacktrace() {
+ var s = "stacktraceinitial";
+ for (var a = arguments.caller; a !=null; a = a.caller) {
+	 print("instacktraceloop");
+   s += "->"+funcname(a.callee) + "\n";
+   if (a.caller == a) {s+="*"; break;}
+ }
+ return s;
+}
+
+function myobj () {
+	this.fag = 4;
+	this.gay = 7;
+	this.f = function() {
+		print("Hello World");
+	}
+}
+
+function testmap () {
+	BotOS.Pathing.Pathable.call(this);
+	
+}
+testmap.prototype = new BotOS.Pathing.Pathable;
+
+function ttt() {
+	_Logger.Write("TEST");
+
+}
+

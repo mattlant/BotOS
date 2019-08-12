@@ -1,0 +1,212 @@
+/***************************************************\
+|                                                   |
+|       Autoskills library Created by Gshock        |
+|                                                   |
+|      Major thanks to Mattlant for help with       |
+|  Data structure architecture and Troubleshooting  |
+|                                                   |
+\***************************************************/
+
+switch(me.classid)
+{
+	case 6: include("Gshock/AutoSin.d2l"); break;
+	case 5: include("Gshock/AutoDruid.d2l"); break;
+	case 4: include("Gshock/AutoBarb.d2l"); break;
+	case 3: include("Gshock/AutoPala.d2l"); break;
+	case 2: include("Gshock/AutoMancer.d2l"); break;
+	case 1: include("Gshock/AutoSorc.d2l"); break;
+	case 0: include("Gshock/AutoZon.d2l"); break;
+}
+
+var gNone = -1;        // no .property for that entry
+
+//Type Constants          a type requires a certain weapon / state to use
+
+var gOneHand = 1;      // attack that only uses 1 weapon
+var gTwoHand = 2;      // attack requiring 2 weapons
+var gShield = 3;       // paladin smite attack
+var gBow = 4;          // bow attack
+var gThrow = 5;        // throwing attack
+var gJump = 6;         // barb jump / attack, does not require walkable
+var gVine = 7;         // druid creeper / vine
+var gWolf = 8;         // attack only available as a Werewolf
+var gBear = 9;         // attack only available as a Werebear
+var gShft = 10;        // attack only available in a shifted form
+var gPrct = 11;        // protective cast spell
+var gRange = 12;	   // magic attack
+var gMelee = 13;	   // melee attack
+var gTrap = 14;        // assassins trap
+var gDagger = 15;      // necro dagger attack
+var gCorpse = 16;      // necro corpse explosion
+var gSpell = 17;      // ??
+
+//Element Constants
+
+var gPhys = 36;
+var gMagic = 37;
+var gFire = 39;
+var gLight = 41;
+var gCold = 43;
+var gPsn = 45;
+var gUndead = 9999;
+
+//Scope Constants
+
+var gSingle = 1;
+var gNarrow = 2;
+var gWide = 3;
+
+// Range Constants
+
+var gShort = 1;
+var gMedium = 2;
+var gLong = 3;
+
+// Special Constants
+var gUntimed = 1;      // untimed spell
+var gTimed = 2;        // timed spell
+var gCharge = 3;       // assassin charge up move
+var gFinish = 4;       // assassin finishing move
+var gLeech = 5;        // skill that gives both mana and life leech (hunger)
+
+
+
+
+
+// creating object list that relates to all char skills with .properties
+
+function oSkill(){
+
+	var cList = LoadSkill();     // filling with skill table cList is local to this d2l
+	this.gSkill = new Array();   // this.gSkill is the actual object
+
+	this.Update = update;        // create or update, allow others
+	this.FindSkill = findskill;  // main user function here
+	this.BaseWeight = baseweight // calculation for base weight
+	this.Update();               // called here for the first time, this creates it
+
+	function update()
+	{
+		for(var count_1 = 0; count_1 < cList.length; count_1++)
+		{
+			if (cList[count_1][0].length >= 16)
+				cList[count_1][0] = cList[count_1][0].substring(0, 16) +
+									String.fromCharCode(me.classid) +
+									  (  cList[count_1][0].length > 17 ?
+									     cList[count_1][0].substring(17) : "" );
+
+			if(me.getSkill(cList[count_1][0]))
+				this.gSkill.push( new oSkillDef( cList[count_1][0],     //skill
+											     cList[count_1][1],     //type
+											     cList[count_1][2],     //element
+											     cList[count_1][3],     //scope
+											     cList[count_1][4],     //special
+											     cList[count_1][5],     //weight
+											     cList[count_1][6],     //mana
+											     cList[count_1][7] ));  //range
+		}
+	}
+
+
+
+	function findskill(_obj, _mon)
+	{
+	if(!_obj) _obj = new Object();
+	var high_point = 0;
+	var high_weight = this.BaseWeight(high_point);
+
+		maingloop:
+		for(var count_1 = 1; count_1 < this.gSkill.length; count_1++){
+
+			temp_weight = this.BaseWeight(count_1);
+
+			if(_obj.Extern instanceof Array){
+				for(var count_2 = 0; count_2 < _obj.Extern.length; count_2++) {
+					if(!_obj.Extern[count_2](this.gSkill[count_1], _obj.ExternData)) continue maingloop;
+				}
+			} else if(typeof(_obj.Extern) == "function") {
+				if(!_obj.Extern(this.gSkill[count_1], _obj.ExternData)) continue;
+			}
+
+			if(_obj.Special){
+				if(_obj.Special != this.gSkill[count_1].Special)
+				continue;
+			}
+
+			if(_obj.Type){
+				if(_obj.Type != this.gSkill[count_1].Type)
+				continue;
+			}
+			
+			if(_obj.Mana) {
+				if(_obj.Mana < this.gSkill[count_1].Mana+3)
+				continue;
+			}
+
+			if(_obj.Element  && !_mon){
+				if(_obj.Element == this.gSkill[count_1].Element)
+				continue;
+			}
+
+			if(_obj.Scope){
+				if(_obj.Scope != this.gSkill[count_1].Scope  && _obj.Scope <= 2)
+				continue;
+				if(this.gSkill[count_1].Scope == 2)
+				temp_weight = temp_weight + (_obj.Scope / 200);
+			}
+
+			if(_mon){
+
+				if(_mon.getState(11) == 0 && this.gSkill[count_1].Element == gCold)
+					temp_weight = temp_weight * 1.1;
+
+				if(this.gSkill[count_1].Element != gPhys || _mon.getStat(gPhys) != 50)
+				{
+					if(_mon.getStat(this.gSkill[count_1].Element) >= 100) temp_weight = 0;
+					if(_mon.getStat(this.gSkill[count_1].Element) != 0)
+					temp_weight = temp_weight * (1 - (_mon.getStat(this.gSkill[count_1].Element) / 100));
+				}
+
+
+			}
+
+			if(temp_weight >= high_weight){
+				high_point = count_1;
+				high_weight = temp_weight;
+			}
+		}
+
+		return ({  Skill:   this.gSkill[high_point].Skill,
+				   Type:    this.gSkill[high_point].Type,
+				   Element: this.gSkill[high_point].Element,
+				   Scope:   this.gSkill[high_point].Scope,
+				   Special: this.gSkill[high_point].Special,
+				   Weight:  this.gSkill[high_point].Weight,
+				   Mana:    this.gSkill[high_point].Mana,
+				   Range:   this.gSkill[high_point].Range  });
+	}
+}
+
+
+function oSkillDef(_skill, _type, _element, _scope, _special, _weight, _mana, _range){
+	this.Skill = _skill;
+	this.Type = _type;
+	this.Element = _element;
+	this.Scope = _scope;
+	this.Special = _special;
+	this.Weight = _weight;
+	this.Mana = _mana;
+	this.Range = _range;
+}
+
+
+function baseweight(skill){
+	var temp;
+	temp = me.getSkill(this.gSkill[skill].Skill);
+	temp = temp * this.gSkill[skill].Weight;
+	return Math.ceil(temp);
+}
+
+function binc(_base, _inc){
+	return _base + _inc * (me.getStat(12) - 1);
+}

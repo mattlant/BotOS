@@ -1,0 +1,119 @@
+////////////////////////
+//Bot specific include//
+////////////////////////
+
+//misc necessities
+include("taskbot/settings.d2l");
+include("taskbot/coremanager.d2l");
+//include("townmove.d2l");
+
+var act=1; // 1, 2 or 3 or one of the below
+//var act="quest";
+//var act="quests";
+
+function main()
+{
+	credits();
+	delay(500);
+
+	Log.PrintLevel = boLOGCRITICALINFO;
+
+//	Sc_TownMoveSetting("buy_pots", true);
+//	Sc_TownMoveSetting("buy_scrolls", true);
+
+	SystemManager();
+
+	print("We're done!!! YAYAYAYA!!!");
+	delay(1000);
+	quit();
+}
+
+function credits()
+{
+	print("ÿc8D2JSP Small CDB-style Task Bot by Hellek v0.1");
+}
+
+var DoingQuest = false;
+
+function LoadQuestData()
+{
+	var gpp = 200;
+
+	var tasks = new Array();
+	
+	var questc = new oQuestLib();
+	
+	tasks.push(new oTaskAI(0, "SetMoveAttackRange", {Val:20}));
+	tasks.push(new oTaskAI(0, "SetMoveAttack", {Val:true}));
+	tasks.push(new oTaskAI(0, "SetState", {Val:mlSTATEEXPLORE}));
+//	new oGoalTown(gpp--, "TownCheck", {Heal:true, Repair:true, Stash:true}, tasks).Insert();
+	switch(act) {
+		case 1:
+			/*
+			new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskCommon(0, "DoCommand", {Command:"Sc_TownWP(1,2);"}),
+				new oTaskCommon(0, "DoCommand", {Command:"me.cancel(0);"}))).Insert();
+			*/
+/*			new oGoalMove(gpp--, "GoToArea", {p: 300, Area:D2JSP_AREA_DEN_OF_EVIL}).Insert();
+			new oGoalMove(gpp--, "ExploreArea", {p:300, Threshold:100, KillAll:true, Range:90}).Insert();
+			new oGoalMove(gpp--, "GoToArea", {p: 300, Area:17}).Insert();
+			new oGoalMove(gpp--, "ExploreArea", {p:300, Threshold:100, KillAll:true, Range:90}).Insert();
+			new oGoalMove(gpp--, "GoToArea", {p: 300, Area:25}).Insert();
+			new oGoalMove(gpp--, "ExploreArea", {p:300, Threshold:100, KillAll:true, Range:90}).Insert();
+*/			
+//			new oGoalMove(gpp--, "GoToArea", {p: 300, Area:D2JSP_AREA_CATACOMBS_LEVEL_4}).Insert();
+
+//			new oGoalMove(gpp--, "GoToArea", {p: 300, Area:D2JSP_AREA_DEN_OF_EVIL}).Insert();
+			new oGoalMove(gpp--, "GoToArea", {p: 300, Area:D2JSP_AREA_CATACOMBS_LEVEL_4, NoWP:true}).Insert();
+			print("Arrived at destination");
+			new oGoalMove(gpp--, "ExploreArea", {p:300, Threshold:100, KillAll:true, Range:90}).Insert();
+
+			break;
+		
+		case 2:
+			new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskCommon(0, "DoCommand", {Command:"Sc_TownMove(2, \"stash\")"}),
+				new oTaskCommon(0, "DoCommand", {Command:"me.cancel(0);"}))).Insert();
+			
+//			new oGoalMove(gpp--, "GoToArea", {p: 300, Area:64}).Insert(); // Maggott lair (does not work well because it does not open doors yet)
+			new oGoalMove(gpp--, "GoToArea", {p: 300, Area:47}).Insert(); // Sewers 1
+			new oGoalMove(gpp--, "ExploreArea", {p:300, Threshold:100, KillAll:true, Range:50}).Insert();
+			break;
+			
+		case 3:
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_DURANCE_OF_HATE_LEVEL_3, NoWP:true, dx:17567, dy:8070}, new oTaskAttack(0, "Attack", {Boss:true, Range:60})).Insert();
+			break;
+			
+		
+		case "quests":
+//			while(true) {
+//				delay(500);
+//				if(DoingQuest) return;
+				
+				var quest = questc.getNextQuest();
+				if(quest) {
+					print("Doing "+quest.name);
+					new oQuest(200, "AddItems", {p:200}, quest.task).Insert();
+					//new oTaskCommon(199, "SetVariable", {Var:"DoingQuest", Val:"false"}).Insert();
+					new oQuest(199, "AddItems", {p:199}, new Array(new oTaskCommon(199, "SetVariable", {Var:"DoingQuest", Val:"false"}))).Insert();
+					DoingQuest=true;
+				} else {
+					print("Done all quests!!!");
+					break;
+				}
+//			}
+			break;
+			
+		case "quest":
+			var i = D2JSP_QUEST_MEPHISTO;
+			print("Doing quest "+questc.quests[i].name);
+			new oQuest(200, "AddItems", {p:200}, questc.quests[i].task).Insert();
+			break;
+	}
+
+}
+
+function QuestTrigger()
+{
+
+}
+
+

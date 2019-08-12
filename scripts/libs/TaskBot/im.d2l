@@ -1,0 +1,442 @@
+/*
+INI
+	.name - file name
+	.section[] - sections
+		.name
+		.modp[]
+		.mod[]
+		.tweak[]
+		.rating[]
+		.target
+*/
+
+// cond?a:b
+var im_iniFile="settings/im.ini";
+var im_INIs = new Array();
+const im_targets_ignore=0;
+const im_targets_pickup=1;
+const im_targets_identify=2;
+const im_targets_drop=3;
+const im_targets_sell=4;
+const im_targets_use=5;
+const im_targets_stash=6;
+const im_targets_cube=7;
+const im_targets_trade=8;
+var im_checkedList=new Array();
+var im_lastArea=0;
+var im_manageList=new Array();
+
+im_loadINI(im_iniFile);
+
+function oItem(_item,iniNum,sectionNum)
+{
+	this.item=copyunit(_item);
+	this.rating=new Array(7);
+	this.myRating=0;
+	this.maxRating=0;
+	this.maxRatingClassid=-1;
+	this.target=(im_INIs[iniNum].section[sectionNum].target?im_INIs[iniNum].section[sectionNum].target:im_targets_pickup);
+	this.rate = function()
+	{
+		var i;
+		for(i=0;i<7;i++)
+			this.rating[i]=eval(im_INIs[iniNum].section[sectionNum].rating[i]);
+		this.myRating=this.rating[me.classid];
+		this.maxRating=0;
+		this.maxRatingClassid=-1;
+		for(i=0;i<7;i++)
+			if(this.rating[i]>maxRating)
+			{
+				this.maxRating=this.rating[i];
+				this.maxRatingClassid=i;
+			}
+	}
+	this.check = function()
+	{
+		if(this.target==im_targets_pickup && this.item.mode==3)
+		{
+			// pickup item
+		}
+		else if(this.target==im_targets_pickup && this.item.mode==0)
+		{
+			// identify item
+		}
+		//else
+		// selling
+		// stashing
+	}
+}
+
+im_checkGround(INInum)
+{
+	var itemResult=null;
+	if(!INInum)INInum=0;
+	if(!im_inTown(me) && im_lastArea!=me.area)im_checkedList=new Array();
+	item=getUnit(4,null,3);
+	if(item)do
+	{															// someone fix it for 0.33
+		if(item.code=="gld")								// gold
+		{
+			continue;
+		}
+		if(item.code=="aqv" || item.code=="cqv")			// arrows & bolts
+		{
+			continue;
+		}
+		if(item.itemtype>=76 && item.itemtype<=81)			// potions
+		{
+			continue;
+		}
+		if(im_checked(item.gid,0,im_checkedList.length-1)continue;
+		im_checkedList.push(item.gid);
+		im_checkedList.sort(im_compare);
+
+		itemResult=im_check(item,0);
+		if(!itemResult)continue;
+		if(itemResult==im_targets_ignore)
+		{
+			// some action on ingore maybe
+		}
+		else
+		{
+			im_manageList.push(new oItem(item,result.INInum,result.section);
+			// add item to pickup list & manage
+		}
+
+	}while(item.getNext(null,3)
+}
+
+function im_check(item,INInum)
+{
+	var i,j,target=im_targets_pickup;
+/*	if(!INI)INI="settings/im.ini";
+	for(i=0;i<im_INIs.length;i++)
+		if(im_INIs[i].name==INI)
+		{
+			INInum=i;
+			break;
+		}
+	if(INInum<0)
+	{
+		print("INI "+INI+" not loaded!");
+		return false;
+	}*/
+	if(item.mode==3)		//item on ground
+	{
+		modploop:for(i=0;i<im_INIs[INInum].section.length;i++)
+		{
+			for(j=0;j<im_INIs[INInum].section[i].modp.length;j++)
+				if[!eval(im_INIs[INInum].section[i].modp[j])continue modploop;
+			if(im_INIs[INInum].section[i].target)target=im_INIs[INInum].section[i].target;
+			var result=new Object();
+			result.tartet=target;
+			result.INInum=INInum;
+			result.section=i;
+			return result;	// maybe to add item to list
+		}
+		return null;
+	}
+}
+
+function im_loadINI(INIname)
+{
+	var i;
+	for(i=0;i<im_INIs.length;i++)
+		if(im_INIs[i].name==INIname)
+			return false;
+	var INI=new Object();
+	INI.name=INIname;
+	var INIfile=fileOpen(INIname, 0);
+	if(!INIfile)
+	{
+		print("Couldn't open INI: "+INIname+" for reading");
+		return false;
+	}
+
+	var INIline,nLines=0,eEndOfSection,section;
+	FileLoop : while (!INIfile.eof) {
+		INIline=INIfile.readLine();
+		nLines++;
+
+		if (INIline=="" || INIline==" " || INIline[0]==";")
+			continue;
+
+		// Check to see if it's a new section
+		if (INIline[0]=="[") {
+			// check if section name is actually valid
+			nEndOfSection = INIline.lastIndexOf("]");
+
+			if (nEndOfSection < 2) {
+				print("Error at line "+nLines+" in "+INIline+" : invalid section name");
+				continue;
+			}
+			section=new Object();
+			section.name=INIline.substring(1,nEndOfSection);
+			section.modp=new Array();
+			section.mod=new Array();
+			section.tweak=new Array();
+			section.rating=null;
+			section.ratings=new Array();
+			section.target=null;
+			/*nIniLen=INI.length;
+			debugprint("ÿc/Starting section "+nIniLen+" at line "+nLines,nDebug);
+			INI[nIniLen] = new Array();
+			INI[nIniLen].push(strCurrentLine.substring(1,nEndOfSection));*/
+			continue;
+		}
+		// to add extra eval functions
+		im_ParseLine(section,INIline,nLines);
+	}
+
+	im_INIs.push(INI);
+}
+
+function im_ParseLine(section,INIline,nLines)
+{
+	var INIval,tweaks,i,j;
+	if(INIline.substring(0,3)=="mod")														// mod, modp
+	{
+		if(INIline.search(";")!=-1)INIval="("+INIline.substring(4).replace(";",")&&(")+")";
+			else INIval=INIline.substring(4);
+		im_ParseVal(section,INIval,INIline.substring(0,4));
+	}
+	else if(INIline.substring(0,6)=="tweak:")												// tweak
+	{
+		tweaks=INIline.substring(6).split(";");
+		for(i=0;i<tweaks.length;i++)
+		{
+			j=tweaks[i].search(",");
+			section.tweak[tweaks[i].substring(0,j)]=tweaks[i].substring(j+1).split(",");
+		}
+	}
+	else if(INIline.substring(0,6)=="rating");												// rating
+	else if(INIline.substring(0,7)=="target:");												// target
+	else print("uknown INI entry, line"+nLines+": "+INILine);
+}
+
+function im_ParseVal(section,cString,type)
+{
+	var parsed="",i,j,mod,pmod,val;
+	// replace lists //
+	const ReplaceList=[
+		["code","item.code"],
+		["name","item.name"],
+		["fname","item.fname"],
+		["ilvl","item.ilvl"],
+		["itemclass","item.itemclass"],
+		["itemtype","getBaseStat(0, item.classid, 70)"],
+		["level","item.level"],
+		["lvlreq","item.lvlreq"],
+		["width","getBaseStat(0, item.classid, 55)"],
+		["heigh","getBaseStat(0, item.classid, 56)"]];
+	var damageReplaceList=[
+		"maxdmg","mindmg","dmg","damage","avgdmg",
+		"onehmax","onehmin","onehdmg","onehavg",
+		"throwmax","throwmin","throwdmg","throwavg",
+		"plusmax","plusmin","plusdmg",
+		"def","defense","plusdef",
+		"psn","poison","ltn","lightning","fire","cold"];
+	var RegStat=/(s)([0-9]+)(\s*)/g;
+	var RegBaseStat=/(b)([0-9]+)(\s*)/g;
+	var RegAnyStat=/(s,b)([0-9]+)(\s*)/g;
+	var RegPlusSkill=/(skil[a-z]+)(_)([0-9]+)(\s*)/g;
+	// mod tweak //
+	mod = cString.match(RegStat);
+	for(i=0;i<mod.length-1;i++)
+	{
+		if(mod[i]=="-dbl-")continue;
+		for(j=i+1;j<mod.length;j++)
+			if(mod[j]==mod[i])mod[j]="-dbl-";
+	}
+	for(i=0;i<mod.length;i++)
+		if(section.tweak[mod[i]])
+		{
+			pmod=im_ParseTweak(section,mod[i]);
+			cString=cString.replace(new RegExp(mod[i],"g"),pmod);
+		}
+	// Replacing //
+	for(i=0;i<ReplaceList.length;i++)															// Replace List
+		cString=cString.replace(new RegExp(ReplaceList[i][0],"g"),ReplaceList[i][1]);
+	for(i=0;i<damageReplaceList.length;i++)														// damage & defense
+		cString=cString.replace(new RegExp(damageReplaceList[i],"g"),"im_calcDmg(item,"+damageReplaceList[i]+")");
+	cString=cString.replace(RegPlusSkill,"im_calcPlusSkill(item,\"$1\",$3)");					// +skill/+skilltree
+	cString=cString.replace(RegStat,"item.getStat($2)");										// stat
+	cString=cString.replace(RegBaseStat,"getBaseStat(0,item.classid,$2)");						// base stat
+
+	// mod adding //
+	if(type=="mod:")section.mod.push(cString);
+	else if(type=="modp")section.modp.push(cString);
+}
+
+function im_ParseTweak(section,mod)
+{
+	var parsed="("+mod+"?0:"
+	if(section.tweak[mod].length==5)
+		parsed+="Math.max(0,";
+	parsed+=section.tweak[mod][0]+"*";
+	if(section.tweak[mod].length>1)
+	{
+		parsed+="Math.pow("+mod;
+		if(section.tweak[mod].length>3)
+			parsed+="+"+section.tweak[mod][3]
+		parsed+=","+section.tweak[mod][1]+")";
+	}
+	if(section.tweak[mod].length>2)
+		parsed+="+"+section.tweak[mod][2];
+	if(section.tweak[mod].length==5)
+		parsed+=")";
+	parsed+=")";
+	return parsed;
+}
+
+function im_calcDmg(item,type)
+{
+	var mul=(item.getFlag(0x400000)?1.5:1);
+	switch(type)	// rewrite, it sux
+	{
+		case "maxdmg":
+			return (getBaseStat(0,item.classid,48)?getBaseStat(0,item.classid,48):getBaseStat(0,item.classid,44))*(item.getStat(18)+item.getStat(219)/8*BM_CharLvl)*(item.getFlag(0x400000)?0.015:0.01)+(item.getStat(24)?item.getStat(24):item.getStat(22))+item.getStat(218)/8*BM_CharLvl;
+		case "mindmg":
+			return (getBaseStat(0,item.classid,47)?getBaseStat(0,item.classid,47):getBaseStat(0,item.classid,43))*item.getStat(17)*(item.getFlag(0x400000)?0.015:0.01)+(item.getStat(23)?item.getStat(23):item.getStat(21));
+		case "dmg":
+		case "damage":
+		case "avgdmg":
+			return (((getBaseStat(0,item.classid,48)?getBaseStat(0,item.classid,48):getBaseStat(0,item.classid,44))*(item.getStat(18)+item.getStat(219)/8*BM_CharLvl)+(getBaseStat(0,item.classid,47)?getBaseStat(0,item.classid,47):getBaseStat(0,item.classid,43))*item.getStat(17))*(item.getFlag(0x400000)?0.015:0.01)+(item.getStat(24)?item.getStat(23)+item.getStat(24):item.getStat(21)+item.getStat(22))+item.getStat(218)/8*BM_CharLvl)/2;
+		case "onehmax":
+			return getBaseStat(0,item.classid,44)*(item.getStat(18)+item.getStat(219)/8*BM_CharLvl)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(22)+item.getStat(218)/8*BM_CharLvl;
+		case "onehmin":
+			return getBaseStat(0,item.classid,43)*item.getStat(17)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(21);
+		case "onehdmg":
+		case "onehavg":
+			return ((getBaseStat(0,item.classid,43)*item.getStat(17)+getBaseStat(0,item.classid,44)*(item.getStat(18)+item.getStat(219)/8*BM_CharLvl))*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(21)+item.getStat(22)+item.getStat(218)/8*BM_CharLvl)/2;
+		case "throwmax":
+			return getBaseStat(0,item.classid,46)*item.getStat(18)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(160);
+		case "throwmin":
+			return getBaseStat(0,item.classid,45)*item.getStat(17)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(159);
+		case "throwdmg":
+		case "throwavg":
+			return ((getBaseStat(0,item.classid,45)*item.getStat(17)+getBaseStat(0,item.classid,46)*(item.getStat(18)+item.getStat(219)/8*BM_CharLvl))*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(159)+item.getStat(160)+item.getStat(218)/8*BM_CharLvl)/2;
+		case "plusmax":
+			return (item.getStat(24)?item.getStat(24):item.getStat(22))+item.getStat(218)/8*BM_CharLvl-(getBaseStat(0,item.classid,48)?getBaseStat(0,item.classid,48):getBaseStat(0,item.classid,44))*(item.getFlag(0x400000)?1.5:1);
+		case "plusmin":
+			return (item.getStat(23)?item.getStat(23):item.getStat(21))-(getBaseStat(0,item.classid,47)?getBaseStat(0,item.classid,47):getBaseStat(0,item.classid,43))*(item.getFlag(0x400000)?1.5:1);
+		case "plusdmg":
+			return (item.getStat(24)?item.getStat(24):item.getStat(22))+item.getStat(218)/8*BM_CharLvl-(getBaseStat(0,item.classid,48)?getBaseStat(0,item.classid,48):getBaseStat(0,item.classid,44))*(item.getFlag(0x400000)?1.5:1)+(item.getStat(23)?item.getStat(23):item.getStat(21))-(getBaseStat(0,item.classid,47)?getBaseStat(0,item.classid,47):getBaseStat(0,item.classid,43))*(item.getFlag(0x400000)?1.5:1);
+		case "def":
+		case "defense":
+			return (getBaseStat(0,item.classid,28)+1)*(item.getStat(16)+item.getStat(215)/8*BM_CharLvl)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(31)+item.getStat(214)/8*BM_CharLvl;
+		case "plusdef":
+			return item.getStat(31)+item.getStat(214)/8*BM_CharLvl-(getBaseStat(0,item.classid,28)?getBaseStat(0,item.classid,28)+1:0)*(item.getFlag(0x400000)?1.5:1);
+		case "psn":
+		case "poison":
+			return (item.getStat(57)*item.getStat(59))>>8;
+		case "ltn":
+		case "lightning":
+			return (item.getStat(50)+item.getStat(51))/2;
+		case "fire":
+			return (item.getStat(48)+item.getStat(49))/2;
+		case "cold":
+			return (item.getStat(54)+item.getStat(55))/2;
+	}
+}
+
+function im_calcPlusSkill(item,type,code)
+{
+	var i,minStat,maxStat;
+	switch(type)
+	{
+		case "skill":
+			minStat=107;
+			maxStat=109;
+			break;
+		case "skilltree":
+			minStat=188;
+			maxStat=193;
+			break;
+	}
+	for(i=minStat;i<=maxStat;i++)
+	{
+		if(!item.getStat(i))return 0;
+		if(type=="skilltree")
+		{
+			if((item.getStat(i)&31)==code)
+				return item.getStat(i)>>5;
+		}
+		else
+		{
+			if((item.getStat(i)&511)==code)
+				return item.getStat(i)>>9;
+		}
+	}
+	return 0;
+}
+
+function im_checked(v,l,r)
+{
+	if(l>=r) return false;
+	var m=Math.floor((l+r)/2);
+	if(v==im_checkedList[m])return true;
+	if(v<im_checkedList[m])
+		return im_checked(v,l,m-1);
+	else
+		return im_checked(v,m+1,r);
+}
+
+function im_nTown(obj)
+{
+	return (obj.area == 1 || obj.area == 40 || eobj.area == 75 || obj.area == 103 || obj.area == 109);
+}
+
+function im_compare(a,b)
+{
+	if(a>b)return 1;
+	if(a<b)return -1;
+	return 0;
+}
+
+function im_findWordS(str,n)
+{
+	for(;n<str.length;n++)
+		if((str.charAt(n)>="0" && str.charAt(n)<="9")||(str.charAt(n)>="a" && str.charAt(n)<="z")||(str.charAt(n)>="A" && str.charAt(n)<="Z")|| str.charAt(n)=="\"" || str.charAt(n)=="," || str.charAt(n)=="." || (str.charAt(n)=="-" && (str.charAt(n-1)=="=" || str.charAt(n-1)=="<" || str.charAt(n-1)==">"))) return n;
+	return -1;
+}
+
+function im_findWordE(str,n)
+{
+	for(;n<str.length;n++)
+		if((str.charAt(n)<"0" || str.charAt(n)>"9")&&(str.charAt(n)<"a" || str.charAt(n)>"z")&&(str.charAt(n)<"A" || str.charAt(n)>"Z")&& str.charAt(n)!="\"" && str.charAt(n)!="," && str.charAt(n)!="." && str.charAt(n)!="-") return n;
+	return -1;
+}
+
+
+function im_findNum(str,n)
+{
+	for(;n<str.length;n++)
+		if(str.charAt(n)>="0" && str.charAt(n)<="9") return n;
+	return -1;
+}
+
+function im_findNonNum(str,n)
+{
+	for(;n<str.length;n++)
+		if(str.charAt(n)<"0" || str.charAt(n)>"9") return n;
+	return -1;
+}
+
+function im_findChr(str,n)
+{
+	for(;n<str.length;n++)
+		if(str.charAt(n)>="a" && str.charAt(n)<="z") return n;
+	return -1;
+}
+
+function im_findNonChr(str,n)
+{
+	for(;n<str.length;n++)
+		if(str.charAt(n)<"a" || str.charAt(n)>"z") return n;
+	return -1;
+}
+
+
+
+

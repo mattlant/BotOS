@@ -1,0 +1,5 @@
+
+include("mld2info.d2l");
+
+var d2Objects = new oD2Info("settings/objects.csv");
+var d2Rooms = new oD2Info("settings/lvlprest.csv");

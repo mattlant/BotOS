@@ -1,0 +1,26 @@
+include("vec_coord.d2l");
+
+function main()
+{
+	print("GameToScreen Test");
+	
+	var scr = getScreenHook();
+	scr.x = 0;
+	scr.y = 0;
+	scr.text = "A";
+	scr.color = 0;
+	
+	var p = GameToScreen(5040, 4080);
+	print("xr: " +p.x+ " yr: " +p.y);
+
+	delay(50000);
+
+}
+
+function GameToScreen(x, y)
+{
+	var v = new vector(-(x - 5000), y - 4000);
+	v.rotate(135);
+	return new coord(400 + Math.round(v.x * 22), 300 - Math.round(v.y * 12));
+}
+

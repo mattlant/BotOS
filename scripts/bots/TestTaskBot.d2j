@@ -1,0 +1,84 @@
+////////////////////////
+//Bot specific include//
+////////////////////////
+
+//misc necessities
+include("taskbot/settings.d2l");
+include("taskbot/coremanager.d2l");
+include("townmove.d2l");
+
+
+//Bot specific Variables
+var doColdPlains = true;
+var doStonyField = true;
+var doUnderground = true;
+
+function main()
+{
+	credits();
+	mlinitdebuglog();
+	mldebuglevel = 0;
+	mldebuglog="output/BloodTaskBot.log";
+	delay(500);
+
+	//mlSettings(mlDOLOGGING, mlYES);
+	//mlSettings(mlPRINTMSG, mlYES);
+
+	Sc_TownMoveSetting("buy_pots", true);
+	Sc_TownMoveSetting("buy_scrolls", true);
+
+	if (begingamedelay > 0)
+	{
+		mlprint("Waiting " + (parseInt(begingamedelay / 1000)) + " seconds for initialization...");
+		delay(begingamedelay);
+	}
+
+	//common begin game stuff
+
+	//START SYSTEM MANAGER
+	mlprint("Starting System Manager");
+	SystemManager();
+
+	mlprint("We're done!!! YAYAYAYA!!!");
+	mlprint("pwned");
+	delay(1000);
+	delay(1000);
+	quit();
+}
+
+function credits()
+{
+	//delay(500);
+	print("ÿc8D2JSP Blood Moore Task Bot by mattlant v0.1");
+}
+
+function LoadQuestData()
+{
+	var gpp = 200;
+
+	var tasks = new Array();
+	tasks.push(new oTaskAI(0, "SetMoveAttackRange", {Val:20}));
+	tasks.push(new oTaskAI(0, "SetMoveAttack", {Val:true}));
+	tasks.push(new oTaskAI(0, "SetState", {Val:mlSTATEEXPLORE}));
+	//new oGoalTown(gpp--, "TownCheck", {Heal:true, Repair:true, Stash:true}, tasks).Insert();
+	//new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskCommon(0, "DoCommand", {Command:"Sc_TownWP(1,5);"}),
+	//	new oTaskCommon(0, "DoCommand", {Command:"me.cancel(0);"}))).Insert();
+	//new oGoalMove(gpp--, "PathToLevel", {Level:3, p:300}).Insert();
+	new oGoalMove(gpp--, "GoToArea", {Area:D2JSP_AREA_BLACK_MARSH, p:300}).Insert();
+	
+	
+	/*
+	new oGoalMove(gpp--, "ExploreArea", {p:300, Threshold:95, KillAll:true, Range:30}).Insert();
+	new oGoalMove(gpp--, "PathToLevel", {Level:4, p:300}).Insert();
+	new oGoalMove(gpp--, "ExploreArea", {p:300, Threshold:95, KillAll:true, Range:30}).Insert();
+	new oGoalMove(gpp--, "PathToWarp", {WarpType:mlWARPUNDERGROUNDPASSAGE, p:300},
+		new oTaskInteract(0, "InteractWarp", {WarpType:mlWARPUNDERGROUNDPASSAGE})).Insert();
+	new oGoalMove(gpp--, "ExploreArea", {p:300, Threshold:95, KillAll:true, Range:30}).Insert();
+	*/
+}
+
+function QuestTrigger()
+{
+
+}
+

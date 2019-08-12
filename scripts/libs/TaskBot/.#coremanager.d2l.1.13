@@ -1,0 +1,280 @@
+
+me.chickenhp = 0; me.chickenmp = 0;
+switch(me.classid) {
+	case 0:	include("taskbot/amazon.d2l"); break; //Amazon
+	case 1:	include("taskbot/sorceress.d2l"); break; //Sorc
+	case 2:	include("taskbot/necromancer.d2l"); break; //Necro
+	case 3:	include("taskbot/paladin.d2l"); break; //Pally
+	case 4: include("taskbot/barbarian.d2l"); break; //Barb
+	case 5:	include("taskbot/druid.d2l"); break; //Druid
+	case 6:	include("taskbot/assassin.d2l"); break; //Assn
+}
+
+//Core common libs
+print("Including BotOS.Pathing");
+include("BotOS/Pathing/BotOS.Pathing.d2l");
+
+print("Including taskbot/coresupport.d2l");
+include("taskbot/coresupport.d2l");
+
+print("Including taskbot/common.d2l");
+include("taskbot/common.d2l");
+
+print("Including taskbot/plugin.d2l");
+include("taskbot/plugin.d2l");
+
+print("Including taskbot/quests.d2l");
+include("taskbot/quests.d2l");
+
+print("Including BotOS.Arrays.Heap");
+include("BotOS/Arrays/BotOS.Arrays.Heap.d2l");
+
+print("Including BotOS.Arrays.FIFO");
+include("BotOS/Arrays/BotOS.Arrays.FIFO.d2l");
+
+print("Including taskbot/aithought.d2l");
+include("taskbot/aithought.d2l");
+
+print("Including taskbot/attack.d2l");
+include("taskbot/attack.d2l");
+
+print("Including taskbot/health.d2l");
+include("taskbot/health.d2l");
+
+print("Including taskbot/movement.d2l");
+include("taskbot/movement.d2l");
+
+print("Including taskbot/town.d2l");
+//include("taskbot/town.d2l");
+
+print("Including taskbot/threat.d2l");
+include("taskbot/threat.d2l");
+
+print("Including taskbot/error.d2l");
+include("taskbot/error.d2l");
+
+print("Including taskbot/commandline.d2l");
+include("taskbot/commandline.d2l");
+
+print("Including taskbot/mlsnagit.d2l");
+include("taskbot/mlsnagit.d2l");
+
+print("Including taskbot/charstat.d2l");
+include("taskbot/charstat.d2l");
+
+print("Including BotOS.Logging");
+include("BotOS/BotOS.Logging.d2l");
+
+print("Including taskbot/chests.d2l");
+include("taskbot/chests.d2l");
+
+print("Including taskbot/merc.d2l");
+include("taskbot/merc.d2l");
+
+print("Including wp.d2l");
+include("wp.d2l");
+
+print("Including eleinilib.d2l");
+include("eleinilib.d2l");
+
+print("Including Sy_Constants.d2l");
+include("Sy_Constants.d2l");
+
+print("Including progressbar.d2l");
+include("progressbar.d2l");
+
+print("Including townmove2.d2l");
+include("townmove2.d2l");
+
+print("Including taskbot/ammo.d2l");
+include("taskbot/ammo.d2l");
+
+print("Including taskbot/getwp.d2l");
+include("taskbot/getwp.d2l");
+
+print("Including taskbot/autostats.d2l");
+include("taskbot/autostats.d2l");
+
+print("Including basestats");
+include("base_items.d2l");
+include("base_objects.d2l");
+include("base_missles.d2l");
+include("base_monstats.d2l");
+
+
+
+
+//CONSTANTS
+const taskcoreversion = "0.2.0";
+
+// 0.2.0 -- started the changes to the new namespace -- mattlant
+
+//Other interanlly used variables
+var coreloopdelay = 4;
+
+var myclassid = me.classid;
+
+var dynwalkdelay = 0;
+
+var returnonnoquest = false;
+var done = false;
+var pause = false;
+
+var LastTask = null;
+var LastGoal = null;
+var LastQuest = null;
+
+var shversion = new ScreenHook("BotOS v" + taskcoreversion, 10, 595);
+var	shconststatus = new ScreenHook("Status Message: ", 10, 362);
+var	shstatus = new ScreenHook("None", 120, 362);
+
+//changed to Log with no var, CHNAGE BACK
+Log = new BotOS.Logging.BotOSLog(0, 0);
+Log.InitializeLogs();
+Log.Write(mlLOGMOVEMENT, "Test", boLOGWARNING);
+TempLog = new BotOS.Logging.Log("output/BotOSTempLog.log", 0, 0);
+TempLog.Initialize();
+
+/*
+var SCTown = new TownMove();
+SCTown.Init();
+var Waypoints = new oWPLib();
+  */
+
+//var d2Rooms = new oD2Info("settings/rooms.csv");
+//var d2Missiles = new oD2Info("settings/missiles.csv");
+
+mlinitdebuglog();
+mldebuglevel = 2;
+mldebuglog="output/TaskBot.log";
+
+function SystemManager()
+{
+	try {
+
+		print("BotOS by mattlant v" + taskcoreversion);
+	
+		TaskQueue = new BotOS.Arrays.HeapLL("p", mlHEAPHIGH);
+		QuestQueue = new BotOS.Arrays.Heap("p");
+		GoalQueue = new BotOS.Arrays.Heap("p");
+		ErrorQueue = new BotOS.Arrays.FIFO();
+	
+		AI = new oAI();
+	
+		PluginManager = new oPlugins();
+	
+		var _cld = coreloopdelay;
+	
+		//commandlineinitialize(); //Not working for some strange reason
+	
+		LoadSystemPlugins();
+		if(typeof(LoadQuestPlugins) == "function") LoadQuestPlugins();
+		if(typeof(LoadQuestData) == "function") LoadQuestData();
+	
+	
+		while(!done)
+		{
+	
+			//TODO: move to a plugin
+			if((me.skip >2 || me.ping > 150) && me.account)
+			{
+				_cld = 15;
+				if(me.skip >4 || me.ping > 200){
+					_cld = 25;
+					dynwalkdelay = dynamicwalkdelay +10;
+				}
+				if(me.skip >8 || me.ping > 300){
+					_cld = 35;
+					dynwalkdelay = dynamicwalkdelay +20;
+				}
+				if(me.skip >12 || me.ping > 400){
+					_cld = 45;
+					dynwalkdelay = dynamicwalkdelay +40;
+				}
+				if(me.skip >16 || me.ping > 500){
+					_cld = 55;
+					dynwalkdelay = dynamicwalkdelay +80;
+				}
+				if(me.skip >20 || me.ping > 600){
+					_cld = 65;
+					dynwalkdelay = dynamicwalkdelay +160;
+				}
+			}
+			else{
+				_cld = coreloopdelay;
+				dynwalkdelay = dynamicwalkdelay;
+			}
+	
+			//Execute all the plugins timed functions
+			PluginManager.ExecuteAll();
+	
+			//TriggerManager is being phased out in favour of plugins
+			EventManager();
+			delay(_cld);
+		}
+	}
+		
+	catch (e) {
+
+		var logwriter = new BotOS.Logging.Log("output/BotOSExceptionCatcherTest.Log");
+		logwriter.Initialize();
+		logwriter.WriteException(e);
+		stop();
+	}
+
+
+}
+
+//TriggerManager is being phased out in favour of plugins
+
+//This function handles the execution of task/goal/quest events
+function EventManager()
+{
+
+	var mymode = me.mode;
+	//TODO: put in a watch handler on mymode to detect changes in mode for death, being hit, etc
+
+	if (mymode==7 || mymode==8 || (mymode>9 && mymode<19)) return;
+
+	//check task queue for a new task and execute, if none, get the next goal
+	if(Task = TaskQueue.Remove()){
+		if(Task.Data.Condition){
+			var _temp = false;
+			eval("if(" + Task.Data.Condition + ") _temp = true");
+			if(_temp) Task[Task.Function]();
+		}
+		else Task[Task.Function]();
+		Task.AddItems();
+		LastTask = Task;
+	}
+	//check goal queue for a new goal and execute, if none, get the next quest
+	else if(Goal = GoalQueue.Remove()){
+		if(Goal.Data.Condition){
+			var _temp = false;
+			eval("if(" + Goal.Data.Condition + ") _temp = true");
+			if(_temp) Goal[Goal.Function]();
+		}
+		else Goal[Goal.Function]();
+		Goal.AddItems();
+
+		LastGoal = Goal;
+	}
+	//check quest queue for a new quest and execute, if none, quit game if set to do so
+	else if(Quest = QuestQueue.Remove()){
+		if(Quest.Data.Condition){
+			var _temp = false;
+			eval("if(" + Quest.Data.Condition + ") _temp = true");
+			if(_temp) Quest[Quest.Function]();
+		}
+		else Quest[Quest.Function]();
+		Quest.AddItems();
+
+		LastQuest = Quest;
+	}
+	else if(returnonnoquest) {
+		print("No more quests. quiting");
+		done = true;
+	}
+}
+
+

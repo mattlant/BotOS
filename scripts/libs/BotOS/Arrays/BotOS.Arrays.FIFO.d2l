@@ -1,0 +1,92 @@
+//##################################################
+//####    Matts Arrays Framework Library 1.0   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+----------------------------------------------------
+History
+Version 1.0.0
+- Initial Release
+
+----------------------------------------------------
+
+*/
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1);
+	}
+}
+
+if(typeof(BotOS.Arrays) != 'function'){
+	BotOS.Arrays = function () {
+		throw new BotOS.NamespaceException("BotOS.Arrays Cannot be instantiated", 1);
+	}
+}
+
+
+BotOS.Arrays.FIFO = function (_max)
+{
+	var Queue = new Array();
+	var qmax = _max;
+
+	this.Insert = FIFO_insert;
+	this.Add = FIFO_insert;
+	this.Remove = FIFO_remove;
+	this.Peek = FIFO_peek;
+	this.Clear = FIFO_clear;
+	this.GetQueue = FIFO_GetQueue;
+
+	function FIFO_insert(d)
+	{
+		Queue.push(d);
+		if(qmax && Queue.length > qmax) this.Remove();
+	}
+
+	function FIFO_remove()
+	{
+		if(Queue.length == 0) return null;
+		return Queue.shift();
+	}
+
+	function FIFO_peek()
+	{
+		return Queue[0];
+	}
+
+	function FIFO_clear()
+	{
+		Queue.length = 0;
+	}
+
+	function FIFO_GetQueue () {
+		return Queue;
+	}
+}
+
+
+
+
+
+
+
+
+

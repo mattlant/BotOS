@@ -1,0 +1,52 @@
+include("ScavIni.d2l");
+
+var begingamedelay = 100;
+
+var chardirectory = "default";
+
+var MainIni = new ScavIni("settings/"+chardirectory+"/general.ini");
+//var begingamedelay = MainIni["General"]["BeginGameDelay"];
+//var begingamedelay = MainIni.General.BeginGameDelay;
+
+var DrinkTimer = 2000;
+
+// for town.d2l
+var hphealstart=50;
+var mphealstart=50;
+
+// for town.d2l
+var repairpercent=50;
+var repairduringquest=true;
+
+//Stamina regen delay and percent to regen at. // for movement.d2l
+var dstamina = 3000;
+var dstaminaamt = 10;
+
+//Dynamic movement Delay
+//NOTE: this is also adjusted by the system according to ping and skip rate
+if(me.classid==1)
+	var dynamicwalkdelay = 0;		//Sorc movement delay
+else
+	var dynamicwalkdelay = 10;		//Others movement delay
+
+var charsnag=chardirectory+"/snagit.ini";
+
+// for town.d2l
+var goldstashamount = 800000;
+
+//Character plugin enable/disable DO NOT CHANGE, ENABLE IN THE ACTUAL PLUGIN
+var charplugin = new Array;
+//AMAZON
+charplugin[0] = false;
+//SORCERESS
+charplugin[1] = false;
+//NECROMANCER
+charplugin[2] = false;
+//PALADIN
+charplugin[3] = false;
+//BARBARIAN
+charplugin[4] = false;
+//DRUID
+charplugin[5] = false;
+//ASSASIN
+charplugin[6] = false;

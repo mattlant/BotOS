@@ -1,0 +1,79 @@
+// Matts terminal display
+
+var FONTINFO = [{x:12, y:12},{x:12, y:12},{x:22, y:22},{x:30, y:30},{x:11, y:13},{x:15, y:17},
+	{x:8, y:10},{x:19, y:20},{x:12, y:14},{x:16, y:19},{x:12, y:14},{x:12, y:14},{x:8, y:10}]
+
+function oTerminal(_ox, _oy, _rows, _cols, _font, _color, _initchar)
+{
+	if(typeof(_ox) != "number" || _ox < 0 || _ox > 800) _ox = 10;
+	if(typeof(_oy) != "number" || _oy < 0 || _oy > 600) _oy = 10;
+	if(typeof(_rows) != "number" || _rows < 0 || _rows > 200) _rows = 40;
+	if(typeof(_cols) != "number" || _cols < 0 || _cols > 200) _cols = 40;
+	if(typeof(_font) != "number") _font = 6;
+	if(typeof(_color) != "number") _color = 0;
+	if(typeof(_initchar) != "string") _initchar = " ";
+
+	this.Rows = _rows;
+	this.Columns = _cols;
+
+	this.Font = _font;
+	this.Color = _color;
+	this.XOrigin = _ox;
+	this.YOrigin = _oy;
+
+
+	this.Screen = new Array();
+	var loop = 0;
+	for(var x=0; x<this.Columns; x++)
+	{
+		this.Screen[x] = new Array();
+		for(var y=0; y<this.Rows; y++) {
+			//this.Screen[x][y] = null;
+			this.Screen[x][y] = getScreenHook();
+			this.Screen[x][y].text = _initchar;
+			this.Screen[x][y].x = _ox + x * FONTINFO[_font].x;
+			this.Screen[x][y].y = _oy + y * FONTINFO[_font].y;
+			this.Screen[x][y].font = _font;
+			this.Screen[x][y].color = _color;
+		}
+	}
+
+	this.CLS = function () {
+		for(var x=0; x<this.Columns; x++)
+		{
+			for(var y=0; y<this.Rows; y++)
+				this.Poke(x, y, " ");
+		}
+	}
+
+	this.Poke = function(x, y, text, color){
+		switch(arguments.length) {
+			case 4:
+				this.Screen[x][y].color = color;
+			case 3:
+				this.Screen[x][y].text = text;
+				break;
+			case 2:
+				this.Screen[x][y].text = " ";
+		}
+	}
+	this.Peek = function(x,y){
+		return this.Screen[x][y].text;
+	}
+}
+
+function oGridDisplay(_ox, _oy, _rows, _cols, _font, _color, _initchar) {
+
+	var rowindex = 0;
+	var colindex = 0;
+
+	this.Terminal = new oTerminal(_ox, _oy, _rows, _cols, _font, _color, _initchar);
+	this.print = function(_text){
+		for(var i = 0; i<_text.length; i++) {
+			this.Terminal.Poke(i, rowindex, _text.substr(i,1));
+		}
+		rowindex++;
+	}
+
+}
+

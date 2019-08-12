@@ -1,0 +1,1589 @@
+/***************************************************************\
+	LICENSE
+
+Redistribution and use in source and binary forms, with or without
+modification, is permitted provided that the following conditions
+are met:
+
+  1. Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+	 
+  2. Any derivitive work of this software must not be named
+     similarly to this work, nor should it be implied that the
+	 creators of this work be liable for supporting said work.
+
+  3. Any derivitive work of this software must make this fact
+     known to users of the derivitive software by displaying the
+	 following message on every instance of said software starting:
+	 "Software derived from and/or uses code from fryCowBot++"
+	 
+  4. Any files used from this work that are written by the creators
+     of this work (i.e., have this license attached) must be
+	 maintain the same file names as they are in this package, unless
+	 significant changes have been made to them.
+
+THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE CREATOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE.
+
+\***************************************************************/
+function plugAutoStats(instname) {
+	this.temp = oPlugin;
+	this.temp("AutoStats", mlPLUGINBYTIME, 5000,"Auto Skill/Stat Assignment", "1.1", "Hellek", instname);
+	delete this.temp;
+	
+	this.AutoStats = function() {
+		if(me.getStat(cUS_NewSkills) > 0)
+			applySkills();
+		if(me.getStat(cUS_StatPts) > 0)
+			applyStats();
+	}
+}
+
+var chardir = "default";
+var autoskillsini = new ScavIni("settings/"+chardir+"/autostats.ini");
+
+function readSkill(i) {
+	var returnval = new Array();
+	var _skill = autoskillsini["Skills"]["skill-"+i];
+	if(_skill) {
+		returnval = _skill.split(",");
+	} else {
+		returnval = false;
+	}
+	return returnval;
+}
+
+function readStat(i) {
+	var returnval = new Array();
+	var _stat = autoskillsini["Stats"]["stat-"+i];
+	if(_stat) {
+		returnval = _stat.split(",");
+	} else {
+		returnval = false;
+	}
+	return returnval;
+}
+
+function skillLevel(skillname)
+{
+	return me.getSkill(skillname, 1)>=0?(me.getSkill(skillname, 1)+1):0;
+}
+
+function applySkills()
+{
+	StdOutput.Write("Checking to see if any skill points need to be used.  ("+me.getStat(5)+")");
+	while (me.getStat(cUS_NewSkills) > 0) {
+		for (var i=1; skill = readSkill(i); i++) {
+			if (!skill || !skill[0]) {
+				StdOutput.Write("No more skills to apply!");
+				return false;
+			}
+			skillid = getSkillId(skill[0]);
+			skillname = getSkillName(skillid);
+			skilllevel = skillLevel(skillname);
+
+			StdOutput.Write("trying skill: "+skill[0]+" ("+skillname+") id: "+skillid+"; target level: "+skill[1]+"; have: "+skilllevel);
+			if (canApplySkill(skill[0]) && skilllevel < skill[1]) {
+				print("Using skill point on: "+skillname);
+				useSkillPoint(skillid);
+				delay(2000);
+				break;
+			}
+		}
+	}
+	print("Done.");
+}
+
+function applyStats()
+{
+	print("Checking to see if any stat points need to be used. ("+me.getStat(cUS_StatPts)+")");
+	while (me.getStat(cUS_StatPts) > 0) {
+		for (var i=1; stat = readStat(i); i++) {
+			if (!stat || !stat[0]) {
+				print("No more stats to apply!");
+				return false;
+			}
+
+			if (stat[0] == "vitality") {
+				statid = cUSP_Vitality;
+				statlevel = me.getStat(cUS_Vitality);
+			} else if (stat[0] == "energy") {
+				statid = cUSP_Energy;
+				statlevel = me.getStat(cUS_Energy);
+			} else if (stat[0] == "strength") {
+				statid = cUSP_Strength;
+				statlevel = me.getStat(cUS_Strength);
+			} else if (stat[0] == "dexterity") {
+				statid = cUSP_Dexterity;
+				statlevel = me.getStat(cUS_Dexterity);
+			} else {
+				print("Unknown stat: "+stat[0]);
+			}
+			
+			print("trying stat: "+stat[0]+" id: "+statid+"; target level: "+stat[1]+"; have: "+statlevel);
+			if (statlevel < stat[1]) {
+				print("Using stat point on: "+stat[0]);
+				useStatPoint(statid);
+				delay(2000);
+				break;
+			}
+		}
+	}
+	print("Done.");
+}
+
+// misc stuffy stuff
+function canApplySkill(skill) {
+	if (skill == "magic arrow") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "fire arrow") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "inner sight") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "critical strike") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "jab") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "cold arrow") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "multiple shot") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Magic Arrow", 1)) return false;
+		return true;
+	} else if (skill == "dodge") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "power strike") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Jab", 1)) return false;
+		return true;
+	} else if (skill == "poison javelin") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "exploding arrow") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Fire Arrow", 1)) return false;
+		if (!skillLevel("Multiple Shot", 1)) return false;
+		return true;
+	} else if (skill == "slow missiles") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Inner Sight", 1)) return false;
+		return true;
+	} else if (skill == "avoid") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Dodge", 1)) return false;
+		return true;
+	} else if (skill == "impale") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Jab", 1)) return false;
+		return true;
+	} else if (skill == "lightning bolt") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Poison Javelin", 1)) return false;
+		return true;
+	} else if (skill == "ice arrow") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Cold Arrow", 1)) return false;
+		return true;
+	} else if (skill == "guided arrow") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Cold Arrow", 1)) return false;
+		if (!skillLevel("Multiple Shot", 1)) return false;
+		return true;
+	} else if (skill == "penetrate") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Critical Strike", 1)) return false;
+		return true;
+	} else if (skill == "charged strike") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Power Strike", 1)) return false;
+		if (!skillLevel("Lightning Bolt", 1)) return false;
+		return true;
+	} else if (skill == "plague javelin") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Lightning Bolt", 1)) return false;
+		return true;
+	} else if (skill == "strafe") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Guided Arrow", 1)) return false;
+		return true;
+	} else if (skill == "immolation arrow") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Exploding Arrow", 1)) return false;
+		return true;
+	} else if (skill == "dopplezon") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Slow Missiles", 1)) return false;
+		return true;
+	} else if (skill == "evade") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Avoid", 1)) return false;
+		return true;
+	} else if (skill == "fend") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Impale", 1)) return false;
+		return true;
+	} else if (skill == "freezing arrow") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Ice Arrow", 1)) return false;
+		return true;
+	} else if (skill == "valkyrie") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Dopplezon", 1)) return false;
+		if (!skillLevel("Evade", 1)) return false;
+		return true;
+	} else if (skill == "pierce") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Penetrate", 1)) return false;
+		return true;
+	} else if (skill == "lightning strike") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Charged Strike", 1)) return false;
+		return true;
+	} else if (skill == "lightning fury") {
+		if (me.classid != 0) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Plague Javelin", 1)) return false;
+		return true;
+	} else if (skill == "fire bolt") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "warmth") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "charged bolt") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "ice bolt") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "frozen armor") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "inferno") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "static field") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "telekinesis") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "frost nova") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "ice blast") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Ice Bolt", 1)) return false;
+		return true;
+	} else if (skill == "blaze") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Inferno", 1)) return false;
+		return true;
+	} else if (skill == "fire ball") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Fire Bolt", 1)) return false;
+		return true;
+	} else if (skill == "nova") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Static Field", 1)) return false;
+		return true;
+	} else if (skill == "lightning") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Charged Bolt", 1)) return false;
+		return true;
+	} else if (skill == "shiver armor") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Ice Blast", 1)) return false;
+		if (!skillLevel("Frozen Armor", 1)) return false;
+		return true;
+	} else if (skill == "fire wall") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Blaze", 1)) return false;
+		return true;
+	} else if (skill == "enchant") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Warmth", 1)) return false;
+		if (!skillLevel("Fire Ball", 1)) return false;
+		return true;
+	} else if (skill == "chain lightning") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Lightning", 1)) return false;
+		return true;
+	} else if (skill == "teleport") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Telekinesis", 1)) return false;
+		return true;
+	} else if (skill == "glacial spike") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Ice Blast", 1)) return false;
+		return true;
+	} else if (skill == "meteor") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Fire Ball", 1)) return false;
+		if (!skillLevel("Fire Wall", 1)) return false;
+		return true;
+	} else if (skill == "thunder storm") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Nova", 1)) return false;
+		if (!skillLevel("Chain Lightning", 1)) return false;
+		return true;
+	} else if (skill == "energy shield") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Teleport", 1)) return false;
+		if (!skillLevel("Chain Lightning", 1)) return false;
+		return true;
+	} else if (skill == "blizzard") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Frost Nova", 1)) return false;
+		if (!skillLevel("Glacial Spike", 1)) return false;
+		return true;
+	} else if (skill == "chilling armor") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Shiver Armor", 1)) return false;
+		return true;
+	} else if (skill == "fire mastery") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		return true;
+	} else if (skill == "hydra") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Enchant", 1)) return false;
+		return true;
+	} else if (skill == "lightning mastery") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		return true;
+	} else if (skill == "frozen orb") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Blizzard", 1)) return false;
+		return true;
+	} else if (skill == "cold mastery") {
+		if (me.classid != 1) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		return true;
+	} else if (skill == "amplify damage") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "teeth") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "bone armor") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "skeleton mastery") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		if (!skillLevel("Raise Skeleton", 1)) return false;
+		return true;
+	} else if (skill == "raise skeleton") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "dim vision") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "weaken") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Amplify Damage", 1)) return false;
+		return true;
+	} else if (skill == "poison dagger") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "corpse explosion") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Teeth", 1)) return false;
+		return true;
+	} else if (skill == "clay golem") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "iron maiden") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Amplify Damage", 1)) return false;
+		return true;
+	} else if (skill == "terror") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Weaken", 1)) return false;
+		return true;
+	} else if (skill == "bone wall") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Bone Armor", 1)) return false;
+		return true;
+	} else if (skill == "golem mastery") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Clay Golem", 1)) return false;
+		return true;
+	} else if (skill == "raise skeletal mage") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Raise Skeleton", 1)) return false;
+		return true;
+	} else if (skill == "confuse") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Dim Vision", 1)) return false;
+		return true;
+	} else if (skill == "life tap") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Iron Maiden", 1)) return false;
+		return true;
+	} else if (skill == "poison explosion") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Poison Dagger", 1)) return false;
+		if (!skillLevel("Corpse Explosion", 1)) return false;
+		return true;
+	} else if (skill == "bone spear") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Corpse Explosion", 1)) return false;
+		return true;
+	} else if (skill == "bloodgolem") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Clay Golem", 1)) return false;
+		return true;
+	} else if (skill == "attract") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Confuse", 1)) return false;
+		return true;
+	} else if (skill == "decrepify") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Terror", 1)) return false;
+		return true;
+	} else if (skill == "bone prison") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Bone Wall", 1)) return false;
+		if (!skillLevel("Bone Spear", 1)) return false;
+		return true;
+	} else if (skill == "summon resist") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Golem Mastery", 1)) return false;
+		return true;
+	} else if (skill == "irongolem") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("BloodGolem", 1)) return false;
+		return true;
+	} else if (skill == "lower resist") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Life Tap", 1)) return false;
+		if (!skillLevel("Decrepify", 1)) return false;
+		return true;
+	} else if (skill == "poison nova") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Poison Explosion", 1)) return false;
+		return true;
+	} else if (skill == "bone spirit") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Bone Spear", 1)) return false;
+		return true;
+	} else if (skill == "firegolem") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("IronGolem", 1)) return false;
+		return true;
+	} else if (skill == "revive") {
+		if (me.classid != 2) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Raise Skeletal Mage", 1)) return false;
+		if (!skillLevel("IronGolem", 1)) return false;
+		return true;
+	} else if (skill == "sacrifice") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "smite") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "might") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "prayer") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "resist fire") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "holy bolt") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "holy fire") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Might", 1)) return false;
+		return true;
+	} else if (skill == "thorns") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "defiance") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "resist cold") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "zeal") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Sacrifice", 1)) return false;
+		return true;
+	} else if (skill == "charge") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Smite", 1)) return false;
+		return true;
+	} else if (skill == "blessed aim") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Might", 1)) return false;
+		return true;
+	} else if (skill == "cleansing") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Prayer", 1)) return false;
+		return true;
+	} else if (skill == "resist lightning") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		return true;
+	} else if (skill == "vengeance") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Zeal", 1)) return false;
+		return true;
+	} else if (skill == "blessed hammer") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Holy Bolt", 1)) return false;
+		return true;
+	} else if (skill == "concentration") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Blessed Aim", 1)) return false;
+		return true;
+	} else if (skill == "holy freeze") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Holy Fire", 1)) return false;
+		return true;
+	} else if (skill == "vigor") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Cleansing", 1)) return false;
+		if (!skillLevel("Defiance", 1)) return false;
+		return true;
+	} else if (skill == "conversion") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Vengeance", 1)) return false;
+		return true;
+	} else if (skill == "holy shield") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Charge", 1)) return false;
+		if (!skillLevel("Blessed Hammer", 1)) return false;
+		return true;
+	} else if (skill == "holy shock") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Holy Freeze", 1)) return false;
+		return true;
+	} else if (skill == "sanctuary") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Thorns", 1)) return false;
+		if (!skillLevel("Holy Freeze", 1)) return false;
+		return true;
+	} else if (skill == "meditation") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Cleansing", 1)) return false;
+		return true;
+	} else if (skill == "fist of the heavens") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Blessed Hammer", 1)) return false;
+		if (!skillLevel("Conversion", 1)) return false;
+		return true;
+	} else if (skill == "fanaticism") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Concentration", 1)) return false;
+		return true;
+	} else if (skill == "conviction") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Sanctuary", 1)) return false;
+		return true;
+	} else if (skill == "redemption") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Vigor", 1)) return false;
+		return true;
+	} else if (skill == "salvation") {
+		if (me.classid != 3) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		return true;
+	} else if (skill == "bash") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "sword mastery") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "axe mastery") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "mace mastery") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "howl") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "find potion") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "leap") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "double swing") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Bash", 1)) return false;
+		return true;
+	} else if (skill == "pole arm mastery") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "throwing mastery") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "spear mastery") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "taunt") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Howl", 1)) return false;
+		return true;
+	} else if (skill == "shout") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Howl", 1)) { print("don't have howl!"); return false; }
+		return true;
+	} else if (skill == "stun") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Bash", 1)) return false;
+		return true;
+	} else if (skill == "double throw") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Double Swing", 1)) return false;
+		return true;
+	} else if (skill == "increased stamina") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		return true;
+	} else if (skill == "find item") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Find Potion", 1)) return false;
+		return true;
+	} else if (skill == "leap attack") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Leap", 1)) return false;
+		return true;
+	} else if (skill == "concentrate") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Stun", 1)) return false;
+		return true;
+	} else if (skill == "iron skin") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		return true;
+	} else if (skill == "battle cry") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Taunt", 1)) return false;
+		return true;
+	} else if (skill == "frenzy") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Double Throw", 1)) return false;
+		return true;
+	} else if (skill == "increased speed") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Increased Stamina", 1)) return false;
+		return true;
+	} else if (skill == "battle orders") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Shout", 1)) return false;
+		return true;
+	} else if (skill == "grim ward") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Find Item", 1)) return false;
+		return true;
+	} else if (skill == "whirlwind") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Leap Attack", 1)) return false;
+		if (!skillLevel("Concentrate", 1)) return false;
+		return true;
+	} else if (skill == "berserk") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Concentrate", 1)) return false;
+		return true;
+	} else if (skill == "natural resistance") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Iron Skin", 1)) return false;
+		return true;
+	} else if (skill == "war cry") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Battle Cry", 1)) return false;
+		if (!skillLevel("Battle Orders", 1)) return false;
+		return true;
+	} else if (skill == "battle command") {
+		if (me.classid != 4) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Battle Orders", 1)) return false;
+		return true;
+	} else if (skill == "raven") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "plague poppy") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "dire wolf") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "shape shifting") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		if (!skillLevel("Dire Wolf", 1)) return false;
+		return true;
+	} else if (skill == "firestorm") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "oak sage") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "summon spirit wolf") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Raven", 1)) return false;
+		return true;
+	} else if (skill == "mammoth bear") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "molten boulder") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Firestorm", 1)) return false;
+		return true;
+	} else if (skill == "arctic blast") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "cycle of life") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Plague Poppy", 1)) return false;
+		return true;
+	} else if (skill == "feral rage") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Dire Wolf", 1)) return false;
+		return true;
+	} else if (skill == "maul") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Mammoth Bear", 1)) return false;
+		return true;
+	} else if (skill == "eruption") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Molten Boulder", 1)) return false;
+		return true;
+	} else if (skill == "cyclone armor") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Arctic Blast", 1)) return false;
+		return true;
+	} else if (skill == "heart of wolverine") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Oak Sage", 1)) return false;
+		return true;
+	} else if (skill == "summon fenris") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Oak Sage", 1)) return false;
+		if (!skillLevel("Summon Spirit Wolf", 1)) return false;
+		return true;
+	} else if (skill == "rabies") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Feral Rage", 1)) return false;
+		return true;
+	} else if (skill == "fire claws") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Feral Rage", 1)) return false;
+		if (!skillLevel("Maul", 1)) return false;
+		return true;
+	} else if (skill == "twister") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Cyclone Armor", 1)) return false;
+		return true;
+	} else if (skill == "vines") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Cycle of Life", 1)) return false;
+		return true;
+	} else if (skill == "hunger") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Fire Claws", 1)) return false;
+		return true;
+	} else if (skill == "shock wave") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Maul", 1)) return false;
+		return true;
+	} else if (skill == "volcano") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Eruption", 1)) return false;
+		return true;
+	} else if (skill == "tornado") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Twister", 1)) return false;
+		return true;
+	} else if (skill == "spirit of barbs") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Heart of Wolverine", 1)) return false;
+		return true;
+	} else if (skill == "summon grizzly") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Summon Fenris", 1)) return false;
+		return true;
+	} else if (skill == "fury") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Rabies", 1)) return false;
+		return true;
+	} else if (skill == "armageddon") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Volcano", 1)) return false;
+		if (!skillLevel("Hurricane", 1)) return false;
+		return true;
+	} else if (skill == "hurricane") {
+		if (me.classid != 5) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Tornado", 1)) return false;
+		return true;
+	} else if (skill == "fire trauma") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "claw mastery") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "psychic hammer") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "tiger strike") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "dragon talon") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 1) return false;
+		return true;
+	} else if (skill == "shock field") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Fire Trauma", 1)) return false;
+		return true;
+	} else if (skill == "blade sentinel") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "quickness") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Claw Mastery", 1)) return false;
+		return true;
+	} else if (skill == "fists of fire") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		return true;
+	} else if (skill == "dragon claw") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 6) return false;
+		if (!skillLevel("Dragon Talon", 1)) return false;
+		return true;
+	} else if (skill == "charged bolt sentry") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Shock Field", 1)) return false;
+		return true;
+	} else if (skill == "wake of fire sentry") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Fire Trauma", 1)) return false;
+		return true;
+	} else if (skill == "weapon block") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Claw Mastery", 1)) return false;
+		return true;
+	} else if (skill == "cloak of shadows") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Psychic Hammer", 1)) return false;
+		return true;
+	} else if (skill == "cobra strike") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 12) return false;
+		if (!skillLevel("Tiger Strike", 1)) return false;
+		return true;
+	} else if (skill == "blade fury") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Blade Sentinel", 1)) return false;
+		if (!skillLevel("Wake of Fire Sentry", 1)) return false;
+		return true;
+	} else if (skill == "fade") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Quickness", 1)) return false;
+		return true;
+	} else if (skill == "shadow warrior") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Cloak of Shadows", 1)) return false;
+		if (!skillLevel("Weapon Block", 1)) return false;
+		return true;
+	} else if (skill == "claws of thunder") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Fists of Fire", 1)) return false;
+		return true;
+	} else if (skill == "dragon tail") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 18) return false;
+		if (!skillLevel("Dragon Claw", 1)) return false;
+		return true;
+	} else if (skill == "lightning sentry") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Charged Bolt Sentry", 1)) return false;
+		return true;
+	} else if (skill == "inferno sentry") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Wake of Fire Sentry", 1)) return false;
+		return true;
+	} else if (skill == "mind blast") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Cloak of Shadows", 1)) return false;
+		return true;
+	} else if (skill == "blades of ice") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Claws of Thunder", 1)) return false;
+		return true;
+	} else if (skill == "dragon flight") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 24) return false;
+		if (!skillLevel("Dragon Tail", 1)) return false;
+		return true;
+	} else if (skill == "death sentry") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Lightning Sentry", 1)) return false;
+		return true;
+	} else if (skill == "blade shield") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Blade Fury", 1)) return false;
+		return true;
+	} else if (skill == "venom") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Fade", 1)) return false;
+		return true;
+	} else if (skill == "shadow master") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Shadow Warrior", 1)) return false;
+		return true;
+	} else if (skill == "royal strike") {
+		if (me.classid != 6) return false;
+		if (me.getStat(cUS_Level) < 30) return false;
+		if (!skillLevel("Cobra Strike", 1)) return false;
+		if (!skillLevel("Blades of Ice", 1)) return false;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function getSkillId(skill) {
+	if (skill == "magic arrow") return 6;
+	if (skill == "fire arrow") return 7;
+	if (skill == "inner sight") return 8;
+	if (skill == "critical strike") return 9;
+	if (skill == "jab") return 10;
+	if (skill == "cold arrow") return 11;
+	if (skill == "multiple shot") return 12;
+	if (skill == "dodge") return 13;
+	if (skill == "power strike") return 14;
+	if (skill == "poison javelin") return 15;
+	if (skill == "exploding arrow") return 16;
+	if (skill == "slow missiles") return 17;
+	if (skill == "avoid") return 18;
+	if (skill == "impale") return 19;
+	if (skill == "lightning bolt") return 20;
+	if (skill == "ice arrow") return 21;
+	if (skill == "guided arrow") return 22;
+	if (skill == "penetrate") return 23;
+	if (skill == "charged strike") return 24;
+	if (skill == "plague javelin") return 25;
+	if (skill == "strafe") return 26;
+	if (skill == "immolation arrow") return 27;
+	if (skill == "dopplezon") return 28;
+	if (skill == "evade") return 29;
+	if (skill == "fend") return 30;
+	if (skill == "freezing arrow") return 31;
+	if (skill == "valkyrie") return 32;
+	if (skill == "pierce") return 33;
+	if (skill == "lightning strike") return 34;
+	if (skill == "lightning fury") return 35;
+	if (skill == "fire bolt") return 36;
+	if (skill == "warmth") return 37;
+	if (skill == "charged bolt") return 38;
+	if (skill == "ice bolt") return 39;
+	if (skill == "frozen armor") return 40;
+	if (skill == "inferno") return 41;
+	if (skill == "static field") return 42;
+	if (skill == "telekinesis") return 43;
+	if (skill == "frost nova") return 44;
+	if (skill == "ice blast") return 45;
+	if (skill == "blaze") return 46;
+	if (skill == "fire ball") return 47;
+	if (skill == "nova") return 48;
+	if (skill == "lightning") return 49;
+	if (skill == "shiver armor") return 50;
+	if (skill == "fire wall") return 51;
+	if (skill == "enchant") return 52;
+	if (skill == "chain lightning") return 53;
+	if (skill == "teleport") return 54;
+	if (skill == "glacial spike") return 55;
+	if (skill == "meteor") return 56;
+	if (skill == "thunder storm") return 57;
+	if (skill == "energy shield") return 58;
+	if (skill == "blizzard") return 59;
+	if (skill == "chilling armor") return 60;
+	if (skill == "fire mastery") return 61;
+	if (skill == "hydra") return 62;
+	if (skill == "lightning mastery") return 63;
+	if (skill == "frozen orb") return 64;
+	if (skill == "cold mastery") return 65;
+	if (skill == "amplify damage") return 66;
+	if (skill == "teeth") return 67;
+	if (skill == "bone armor") return 68;
+	if (skill == "skeleton mastery") return 69;
+	if (skill == "raise skeleton") return 70;
+	if (skill == "dim vision") return 71;
+	if (skill == "weaken") return 72;
+	if (skill == "poison dagger") return 73;
+	if (skill == "corpse explosion") return 74;
+	if (skill == "clay golem") return 75;
+	if (skill == "iron maiden") return 76;
+	if (skill == "terror") return 77;
+	if (skill == "bone wall") return 78;
+	if (skill == "golem mastery") return 79;
+	if (skill == "raise skeletal mage") return 80;
+	if (skill == "confuse") return 81;
+	if (skill == "life tap") return 82;
+	if (skill == "poison explosion") return 83;
+	if (skill == "bone spear") return 84;
+	if (skill == "bloodgolem") return 85;
+	if (skill == "attract") return 86;
+	if (skill == "decrepify") return 87;
+	if (skill == "bone prison") return 88;
+	if (skill == "summon resist") return 89;
+	if (skill == "irongolem") return 90;
+	if (skill == "lower resist") return 91;
+	if (skill == "poison nova") return 92;
+	if (skill == "bone spirit") return 93;
+	if (skill == "firegolem") return 94;
+	if (skill == "revive") return 95;
+	if (skill == "sacrifice") return 96;
+	if (skill == "smite") return 97;
+	if (skill == "might") return 98;
+	if (skill == "prayer") return 99;
+	if (skill == "resist fire") return 100;
+	if (skill == "holy bolt") return 101;
+	if (skill == "holy fire") return 102;
+	if (skill == "thorns") return 103;
+	if (skill == "defiance") return 104;
+	if (skill == "resist cold") return 105;
+	if (skill == "zeal") return 106;
+	if (skill == "charge") return 107;
+	if (skill == "blessed aim") return 108;
+	if (skill == "cleansing") return 109;
+	if (skill == "resist lightning") return 110;
+	if (skill == "vengeance") return 111;
+	if (skill == "blessed hammer") return 112;
+	if (skill == "concentration") return 113;
+	if (skill == "holy freeze") return 114;
+	if (skill == "vigor") return 115;
+	if (skill == "conversion") return 116;
+	if (skill == "holy shield") return 117;
+	if (skill == "holy shock") return 118;
+	if (skill == "sanctuary") return 119;
+	if (skill == "meditation") return 120;
+	if (skill == "fist of the heavens") return 121;
+	if (skill == "fanaticism") return 122;
+	if (skill == "conviction") return 123;
+	if (skill == "redemption") return 124;
+	if (skill == "salvation") return 125;
+	if (skill == "bash") return 126;
+	if (skill == "sword mastery") return 127;
+	if (skill == "axe mastery") return 128;
+	if (skill == "mace mastery") return 129;
+	if (skill == "howl") return 130;
+	if (skill == "find potion") return 131;
+	if (skill == "leap") return 132;
+	if (skill == "double swing") return 133;
+	if (skill == "pole arm mastery") return 134;
+	if (skill == "throwing mastery") return 135;
+	if (skill == "spear mastery") return 136;
+	if (skill == "taunt") return 137;
+	if (skill == "shout") return 138;
+	if (skill == "stun") return 139;
+	if (skill == "double throw") return 140;
+	if (skill == "increased stamina") return 141;
+	if (skill == "find item") return 142;
+	if (skill == "leap attack") return 143;
+	if (skill == "concentrate") return 144;
+	if (skill == "iron skin") return 145;
+	if (skill == "battle cry") return 146;
+	if (skill == "frenzy") return 147;
+	if (skill == "increased speed") return 148;
+	if (skill == "battle orders") return 149;
+	if (skill == "grim ward") return 150;
+	if (skill == "whirlwind") return 151;
+	if (skill == "berserk") return 152;
+	if (skill == "natural resistance") return 153;
+	if (skill == "war cry") return 154;
+	if (skill == "battle command") return 155;
+	if (skill == "raven") return 221;
+	if (skill == "plague poppy") return 222;
+	if (skill == "dire wolf") return 223;
+	if (skill == "shape shifting") return 224;
+	if (skill == "firestorm") return 225;
+	if (skill == "oak sage") return 226;
+	if (skill == "summon spirit wolf") return 227;
+	if (skill == "mammoth bear") return 228;
+	if (skill == "molten boulder") return 229;
+	if (skill == "arctic blast") return 230;
+	if (skill == "cycle of life") return 231;
+	if (skill == "feral rage") return 232;
+	if (skill == "maul") return 233;
+	if (skill == "eruption") return 234;
+	if (skill == "cyclone armor") return 235;
+	if (skill == "heart of wolverine") return 236;
+	if (skill == "summon fenris") return 237;
+	if (skill == "rabies") return 238;
+	if (skill == "fire claws") return 239;
+	if (skill == "twister") return 240;
+	if (skill == "vines") return 241;
+	if (skill == "hunger") return 242;
+	if (skill == "shock wave") return 243;
+	if (skill == "volcano") return 244;
+	if (skill == "tornado") return 245;
+	if (skill == "spirit of barbs") return 246;
+	if (skill == "summon grizzly") return 247;
+	if (skill == "fury") return 248;
+	if (skill == "armageddon") return 249;
+	if (skill == "hurricane") return 250;
+	if (skill == "fire trauma") return 251;
+	if (skill == "claw mastery") return 252;
+	if (skill == "psychic hammer") return 253;
+	if (skill == "tiger strike") return 254;
+	if (skill == "dragon talon") return 255;
+	if (skill == "shock field") return 256;
+	if (skill == "blade sentinel") return 257;
+	if (skill == "quickness") return 258;
+	if (skill == "fists of fire") return 259;
+	if (skill == "dragon claw") return 260;
+	if (skill == "charged bolt sentry") return 261;
+	if (skill == "wake of fire sentry") return 262;
+	if (skill == "weapon block") return 263;
+	if (skill == "cloak of shadows") return 264;
+	if (skill == "cobra strike") return 265;
+	if (skill == "blade fury") return 266;
+	if (skill == "fade") return 267;
+	if (skill == "shadow warrior") return 268;
+	if (skill == "claws of thunder") return 269;
+	if (skill == "dragon tail") return 270;
+	if (skill == "lightning sentry") return 271;
+	if (skill == "inferno sentry") return 272;
+	if (skill == "mind blast") return 273;
+	if (skill == "blades of ice") return 274;
+	if (skill == "dragon flight") return 275;
+	if (skill == "death sentry") return 276;
+	if (skill == "blade shield") return 277;
+	if (skill == "venom") return 278;
+	if (skill == "shadow master") return 279;
+	if (skill == "royal strike") return 280;
+}
+
+
+function getSkillName(skill) {
+	if (skill == 6) return "Magic Arrow";
+	if (skill == 7) return "Fire Arrow";
+	if (skill == 8) return "Inner Sight";
+	if (skill == 9) return "Critical Strike";
+	if (skill == 10) return "Jab";
+	if (skill == 11) return "Cold Arrow";
+	if (skill == 12) return "Multiple Shot";
+	if (skill == 13) return "Dodge";
+	if (skill == 14) return "Power Strike";
+	if (skill == 15) return "Poison Javelin";
+	if (skill == 16) return "Exploding Arrow";
+	if (skill == 17) return "Slow Missiles";
+	if (skill == 18) return "Avoid";
+	if (skill == 19) return "Impale";
+	if (skill == 20) return "Lightning Bolt";
+	if (skill == 21) return "Ice Arrow";
+	if (skill == 22) return "Guided Arrow";
+	if (skill == 23) return "Penetrate";
+	if (skill == 24) return "Charged Strike";
+	if (skill == 25) return "Plague Javelin";
+	if (skill == 26) return "Strafe";
+	if (skill == 27) return "Immolation Arrow";
+	if (skill == 28) return "Dopplezon";
+	if (skill == 29) return "Evade";
+	if (skill == 30) return "Fend";
+	if (skill == 31) return "Freezing Arrow";
+	if (skill == 32) return "Valkyrie";
+	if (skill == 33) return "Pierce";
+	if (skill == 34) return "Lightning Strike";
+	if (skill == 35) return "Lightning Fury";
+	if (skill == 36) return "Fire Bolt";
+	if (skill == 37) return "Warmth";
+	if (skill == 38) return "Charged Bolt";
+	if (skill == 39) return "Ice Bolt";
+	if (skill == 40) return "Frozen Armor";
+	if (skill == 41) return "Inferno";
+	if (skill == 42) return "Static Field";
+	if (skill == 43) return "Telekinesis";
+	if (skill == 44) return "Frost Nova";
+	if (skill == 45) return "Ice Blast";
+	if (skill == 46) return "Blaze";
+	if (skill == 47) return "Fire Ball";
+	if (skill == 48) return "Nova";
+	if (skill == 49) return "Lightning";
+	if (skill == 50) return "Shiver Armor";
+	if (skill == 51) return "Fire Wall";
+	if (skill == 52) return "Enchant";
+	if (skill == 53) return "Chain Lightning";
+	if (skill == 54) return "Teleport";
+	if (skill == 55) return "Glacial Spike";
+	if (skill == 56) return "Meteor";
+	if (skill == 57) return "Thunder Storm";
+	if (skill == 58) return "Energy Shield";
+	if (skill == 59) return "Blizzard";
+	if (skill == 60) return "Chilling Armor";
+	if (skill == 61) return "Fire Mastery";
+	if (skill == 62) return "Hydra";
+	if (skill == 63) return "Lightning Mastery";
+	if (skill == 64) return "Frozen Orb";
+	if (skill == 65) return "Cold Mastery";
+	if (skill == 66) return "Amplify Damage";
+	if (skill == 67) return "Teeth";
+	if (skill == 68) return "Bone Armor";
+	if (skill == 69) return "Skeleton Mastery";
+	if (skill == 70) return "Raise Skeleton";
+	if (skill == 71) return "Dim Vision";
+	if (skill == 72) return "Weaken";
+	if (skill == 73) return "Poison Dagger";
+	if (skill == 74) return "Corpse Explosion";
+	if (skill == 75) return "Clay Golem";
+	if (skill == 76) return "Iron Maiden";
+	if (skill == 77) return "Terror";
+	if (skill == 78) return "Bone Wall";
+	if (skill == 79) return "Golem Mastery";
+	if (skill == 80) return "Raise Skeletal Mage";
+	if (skill == 81) return "Confuse";
+	if (skill == 82) return "Life Tap";
+	if (skill == 83) return "Poison Explosion";
+	if (skill == 84) return "Bone Spear";
+	if (skill == 85) return "BloodGolem";
+	if (skill == 86) return "Attract";
+	if (skill == 87) return "Decrepify";
+	if (skill == 88) return "Bone Prison";
+	if (skill == 89) return "Summon Resist";
+	if (skill == 90) return "IronGolem";
+	if (skill == 91) return "Lower Resist";
+	if (skill == 92) return "Poison Nova";
+	if (skill == 93) return "Bone Spirit";
+	if (skill == 94) return "FireGolem";
+	if (skill == 95) return "Revive";
+	if (skill == 96) return "Sacrifice";
+	if (skill == 97) return "Smite";
+	if (skill == 98) return "Might";
+	if (skill == 99) return "Prayer";
+	if (skill == 100) return "Resist Fire";
+	if (skill == 101) return "Holy Bolt";
+	if (skill == 102) return "Holy Fire";
+	if (skill == 103) return "Thorns";
+	if (skill == 104) return "Defiance";
+	if (skill == 105) return "Resist Cold";
+	if (skill == 106) return "Zeal";
+	if (skill == 107) return "Charge";
+	if (skill == 108) return "Blessed Aim";
+	if (skill == 109) return "Cleansing";
+	if (skill == 110) return "Resist Lightning";
+	if (skill == 111) return "Vengeance";
+	if (skill == 112) return "Blessed Hammer";
+	if (skill == 113) return "Concentration";
+	if (skill == 114) return "Holy Freeze";
+	if (skill == 115) return "Vigor";
+	if (skill == 116) return "Conversion";
+	if (skill == 117) return "Holy Shield";
+	if (skill == 118) return "Holy Shock";
+	if (skill == 119) return "Sanctuary";
+	if (skill == 120) return "Meditation";
+	if (skill == 121) return "Fist of the Heavens";
+	if (skill == 122) return "Fanaticism";
+	if (skill == 123) return "Conviction";
+	if (skill == 124) return "Redemption";
+	if (skill == 125) return "Salvation";
+	if (skill == 126) return "Bash";
+	if (skill == 127) return "Sword Mastery";
+	if (skill == 128) return "Axe Mastery";
+	if (skill == 129) return "Mace Mastery";
+	if (skill == 130) return "Howl";
+	if (skill == 131) return "Find Potion";
+	if (skill == 132) return "Leap";
+	if (skill == 133) return "Double Swing";
+	if (skill == 134) return "Pole Arm Mastery";
+	if (skill == 135) return "Throwing Mastery";
+	if (skill == 136) return "Spear Mastery";
+	if (skill == 137) return "Taunt";
+	if (skill == 138) return "Shout";
+	if (skill == 139) return "Stun";
+	if (skill == 140) return "Double Throw";
+	if (skill == 141) return "Increased Stamina";
+	if (skill == 142) return "Find Item";
+	if (skill == 143) return "Leap Attack";
+	if (skill == 144) return "Concentrate";
+	if (skill == 145) return "Iron Skin";
+	if (skill == 146) return "Battle Cry";
+	if (skill == 147) return "Frenzy";
+	if (skill == 148) return "Increased Speed";
+	if (skill == 149) return "Battle Orders";
+	if (skill == 150) return "Grim Ward";
+	if (skill == 151) return "Whirlwind";
+	if (skill == 152) return "Berserk";
+	if (skill == 153) return "Natural Resistance";
+	if (skill == 154) return "War Cry";
+	if (skill == 155) return "Battle Command";
+	if (skill == 221) return "Raven";
+	if (skill == 222) return "Plague Poppy";
+	if (skill == 223) return "Dire Wolf";
+	if (skill == 224) return "Shape Shifting";
+	if (skill == 225) return "Firestorm";
+	if (skill == 226) return "Oak Sage";
+	if (skill == 227) return "Summon Spirit Wolf";
+	if (skill == 228) return "Mammoth Bear";
+	if (skill == 229) return "Molten Boulder";
+	if (skill == 230) return "Arctic Blast";
+	if (skill == 231) return "Cycle of Life";
+	if (skill == 232) return "Feral Rage";
+	if (skill == 233) return "Maul";
+	if (skill == 234) return "Eruption";
+	if (skill == 235) return "Cyclone Armor";
+	if (skill == 236) return "Heart of Wolverine";
+	if (skill == 237) return "Summon Fenris";
+	if (skill == 238) return "Rabies";
+	if (skill == 239) return "Fire Claws";
+	if (skill == 240) return "Twister";
+	if (skill == 241) return "Vines";
+	if (skill == 242) return "Hunger";
+	if (skill == 243) return "Shock Wave";
+	if (skill == 244) return "Volcano";
+	if (skill == 245) return "Tornado";
+	if (skill == 246) return "Spirit of Barbs";
+	if (skill == 247) return "Summon Grizzly";
+	if (skill == 248) return "Fury";
+	if (skill == 249) return "Armageddon";
+	if (skill == 250) return "Hurricane";
+	if (skill == 251) return "Fire Trauma";
+	if (skill == 252) return "Claw Mastery";
+	if (skill == 253) return "Psychic Hammer";
+	if (skill == 254) return "Tiger Strike";
+	if (skill == 255) return "Dragon Talon";
+	if (skill == 256) return "Shock Field";
+	if (skill == 257) return "Blade Sentinel";
+	if (skill == 258) return "Quickness";
+	if (skill == 259) return "Fists of Fire";
+	if (skill == 260) return "Dragon Claw";
+	if (skill == 261) return "Charged Bolt Sentry";
+	if (skill == 262) return "Wake of Fire Sentry";
+	if (skill == 263) return "Weapon Block";
+	if (skill == 264) return "Cloak of Shadows";
+	if (skill == 265) return "Cobra Strike";
+	if (skill == 266) return "Blade Fury";
+	if (skill == 267) return "Fade";
+	if (skill == 268) return "Shadow Warrior";
+	if (skill == 269) return "Claws of Thunder";
+	if (skill == 270) return "Dragon Tail";
+	if (skill == 271) return "Lightning Sentry";
+	if (skill == 272) return "Inferno Sentry";
+	if (skill == 273) return "Mind Blast";
+	if (skill == 274) return "Blades of Ice";
+	if (skill == 275) return "Dragon Flight";
+	if (skill == 276) return "Death Sentry";
+	if (skill == 277) return "Blade Shield";
+	if (skill == 278) return "Venom";
+	if (skill == 279) return "Shadow Master";
+	if (skill == 280) return "Royal Strike";
+	return "";
+}

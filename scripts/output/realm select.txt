@@ -1,0 +1,11 @@
+Text	Type	X	Y	XSize	YSize	visible	disabled	Extended Text
+null	2	0	599	800	600	false	undefined	undefined
+null	2	400	120	181	170	false	undefined	undefined
+null	2	400	120	188	177	false	undefined	undefined
+null	2	237	555	340	340	false	undefined	undefined
+SELECT GATEWAY	4	237	270	340	35	false	undefined	SELECT GATEWAY
+If the current gateway does not best represent	4	257	345	320	84	false	undefined	If the current gateway does not best represent,your location, select another Battle.net gateway,connection.
+null	5	549	491	10	154	false	undefined	undefined
+U.S. West	4	257	500	292	160	false	undefined	U.S. West,U.S. East,Asia,Europe
+OK	6	281	538	96	32	false	false	undefined
+CANCEL	6	436	538	96	32	false	false	undefined

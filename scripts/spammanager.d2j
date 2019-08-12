@@ -1,0 +1,451 @@
+//##################################################
+//######    Spam Manager for trickdaddy     ########
+//##################################################
+/*
+Added in game creation support. This wil replace the
+crappy starter.d2j
+----------------------------------------------------*/
+/*----------------------------------------------------
+Copyright (C) 2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+----------------------------------------------------
+*/
+
+
+
+include("BotOS/BotOS.Logging.d2l");
+include("BotOS/Arrays/BotOS.Arrays.FIFO.d2l");
+include("BotOS/Arrays/BotOS.Arrays.Heap.d2l");
+include("BotOS/OOG/BotOS.OOG.d2l");
+
+var Accounts = new Array();
+
+// Account name, Account Password, number of characters on the account
+// you can push as many accounts as you want using thios method
+// accountname, password, number of characters on account, Realm, charcater to use for game creation(1-8), difficulty
+// realm: 1 = West, 2 = East, 3 = Asia(not working yet), 4 = europe
+// difficulty: 1 = normal, 2 = mightmare, 3 = hell
+
+
+Accounts.push(["dochixpone", "matt", 8, 2, 1, 3]);
+Accounts.push(["mattlant2", "", 8, 1, 1, 1]);
+Accounts.push(["mattlant3", "", 8, 1, 1, 1]);
+
+//Use to specify wether it will join or create
+
+var CreateGames = true;
+
+//time in minutes before you switch to the next account character
+var charswitchtime = 5;
+
+//dont touch these
+var spam = new Array();
+var channels = new Array();
+
+
+var chandelay = 1000;
+
+//randomize some delays, should need to be edited
+var randomizedelays = true;
+var rndlow = 1000;
+var rndhigh = 2000;
+
+//This is the delay till it makes a new game. It is in milliseconds.
+var nextgame = 10000;
+
+
+//dont touch these unless you want to specify many different files
+var spamfile = "messages.spm"
+var channelfile = "channels.spm"
+
+//dont touch these
+var acctcounter = 0;
+var charcounter = 1;
+var chancounter = 0;
+
+//if teh bot crashes with an exception, details will be in here. Send these to mattlant :D
+var Logger = new BotOS.Logging.Log("output/spambotException.log", 0, 0);
+Logger.Initialize();
+
+
+var gamequeue = new BotOS.Arrays.FIFO(10);
+var pgamequeue = new BotOS.Arrays.Heap("Players", mlHEAPHIGH);
+
+function Game (gamename, players) {
+	this.GameName = gamename;
+	this.Players = players;
+}
+
+function main() {
+
+	try {
+
+		//load the spam messages
+
+		spam = readspam();
+		channels = readchannels();
+
+
+		var main = new BotOS.OOG.Controls.MainScreen();
+		var realm = new BotOS.OOG.Controls.RealmSelectScreen();
+		var login = new BotOS.OOG.Controls.LoginScreen();
+		var character = new BotOS.OOG.Controls.CharacterScreen();
+		var lobby = new BotOS.OOG.Controls.LobbyScreen();
+		var chat = new BotOS.OOG.Controls.ChatScreen();
+		var chan = new BotOS.OOG.Controls.ChannelSubScreen();
+		var cgame = new BotOS.OOG.Controls.CreateGameSubScreen();
+		var jgame = new BotOS.OOG.Controls.JoinGameSubScreen();
+
+
+		//Steps for SPam Manager
+		// 1 - Figure out where we are -> todo
+		// 2 - Jump tp right spot based upon where we are -> todo
+		// 3 - Log onto battle net
+		// 4 - enter chat
+		// 5 - change channel
+		// 6 - spam messages
+		// 7 - goto step 5
+		// 8 - if game spamming, then enter game every x number of channel changes
+
+		////////////////////////////////////////
+		//Log onto Battlenet
+		////////////////////////////////////////
+		acctcounter = 0;
+		var dcounter = 0;
+mainloop:while(1) {
+			try {
+	
+				if(BotOS.OOG.IsInGame()) {
+					BotOS.OOG.WaitForGameEnd();
+				}
+
+				delay(5000);
+
+				if(acctcounter > Accounts.length-1) acctcounter = 0;
+	
+				if(BotOS.OOG.IsMainScreenShowing()) {
+
+					//Add in Realm Choice Logic
+
+					main.Initialize();
+
+					if(!BotOS.OOG.IsRealmSelectScreenShowing())
+					{
+						main.Controls["GateWayButton"].Click();
+						delay(2000);
+						dcounter = 0;
+						while(!BotOS.OOG.IsRealmSelectScreenShowing()) {
+							delay(200);
+							dcounter++;
+							if(dcounter > 50) continue mainloop;
+						}
+
+						realm.Initialize();
+						realm.Controls["RealmListBox"].Realm = Accounts[acctcounter][3];
+						delay(500);
+						realm.Controls["RealmOKButton"].Click();
+						dcounter = 0;
+						while(!BotOS.OOG.IsMainScreenShowing()) {
+							delay(200);
+							dcounter++;
+							if(dcounter > 50) continue mainloop;
+						}
+						
+					}
+
+					main.Controls["BattleNetButton"].Click();
+					delay(2000);
+					dcounter = 0;
+					while(!BotOS.OOG.IsLoginScreenShowing()) {
+						delay(200);
+						dcounter++;
+						if(dcounter > 50) continue mainloop;
+					}
+				}
+				if(BotOS.OOG.IsLoginScreenShowing()) {
+					login.Initialize();
+					login.Controls["AccountTextBox"].Text = Accounts[acctcounter][0];
+					delay(1000);
+					login.Controls["PasswordTextBox"].Text = Accounts[acctcounter][1];
+					delay(1000);
+					login.Controls["LoginButton"].Click();
+					charcounter = 1;
+					delay(2000);
+					dcounter = 0;
+					while(!BotOS.OOG.IsCharacterScreenShowing()) {
+						delay(200);
+						dcounter++;
+						if(dcounter > 50) continue mainloop;
+					}
+				}
+	
+		
+	choosecharloop:while(1) {
+					if(BotOS.OOG.IsCharacterScreenShowing()) {
+						character.Initialize();
+						if(Accounts[acctcounter][4] !== null)
+							character.Slots[Accounts[acctcounter][4]].Click();
+						else
+							character.Slots[charcounter].Click();
+						character.Controls["OKButton"].Click();
+						dcounter = 0;
+						delay(2000);
+						dcounter = 0;
+						while(!BotOS.OOG.IsLobbyScreenShowing()) {
+							delay(200);
+							dcounter++;
+							if(dcounter > 50) continue mainloop;
+						}
+					}
+	
+		
+					var cswitchtimer = new Date();
+			
+	mainspamloop:	while(1) {
+						if(CreateGames){
+							//We need to create a random game rather than
+							if(BotOS.OOG.IsLobbyScreenShowing()) {
+								lobby.Initialize();
+								lobby.Controls["CreateButton"].Click();
+								delay(2000);
+								dcounter = 0;
+								while(!BotOS.OOG.IsCreateGameSubScreenShowing()) {
+									delay(200);
+									dcounter++;
+									if(dcounter > 50) continue mainloop;
+								}
+							}
+							if(BotOS.OOG.IsCreateGameSubScreenShowing()){
+								cgame.Initialize();
+								//Main create game part
+								cgame.Controls["GameNameTextBox"].Text = TDW_BASIC_GetRandomString(rnd(4,15));
+								delay(500);
+								cgame.Controls["GamePasswordTextBox"].Text = TDW_BASIC_GetRandomString(rnd(4,15));
+								delay(500);
+								//print("Account diff" + Accounts[acctcounter][5]);
+								//delay(5000);
+								switch(Accounts[acctcounter][5])
+								{
+									case 1:
+										cgame.Controls["NormalRadioButton"].Click();
+										break;
+									case 2:
+										cgame.Controls["NightmareRadioButton"].Click();
+										break;
+									case 3:
+										cgame.Controls["HellRadioButton"].Click();
+										break;
+								}
+								delay(500);
+								cgame.Controls["CreateGameButton"].Click();
+
+								delay(10000);
+
+
+							}
+							else continue mainloop;
+							
+						}
+						else {
+							if(BotOS.OOG.IsLobbyScreenShowing()) {
+								lobby.Initialize();
+								lobby.Controls["JoinButton"].Click();
+								delay(2000);
+								dcounter = 0;
+								while(!BotOS.OOG.IsJoinGameSubScreenShowing()) {
+									delay(200);
+									dcounter++;
+									if(dcounter > 50) continue mainloop;
+								}
+							}
+
+							if(BotOS.OOG.IsJoinGameSubScreenShowing()) {
+								jgame.Initialize();
+								var titems = jgame.Controls["GameListBox"].Items;
+								
+								//CLear the queue for a new set of games
+								pgamequeue.Clear();
+								//Add all games to the PQueue
+								for(var i = 0; i < titems.length; i++) {
+									if(parseInt(titems[i][1]) < 8) //add only 7 player or less
+										pgamequeue.Insert(new Game(titems[i][0], titems[i][1]));
+								}
+								
+								//Now we have a PQueue with games, lets start popping them off and coomparing to our FIFO game queue
+	ploop:   					for(var o = 0; o < pgamequeue.getLength(); o++) {
+									var g = pgamequeue.Remove();
+									var q = gamequeue.GetQueue();
+	gloop:   						for(var i = 0; i < q.length; i++) {
+										if(q[i].GameName == g.GameName) continue ploop;
+									}
+									//we got a high count game, lets add to fifo and continue
+									gamequeue.Insert(g);
+									break;
+								}
+	
+								pgamequeue.Clear();
+								print(g.GameName);
+								print(g.Players);
+								delay(1500);
+								jgame.Controls["JoinGameNameTextBox"].Text = g.GameName;
+								delay(1500);
+								jgame.Controls["JoinGameButton"].Click();
+								delay(10000);
+							}
+
+						}
+	
+						if(BotOS.OOG.IsInGame()) {
+							BotOS.OOG.WaitForGameEnd();
+	
+						}
+		
+						if((new Date() - cswitchtimer) > charswitchtime*1000*60 && Accounts[acctcounter][4] === null) {
+							//This is where we get back to the Opening screen
+	
+							if(!BotOS.OOG.IsLobbyScreenShowing()) {
+								chat.Controls["QuitButton"].Click();
+							}
+							else {
+								lobby.Controls["QuitButton"].Click();
+							}
+							delay(3000);
+							charcounter++;
+							break mainspamloop;
+	
+						}
+						delay(nextgame);
+	
+	
+					}
+					if(charcounter > Accounts[acctcounter][2]) {
+						character.Controls["ExitButton"].Click();
+						delay(3000);
+						break;
+	
+					}
+	
+			
+				}
+				if(acctcounter >= Accounts.length) 
+					acctcounter = 0;
+				else acctcounter++;
+			}
+			catch(e) {
+				Logger.WriteException(e);
+				continue mainloop;
+			}
+
+		}
+	
+	
+			
+
+	}
+	catch(e) {
+		//Log the exception
+		Logger.WriteException(e);
+		//load a new Spam Manager
+		//load("spammanager.d2j");
+		//Stop this spam manager
+		stop();
+
+	}
+	stop();
+	
+
+}
+
+function getrnd() {
+
+	return rnd(rndlow, rndhigh);
+
+}
+
+function readspam () {
+	var tspam = new Array();
+	var file = fileOpen("settings/" + spamfile, 0);
+	while(!file.eof) {
+		var line = file.readLine();
+		if(!line.length) continue;
+		if(line == "/END") break;
+		var delay = parseInt(file.readLine());
+		tspam.push([line, delay]);
+	}
+	file.close();
+	return tspam;
+}
+
+function readchannels() {
+	var tchan = new Array();
+	var file = fileOpen("settings/" + channelfile, 0);
+	while(!file.eof) {
+		var line = file.readLine();
+		if(!line.length) continue;
+		if(line == "/END") break;
+		tchan.push(line);
+	}
+	file.close();
+	return tchan;
+}
+
+
+
+
+
+
+// RANDOM NAME GENERATOR BY TheDesertWind (thanks!)
+// ////////////////////////////////////////////////////////////////////////////  
+function TDW_BASIC_GetRandomString(out_length, char_set_string)  
+{  
+     if (out_length < 1)  
+          return("");  
+  
+     char_set_string = (TDW_BASIC_GEN_TypeOfStringNotEmpty(char_set_string)) ?  
+          char_set_string :  
+          "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";  
+  
+     var out_string = "";  
+  
+     for ( ; out_length; out_length--)  
+          out_string += char_set_string.charAt(rnd(0, char_set_string.length - 1));  
+  
+     return(out_string);  
+}  
+// ////////////////////////////////////////////////////////////////////////////  
+  
+// ////////////////////////////////////////////////////////////////////////////  
+function TDW_BASIC_GetRandomStringLower(out_length)  
+{  
+     return(TDW_BASIC_GetRandomString(out_length, "abcdefghijklmnopqrstuvwxyz"));  
+}  
+// ////////////////////////////////////////////////////////////////////////////  
+  
+// ////////////////////////////////////////////////////////////////////////////  
+function TDW_BASIC_GetRandomStringUpper(out_length)  
+{  
+     return(TDW_BASIC_GetRandomString(out_length, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"));  
+}  
+// ////////////////////////////////////////////////////////////////////////////  
+  
+// ////////////////////////////////////////////////////////////////////////////  
+function TDW_BASIC_GetRandomStringDigits(out_length)  
+{  
+     return(TDW_BASIC_GetRandomString(out_length, "0123456789"));  
+}  
+// ////////////////////////////////////////////////////////////////////////////   
+
+// ////////////////////////////////////////////////////////////////////////////
+function TDW_BASIC_GEN_TypeOfStringNotEmpty(in_data)
+{
+    return((TDW_BASIC_GEN_TypeOfString(in_data) && (in_data != "")) ?
+        true : false);
+}
+// ////////////////////////////////////////////////////////////////////////////
+
+// ////////////////////////////////////////////////////////////////////////////
+function TDW_BASIC_GEN_TypeOfString(in_data)
+{
+    return(((in_data instanceof String) || (typeof(in_data) == "string")) ?
+        true : false);
+}
+

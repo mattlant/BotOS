@@ -1,0 +1,59 @@
+//merc.d2l
+
+var Mercenary = null;
+
+function plugMerc(instname)
+{
+	this.temp = oPlugin;
+	this.temp("MercCore", mlPLUGINBYTIME, 1000, "Mercenary Support Plugin", "0.0.1", "mattlant", instname);
+	delete this.temp;
+	
+	var Mercenary = new oMerc();
+
+	this.MercCore = function() {
+		Mercenary.Update();
+		if(!(Mercenary.getHealth > 0)) {
+			new oTaskCommon(900, "DoCommand", {Command:"SCTown.Revive(null, true);"}).Insert();
+
+		}
+		else if(Mercenary.getHealth < 40) {
+			//Drink Pot
+			if(!Mercenary.getState(100)) { //Dont drink if he is already drinking
+				//drink next relevant according to psuedo
+				for(var i = 1; i < 6; i++) {
+					if(this.Potions[("hp" + i)].length) {
+						new oTaskHealth(975, "DrinkMerc", {Pot:this.Potions[("hp" + i)].pop()}).Insert();
+						AI.IsDrinking = true;
+						break;
+					}
+				}
+				
+				//mark into potion usage
+			}
+		}		
+	}
+	
+		
+		
+}
+
+function oMerc() {
+	
+	this.Merc = null;
+	
+	this.Update = oMerc_update;
+	this.getHealth = oMerc_gethealth;
+
+	this.Update();
+	
+	
+	function oMerc_update() {
+		if(this.Merc) return;
+		this.Merc = SCTown.GetMerc();
+	}
+	
+	function oMerc_gethealth () {
+		if (!this.Merc || this.Merc.hp <=0) return 0;
+		return Math.round(this.Merc.hp/this.Merc.hpmax*100);
+	}
+}

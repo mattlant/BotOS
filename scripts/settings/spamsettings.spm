@@ -1,0 +1,22 @@
+;Username and password list
+mattlant|cocacola
+username2|password2
+user3|pass3
+userN|passN
+
+
+;randomedelays
+true
+
+;random delay low amount
+var rndlow = 100;
+
+;random delay high amount
+var rndhigh = 2000;
+
+;File that holds the messages to spam
+var spamfile = "messages.spm"
+
+;file that holds the channel list
+var channelfile = "channels.spm"
+

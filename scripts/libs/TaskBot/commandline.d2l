@@ -1,0 +1,130 @@
+//Core command line interface
+//Big thanks to SwedishPower
+
+var mlCOMMANDLINEPAUSE = 1;
+var mlCOMMANDLINECONTINUE = 1;
+
+var AllControl=true;
+var mlmessage = "";
+function plugMLCLI(instname)
+{
+	this.temp = oPlugin;
+	this.temp("CLITakeAction", mlPLUGINBYTIME, 50,"Command Line Interface", "0.0.1", "mattlant", instname);
+	delete this.temp;
+
+	this.CLITakeAction = function () {
+		if(AI.Pause)
+			new oTaskCommon(950, "Delay", {Amount:55}).Insert();
+			//delay(200);
+	}
+}
+
+function gamemsgHandler(msg)
+{
+
+   var gmArray= msg.split(":");
+   var msgSender = new String(gmArray[0]).substr(3);
+   var message = new String(gmArray[1]).substr(1);
+
+  // print(message);
+  switch(message)
+	 {
+		case "QUIT":
+			quit();
+			return;
+		case "STOP":
+			stop();
+			print("Didint stop for some reason");
+			return;
+		case "PAUSE":
+			print("Pausing game");
+			AI.Pause = true;
+			return;
+		case "UNPAUSE":
+			print("Unpausing game");
+			AI.Pause = false;
+			return;
+			
+		case "RUNGC":
+			print("Running Garbage Collector");
+			runGC();
+			return;
+			
+		case "DUMPMAP":
+			print("Dumping the map to file: TaskBotMapDump.txt");
+			Map.Dump(1);
+			return;
+			
+		case "INITMAP":
+			print("Initing the map");
+			Map.InitializeMap();
+			return;
+			
+		//case "CLEARTASK":
+		//	print("Clearing Task Queue");
+		//	TaskQueue.Clear();
+		//	break;
+	 }
+	
+	
+	var parsedmessage = message.split(" ");
+	switch(parsedmessage[0]) {
+		case "INITMAP":
+			Map.InitializeMap(parsedmessage[1]);
+			print("Initing Area: " + parsedmessage[1]);
+			break;
+		case "enable":
+			PluginManager.Enable(parsedmessage[1]);
+			print("Plugin: " + parsedmessage[1] + " Enabled");
+			break;
+		case "disable":
+			PluginManager.Disable(parsedmessage[1]);
+			print("Plugin: " + parsedmessage[1] + " Disabled");
+			break;
+			
+		case "printval":
+			eval("print("+parsedmessage[1]+")");
+			break;
+			
+		case "eval":
+			eval(parsedmessage[1]);
+			break;
+	}
+			
+}
+
+function inputlineHandler(_line) {
+	var ts = _line.split(" ");
+	command = ts[0].substr(1);
+	
+	switch(command) {
+		case "ex":
+			var comm = _line.substr(4);
+			eval(comm);
+			break;
+	}
+}
+
+//Future changes require plugins and objects to subscribe
+function keypressHandler(key) {
+//   print(key);
+	switch(parseInt(key)) {
+		case 33:
+			StdOutput.ScrollUp();
+			break;
+		case 34:
+			StdOutput.ScrollDown();
+			break;
+
+	}
+}
+
+
+
+/*
+<njaguar> 		function gamemsgHandler() { ... };
+<njaguar> 		function hostilemsgHandler() { ... };
+<njaguar> 		function partymsgHandler() { ... };
+<njaguar> 		function keypressHandler() { ... };
+<njaguar> 	.	Removed msg object, use the event handlers!
+*/

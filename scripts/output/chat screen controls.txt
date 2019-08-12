@@ -1,0 +1,39 @@
+Text	Type	X	Y	XSize	YSize	visible	disabled	Extended Text
+CREATE	6	533	469	120	20	false	false	undefined
+CHANNEL	6	535	490	80	20	false	false	undefined
+JOIN	6	652	469	120	20	false	false	undefined
+LADDER	6	614	490	80	20	false	true	undefined
+QUIT	6	693	490	80	20	false	false	undefined
+null	2	145	69	510	60	false	false	undefined
+null	9	145	69	510	60	false	false	undefined
+gtrgrtgsr (1)	4	28	138	354	60	false	false	gtrgrtgsr (1)
+null	5	400	390	10	314	false	false	undefined
+You have joined channel: Diablo II USA-1	4	28	410	354	298	false	false	You have joined channel: Diablo II USA-1,Welcome to Battle.net!,This server is hosted by Dacom.,There are currently 98143 users playing 57504 games of,     Diablo II Lord of Destruction, and 325201 users playing,     110273 games on Battle.net.,Last logon: Sat Feb 14  12:27 AM,You have joined channel: gtrgrtgsr
+null	2	84	52	147	68	false	false	undefined
+null	2	415	447	373	373	false	false	undefined
+	4	447	398	290	269	false	false	
+null	2	726	52	147	68	false	false	undefined
+SEND	6	27	470	80	20	false	true	undefined
+WHISPER	6	107	470	80	20	false	true	undefined
+HELP	6	187	470	80	20	false	false	undefined
+SQUELCH	6	27	490	72	20	false	true	undefined
+UNSQUELCH	6	99	490	96	20	false	true	undefined
+EMOTE	6	195	490	72	20	false	true	undefined
+	6	725	583	25	30	true	true	undefined
+	6	751	583	25	30	true	true	undefined
+	6	725	528	25	30	true	true	undefined
+	6	751	528	25	30	true	true	undefined
+	1	28	450	335	32	false	true	undefined
+	6	40	591	60	100	false	false	undefined
+	6	100	591	60	100	false	false	undefined
+	6	160	591	60	100	false	false	undefined
+	6	220	591	60	100	false	false	undefined
+	6	280	591	60	100	false	false	undefined
+	6	340	591	60	100	false	false	undefined
+	6	400	591	60	100	false	false	undefined
+	6	460	591	60	100	false	false	undefined
+	6	520	591	60	100	false	false	undefined
+	6	580	591	60	100	false	false	undefined
+	6	640	591	60	100	false	false	undefined
+null	12	40	591	720	75	false	false	undefined
+	6	398	474	12	13	false	false	undefined

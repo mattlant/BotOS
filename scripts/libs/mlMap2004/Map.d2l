@@ -1,0 +1,234 @@
+//##################################################
+//######   Matts Map and Pathing Library    ########
+//##################################################
+/*
+----------------------------------------------------*/
+//mlMapObjects.d2l
+//This file contains Classes used in mlMap
+/*----------------------------------------------------
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as original header
+and credits stay.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+// Maybe the map object should take ARea objects and add them to an even bigger array.
+// This would then implement the IPathable Interface.
+// Or it could not add to a large array but still conforms to IPathable but internaly it 
+// uses offsets to get collision data out of seperate maps
+// To Be Decided
+
+// IPathable is just
+// .IsWalkable(x, y)
+// .IsInRange(x, y);
+// .CollisionData[y][x] property this is where it fucks up. it would need toi be added to a large array.
+// Perhaps some scripters wont mind this, who knows. It will add quite some time to it.
+// this is good, because room and area will implement the interface i can add rooms AND areas to a map object
+// or just a couple of rooms, or whatever i want that implements the inteface. :D
+
+include("mlMap2004/Pathable.d2l");
+include("mlLog.d2l");
+
+const mlMAPTYPE_AREA = 1;
+const mlMAPTYPE_CROSSAREA = 2;
+const mlMAPTYPE_MULTIAREA = 3;
+const mlMAPTYPE_ROOMS = 4;
+
+
+function Map(_areanums) {
+
+	//if(!_info) _info = new Object();
+	//if(!_info.Name) _info.Name = "Map";
+	//if(!_info.Type) _info.Type = mlMAPTYPE_CROSSAREA;
+
+	Pathable.call(this, {NoLogger:true, Name:("Map"+_areanums.toString())});
+
+	this.Areas = new Array();
+	this.AreaNumbers = new Array();
+	
+	this.InitializeRooms = Map_InitializeRooms;
+	//this.Prepare = Map_Prepare;
+	this.Initialize = Map_Initialize;
+	//this.AreaExists = Map_AreaExists;
+
+	if(!Variable.IsArray(_areanums)) {
+		print("NotArray");
+		if(!Variable.IsNumber(_areanums)) {
+			_areanums = me.area;
+		}
+		if(_areanums < 1 || _areanums > 180) {
+			throw new ArgumentException("Map.ctor -> parameter passed must contain nothing or a valid area number.", 1, "Map.d2l");
+		}
+		this.AreaNumbers.push(_areanums);
+	}
+	else {
+		this.AreaNumbers = _areanums;
+	}
+
+
+	var _incr = false;
+
+	if(!this.AreaNumbers.length)
+		throw new MappingException("Map.ctor -> Internal Error, this.AreaNumbers.length == 0. Please report to mattlant", 1, "Map.d2l");
+
+	if(this.AreaNumbers.length < 2) {
+		//check the area linkage and get only Contingeous linked areas
+	}
+
+	
+	
+	
+	for(var i = 0; i < this.AreaNumbers.length; i++) {
+		print("in a loop");
+		this.Areas.push(new Area({AreaNumber:this.AreaNumbers[i], NoCollisionData:true}));
+	}
+	for(var i = 0; i < this.Areas.length; i++) {
+		print("In second loop");
+		this.Rooms = this.Rooms.concat(this.Areas[i].Rooms);
+		this.Areas[i].Rooms = null;
+		this.Areas[i].CollisionData = null;
+	}
+
+	//at this point we have our area(s) ready.
+	this.InitializeRooms();
+	
+
+	//////////////////////////////////////////////////////////////////////
+	// Map Methods
+	// -------------------------------------------------------------------
+	//////////////////////////////////////////////////////////////////////
+
+
+	function Map_InitializeRooms(_coll) 
+	{
+		//print("this.Rooms.length: " + this.Rooms.length);
+		if(!this.Rooms || !this.Rooms.length) 
+			throw new MappingException("Map.InitializeRooms(internal error) -> this.Rooms is not set", 5000, "Area.d2l");
+		
+		var currareanum = 0;
+
+		for(var i = 0; i < this.Rooms.length; i++) {
+			//print(i);
+			if(this.Rooms[i].x < this.x)
+				this.x = this.Rooms[i].x;
+			if(this.Rooms[i].y < this.y)
+				this.y = this.Rooms[i].y;
+			if(this.Rooms[i].MaxX > this.MaxX)
+				this.MaxX = this.Rooms[i].MaxX;
+			if(this.Rooms[i].MaxY > this.MaxY)
+				this.MaxY = this.Rooms[i].MaxY;
+
+			//this.PresetUnits = this.PresetUnits.concat(this.Rooms[this.Rooms.length-1].PresetUnits);
+
+		}
+
+
+		this.Width = this.MaxX - this.x;
+		this.Height = this.MaxY - this.y;
+		this.MaxX -= 1;
+		this.MaxY -= 1;
+
+		print(this.Width, this.Height);
+
+		var hgt = this.Height - 1;
+		var wdt = this.Width - 1;
+
+		if(!this.CollisionData) 
+		{
+			this.CollisionData = new Array();
+			this.CollisionData.length = this.Height;
+			for(var i = 0; i<this.Height; i++)
+			{
+				this.CollisionData[i] = new Array();
+				this.CollisionData[i].length = this.Width;
+				if(mlAREASOUTDOORFLAG[this.Number] && (!i || i == hgt))
+				{
+					for(var j = 0; j<this.Width; j++) this.CollisionData[i][j] = 0xFF;
+				}
+				else if(mlAREASOUTDOORFLAG[this.Number]) 
+				{
+					this.CollisionData[i][0] = 0xFF;
+					this.CollisionData[i][wdt] = 0xFF;
+				}
+			}
+		}
+
+		print("this.Rooms.length: " + this.Rooms.length)
+	}
+
+	function Map_Initialize () {
+		if(!this.Rooms) 
+			throw new MappingException("Map.Initialize -> this.Rooms is not set", 1, "Area.d2l");
+		
+		if(this.IsInitialized) return true;
+		
+		if(_incr) 
+		{
+			if(this.IncrementCount == this.Rooms.length) 
+			{
+				this.IsInitialized = true;
+				this.Rooms = null;
+				runGC();
+				return true;
+			}
+			Pathable.ArrayCopy2D(this.CollisionData, this.Rooms[this.IncrementCount].CollisionData, this.Rooms[this.IncrementCount].x-this.x, this.Rooms[this.IncrementCount].y-this.y);
+			this.Rooms[this.IncrementCount]/*.CollisionData*/ = null;
+			this.IncrementCount++;
+			
+			if(!(IncrementCount%200)) {
+				print("running GC");
+				runGC();
+			}
+			
+
+
+		}
+		else
+		{
+
+			for(var i = 0; i<this.Rooms.length; i++) 
+			{
+				Pathable.ArrayCopy2D(this.CollisionData, this.Rooms[i].CollisionData, this.Rooms[i].x-this.x, this.Rooms[i].y-this.y);
+				this.Rooms[i]/*.CollisionData*/ = null;
+				
+				if(!(i%200)) {
+					print("running GC");
+					runGC();
+				}
+				
+			}
+			this.IsInitialized = true;
+			this.Rooms = null;
+			runGC();
+			return true;
+		}
+		//runGC();
+		return false;
+	}
+
+
+}
+
+Map.prototype = new Pathable;
+
+Map.ContingeousAreas = [[1,2,3,4,17], [5, 6, 7, 26, 27, 28], [40,41,42,43,44,45], [75, 76, 77, 78, 79, 80, 81, 82, 83], [103,104,105, 106], [107,108], [109,110,111,112]];
+
+
+

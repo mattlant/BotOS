@@ -1,0 +1,50 @@
+//questdef.d2l
+
+
+//Quest definitions
+
+function oQuestDef(_qt, _qn, _sqn, _bqn, _bsqn, _b) {
+	this.QuestTask = _qt;
+	this.QuestNumber = _qn;
+	this.SubQuestNumber = _sqn;
+	this.BlockingQuestNumber = _bq;
+	this.BlockingSubQuestNumber = _bsq;
+	this.Boss = _b;
+}
+
+
+
+//Quest def ideas
+/*
+rather than defining hardcoded oQuest objects, just have a general definition, and let the system create the objects as needed.
+
+move area DURANCE3 -> triggers oGoalMove(GoToArea)
+move coord 17571 8068 -> triggers oGoalMove(PathToXY)
+attack boss Mephisto -> triggers oTaskAttack(Boss:true)
+
+and after the ai can optionally explore the rest of the area and clean up;
+
+reason i am thinking of not hard codin, is the AI may want to override and explore durance 3 to cleanup, and then just kill mephon the way
+
+*/
+
+;Den of Evil
+[0 0]
+move area 8
+move explore 100
+if not quest 0 goto 2
+
+;Sisters Burial Grounds - Blood Raven
+[1 0]
+move area 17
+move centre
+attack boss Blood Raven
+
+;The search for Cain
+[2 0]
+move area 17
+move centre
+attack boss Blood Raven
+
+
+

@@ -1,0 +1,16 @@
+// meh
+function credits() {
+	print("ÿc2Location Script!!!");
+	print("ÿc4Script by LordOfMars");
+	print("ÿc1Core .d2h created by nJaguar");
+}
+
+function main() {
+	delay(2000);
+	credits();
+
+	while(1==1) {
+		overhead("My Position is [" + me.x + ", " + me.y + "]");
+		delay(200);
+	}
+}

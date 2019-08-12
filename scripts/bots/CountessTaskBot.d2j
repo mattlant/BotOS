@@ -1,0 +1,113 @@
+////////////////////////
+//Bot specific include//
+////////////////////////
+
+//misc necessities
+include("taskbot/settings.d2l");
+include("taskbot/coremanager.d2l");
+include("townmove.d2l");
+
+
+function main()
+{
+	begingamedelay = 1000;
+	if (begingamedelay > 0)
+	{
+		mlprint("Waiting " + (parseInt(begingamedelay / 1000)) + " seconds for initialization...");
+		delay(begingamedelay);
+	}
+
+	credits();
+	mlinitdebuglog();
+	mldebuglevel = 0;
+	mldebuglog="output/CountessTaskBot.log";
+	//delay(500);
+	//delay(500);
+
+	//mlSettings(mlDOLOGGING, mlYES);
+	//mlSettings(mlPRINTMSG, mlYES);
+
+	Sc_TownMoveSetting("buy_pots", true);
+	Sc_TownMoveSetting("buy_scrolls", true);
+
+	//common begin game stuff
+	var runtime = new Date();
+	//START SYSTEM MANAGER
+	mlprint("Starting System Manager");
+	SystemManager();
+
+	mlprint("We're done!!! YAYAYAYA!!!");
+	mlprint("pwned");
+	var endruntime = new Date();
+	print("Run took: " + (endruntime - runtime));
+	delay(2000);
+	delay(1000);
+	delay(1000);
+	quit();
+}
+
+function credits()
+{
+	//delay(500);
+	print("ÿc@-------------------------------------------------------------");
+	print("ÿc8D2JSP Countess Task Based Script!!!  Version 0.0.1");
+	print("ÿc9Script by mattlant and others whose original code is used");
+	print("ÿc1D2JSP.d2h core created and coded by nJaguar!");
+	print("ÿc@-------------------------------------------------------------");
+	delay(250);
+}
+
+var t1complete = false;
+var t1start = false;
+
+function QuestTrigger()
+{
+
+
+
+
+
+}
+
+function LoadQuestData()
+{
+
+	var gpp = 300;
+
+	//new oGoalTown(gpp--, "TownCheck", {Heal:true, Repair:true, Stash:true}).Insert();
+
+	new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskCommon(0, "SetVariable", {Var:"moveattack", Val:"false"}),
+		new oTaskCommon(0, "DoCommand", {Command:"Sc_TownWP(1,5);"}), new oTaskCommon(0, "DoCommand", {Command:"me.cancel(0);"}))).Insert();
+
+	new oGoalMove(gpp--, "PathToWarp", {WarpType:mlWARPTOWER, p:300}, new oTaskInteract(0, "InteractWarp", {WarpType:mlWARPTOWER})).Insert();
+
+
+	for(var i = 0; i<5; i++)
+		new oGoalMove(gpp--, "PathToWarp", {WarpType:mlWARPNEXT, p:300}, new oTaskInteract(0, "InteractWarp", {WarpType:mlWARPNEXT})).Insert();
+/*
+	new oGoalMove(0, "PathToXY", {dx:12533, dy:11047, p:300, Condition:"mlIsWalkable(12540, 11129)"}).Insert();
+	new oGoalMove(0, "PathToXY", {dx:12545, dy:11102, p:300, Condition:"mlIsWalkable(12540, 11129)"}).Insert();
+*/
+
+	new oGoal(gpp--, "AddItems", {p:500}, new oTaskCondition(0, "TFCondition", {
+		TFCondition:"Map.IsWalkable(12540, 11129)",
+		TrueItems:new oGoalMove(0, "PathToXY", {dx:12533, dy:11047, p:300}),
+		FalseItems:new oGoalMove(0, "PathToXY", {dx:12545, dy:11102, p:300}),
+		p:gpp--})).Insert();
+		
+	new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskAttack(0, "Attack", {Unique:true}), new oTaskCommon(0, "SetVariable", {Var:"snagitenable", Val:"true"}),
+		new oTaskCommon(401, "SetVariable", {Var:"done", Val:"true"}))).Insert();
+}
+
+
+//12570, 11131 ~start coordinates
+//12540, 11129 not walkable
+//12533, 11047 goto to detect countess
+//12562, 11025 is where countess is
+
+//12635, 11067
+//12545, 11102 to detect countess
+//12531, 11071 is where countess is
+
+
+//quest object

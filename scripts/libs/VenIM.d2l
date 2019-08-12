@@ -1,0 +1,2967 @@
+// Item Management lib - VenIM
+
+// Ven0m - r1.54 and all future releases
+// versions up to 1.53 by Blue Mind & HolyCoitus, also thx to other people that put major effort into this library (BMpwnIt)
+// -----------------------------------------------------------------------------
+// History :
+// 1.8:   VenIM now; added support for items sections - FAST item checking
+// 1.71:  modified to work with d2jsp 0.37+
+//        skill-related stats no longer work, use skills properties
+//        converted to use clicks, added itemclass for evals, clickmin, clickmax - for click delay override
+//        fixed prefix & affix commands, numbers bug, fixed itemclass, better "non-English" support
+// 1.7:   for d2jsp 0.33, in evals "itemtype" replaced with "type", added logging colors
+// 1.67:  some small fixes, added area checking
+// 1.66:  final Snagit return code fix, small performance improvements
+//        added many mods - damage & defense calcs, dmg and def calcs support stat/lvl
+//        thx to SteveH6479's ideas: default randomized delays, min & max telekinesis
+//        range, probability for using telekinesis
+//        thx to rock's and thatoneguy's idea: final defense check
+// 1.65+  by SteveH6479
+//        fixed minor range checking bug, fix a problem where it only tries
+//        to pick up item once, included KillKeeper's snagit return code fix
+// 1.65:  modified snagit, now it also returns codes, added godly item pickup, range mod
+//        changed telekinesis usage, more stable & safe, possible snagit error messages
+//        fixed some eval-d & eval-pu bugs
+// 1.6411 Added Parenthesis check in eval-id & eval-pu
+// 1.641: ShopIt speed improved, strreq & dexreq give correct requirements
+//        no more need to multpily +life/+mana entries in evals (no backward compatibility)
+//        fixed some eval bugs
+// 1.64 (for d2jsp 0.32):  eval-id & eval-pu modified - bugfix, added new commands
+//        now they also support functions
+//        ShopIt checks gold before transaction
+//        added new setup command:  debuglog
+//        added new commands for INIs: strreq,dexreq,lvlreq
+//        new logging command - GUIlog
+//        support for item counter
+// 1.63:  eval-id & eval-pu rewritten, now support all item mods
+//        Speed optimizations, added noParsing mode and variable to disable telekinesis
+//        ShopIt modified as IchLiebeDich suggested + ability to check other items if
+//          failed to buy one due to the lack of space
+//        Names for +skills & +skilltrees in logs addded
+// 1.62:  Damage & poison calculating functions support all symbols (<,>,=,!)
+//        new INI parsing, all found parsing bugs fixed, fixed ShopIt logging bug
+//        DoCast removed, now lin uses internal Telekinesis casting function
+//        ethereal check in logs added, some code cleanup
+// 1.612: Sorc picks up items manually if she hasn't got Telekinesis.
+//        Added new logging for identified items & logged-only with ShopIt
+//        Fixed ShopIt to make better logs.
+// 1.611: added possibility to change ShopIt INIs, version checking
+// 1.61 : -completly rebuilt ShopIt, now there's no need to modify it for any ShopBot
+//         it supports item lists, logs & returns transaction, won't cause assertion
+//         errors anymore, should not miss items
+//        -rebuilt part of SnagIt
+//        -changed logging style, big thx to charly007007 for core of new logging
+//        removed gold delay - now dynamic, mingoldpickup can be changed in INI
+//        fixed INI caching
+// 1.60a: |by IchLiebeDich
+//        |shopIt return true if something was bought
+//        |cache INI files
+//        |Add mingoldpickup
+//        |use only telekenisis with sorc to take gold
+//        |can change delay to pick up gold
+//        \correct ConvertColors (thanks to eosphoros)
+//        |by Ven0m: small fixes to bugs introduced in 1.60
+// 1.60 : Added Support for stat names, skill names, skiltree names, itemtypes;
+//        added eval-pro; changed +life, +mana, +stamina handling
+// 1.59 : Added easy to use skill, skilltree, little bugifx
+// 1.58a: Added weight (easier to use now)
+// 1.58 : Added skillattack, skillhit, skillgethit, skillcharges, poison
+// 1.57a: fixed nasty bug introduced in 1.57
+// 1.57 : Added final 1-handed damage; +maxdmg, +mindmg; weapon hand requirements
+// 1.56 : Partially fixed eval-id & eval-pu
+// 1.55 : Some little fixes, "mod" should work
+// 1.54 : Added support for final damage levels
+//        maxdmg, mindmg, avgdmg
+// -----------------------------------------------------------------------------
+// 1.53 : Added in the ability to use | in the inis
+// 1.52 : Made the ini parsing one variable, and cleaned up code
+// 1.51 : Added in <autoid> support
+// 1.5c : Much easier to read logging
+// 1.5a : Fixed a possible memory leak...
+// 1.5 : Added in the ability to log items that are set not to be picked up
+// 1.4 : Bug fixes, added in distance code, and hopefully made it work with pickit
+// 1.3 : Added in belt management and ranged items
+// 1.2 : Added in a better method to deal with the ini in memory from FryGuy
+// 1.1a : Added in checking if items should be ided
+// 1.1 : Completed snagit
+// 1.0a : Added quote removal in the ini parsing
+// 1.0 : Added the start of the code for SnagIt!
+// 0.9a : Added better logging
+// 0.9 : Added quality checking for unique items
+// 0.8 : Added jewel checking method
+// 0.7e : Fixed a ton of bugs
+// 0.7d : Made the library universal to check mods of all items
+// 0.7c : stupid bug in 0.7b
+// 0.7b : removed the need to call getINI() from outside the script
+// 0.7 : items logging
+// 0.6 : standalone reusable library
+//       beta 20+ required for normal/exceptional/elite detection
+//       ini and mods parsing are working
+// 0.5 : ini parsing added
+// 0.4 : working and working fast already. anya support only
+// 0.3- : didn't bother to keep a history log
+
+////////// credits - big THX to: ////////////////////////////////////
+// njaguar & mousepad for d2jsp
+// BlueMind & HolyCoitus for previous BMpwnIt releases, also others who helped them
+// thatoneguy for Guides, INI generators, suggestions, testing and tech support
+// SteveH6479 for many useful ideas and bugfixes
+// z28camkid, PSK for new default INIs & testing
+// charly007007 for new logging design
+// lord2800, Darien, Shrek_III, raeky, SoulCatcher, Killkeeper, Xizeta, Scorpio, Muellsammler, HellsNucleus and XxBoBxX
+//   for all their support, suggestions and testing
+// russian - he knows why :)
+// All Tech Support team for helping users of this lib
+// and of course - Dream_WEaver - for everything :)
+// == Testers team ==
+// blinko1, kasb, conan, pooshy
+
+/* ææææææææææææææææææææææææææææ
+Do not edit anything past this point!
+ææææææææææææææææææææææææææææ */
+
+var matt = 1976;
+var IM_libVersion=1.8;
+include("base_items.d2l");
+// ** Logging related
+logging=1;
+areaLogging=2;
+actLogging=2;
+fLog="output/"+me.name+"ItemLog.html";
+var writedesc=false;
+var locdesc=false;
+var fontColor = false;
+var backColor = false;
+debugLogging=false;
+IMlogErrors=false;
+// ** The INI
+var INI = new Array();
+var INICached = new Array();
+var WhichINI="temp";
+var numbersINI = new Array();
+var itemNumber=false;
+var idValid=false;
+noParsing=0;
+IMcheckParenthesis=true;
+IMgodlyPickup=true;
+IM_RandDel=0;						//random delay added to DoDel
+IM_MaxTkRange=20;
+IM_MinTkRange=5;
+IM_clickMin=20;
+IM_clickMax=100;
+IM_CharLvl=99;
+IM_logsnagident=true;
+
+ShopItINIfile="settings/items.ini";
+numbersFile="settings/IMNumbers.ini";
+
+// ** SnagIt variables
+bitcheck=0;
+DontLog=false;
+GUIlog=false;
+textToScreen=false;
+SkipType=new Array();
+snagrad=60;
+IgnoreGID=new Array();
+mingoldpickup=0;
+useTeleItem=100;
+
+// ** Mods parsing
+const itemQual=["none","lowquality","normal","superior","magic","set","rare","unique","craft"];
+
+// ** Key types
+const keyTypes=["code","item","type","qual","level","classlevel","dmg%","def%","description","show","pickup","iditem","log","guilog","mod","isethereal","hassockets",
+			"identified","needprefix","needsuffix","weight","ilvl","eval-pu","eval-id",
+			"maxdmg","mindmg","dmg","damage","avgdmg","onehmax","onehmin","onehdmg","onehavg","throwmin","throwmax","throwdmg","throwavg",
+			"plusmax","plusmin","plusdmg","hand","speed","def","defense","plusdef","skillattack","skillhit","skillgethit","skillcharges","skill","skills","skilltree","poison","lvlreq","strreq","dexreq",
+			"prefix","suffix","number","range","godly","colfont","colback","clickmin","clickmax",
+			"loglevel","logareas","logacts","logfile","debuglog","logsnagident","skip","fillbelt","pickupradius","mingoldpickup","useteleitem","noparsing","logerrors","minteledist","maxteledist"];
+
+// ** Stats paring
+const IM_Stats=[
+	"strength",
+	"energy",
+	"dexterity",
+	"vitality",
+	"STATPTS",
+	"NEWSKILLS",
+	"HITPOINTS",
+	"life",
+	"MAXMANA",
+	"mana",
+	"STAMINA",
+	"stamina",
+	"LEVEL",
+	"EXPERIENCE",
+	"GOLD",
+	"GOLDBANK",
+	"%enhanced defense",
+	"ITEM_MAXDAMAGE_PERCENT",
+	"%enhanced damage",
+	"attack rating",
+	"%to block",
+	"one-handed min damage",
+	"one-handed max damage",
+	"two-handed min damage",
+	"two-handed max damage",
+	"DAMAGEPERCENT",
+	"MANARECOVERY",
+	"%mana regeneration",
+	"%stamina recovery",
+	"LASTEXP",
+	"NEXTEXP",
+	"base armor class",
+	"missile defense",
+	"melee defense",
+	"reduced damage",
+	"magic damage reduction",
+	"%damage reduction",
+	"magic resistance",
+	"max magic resistance",
+	"fire resistance",
+	"max fire resistance",
+	"lightning resistance",
+	"max lightning resistance",
+	"cold resistance",
+	"max cold resistance",
+	"poison resistance",
+	"max poison resistance",
+	"DAMAGEAURA",
+	"min fire damage",
+	"max fire damage",
+	"min lightning damage",
+	"max lightning damage",
+	"min magic damage",
+	"max magic damage",
+	"min cold damage",
+	"max cold damage",
+	"cold duration",
+	"min poison damage",
+	"max poison damage",
+	"poison duration",
+	"life leech",
+	"LIFEDRAINMAXDAM",
+	"mana leech",
+	"MANADRAINMAXDAM",
+	"STAMDRAINMINDAM",
+	"STAMDRAINMAXDAM",
+	"STUNLENGTH",
+	"speed reduction",
+	"base attack rate",
+	"OTHER_ANIMRATE",
+	"quantity",
+	"VALUE",
+	"durability",
+	"max durabilty",
+	"replenish life",
+	"%enhanced durability",
+	"%max life",
+	"%max mana",
+	"attacker takes damage",
+	"%gold find",
+	"%magic find",
+	"knockback",
+	"ITEM_TIMEDURATION",
+	"+skills",
+	"--84--",
+	"--85--",
+	"--86--",
+	"--87--",
+	"ITEM_DOUBLEHERBDURATION",
+	"light radius",
+	"ITEM_LIGHTCOLOR",
+	"minus requirements",
+	"ITEM_FASTATTACKRATE",
+	"increased attack speed",
+	"ITEM_FASTESTATTACKRATE",
+	"ITEM_FASTMOVEVELOCITY",
+	"increased run/walk speed",
+	"ITEM_FASTESTMOVEVELOCITY",
+	"ITEM_FASTGETHITRATE",
+	"faster hit recovery",
+	"ITEM_FASTESTGETHITRATE",
+	"ITEM_FASTBLOCKRATE",
+	"increased block speed",
+	"ITEM_FASTESTBLOCKRATE",
+	"ITEM_FASTCASTRATE",
+	"faster cast rate",
+	"ITEM_FASTESTCASTRATE",
+	"increase single skill",
+	"increase single skill",
+	"increase single skill",
+	"reduce poison length",
+	"ITEM_NORMALDAMAGE",
+	"hit causes monster to flee",
+	"hit blinds target",
+	"%damage goes to mana",
+	"ignores target defense",
+	"%defense reduction",
+	"prevent monster heal",
+	"half freeze duration",
+	"%attack rating",
+	"ITEM_DAMAGETARGETAC",
+	"enhanced damage to demons",
+	"enhanced damage to undead",
+	"attack rating to demons",
+	"attack rating to undead",
+	"ITEM_THROWABLE",
+	"increase fire skills",
+	"ITEM_ALLSKILLS",
+	"attacker takes lightning damage",
+	"IRONMAIDEN_LEVEL",
+	"LIFETAP_LEVEL",
+	"THORNS_LEVEL",
+	"BONEARMOR",
+	"BONEARMORMAX",
+	"freezes target",
+	"open wounds",
+	"crushing blow",
+	"ITEM_KICKDAMAGE",
+	"mana after kill",
+	"ITEM_HEALAFTERDEMONKILL",
+	"ITEM_EXTRABLOOD",
+	"deadly strike",
+	"%fire absorb",
+	"fire absorb",
+	"%lightning absorb",
+	"lightning absorb",
+	"%magic absorb",
+	"magic absorb",
+	"%cold absorb",
+	"cold absorb",
+	"slows target",
+	"ITEM_BLESSEDAIM",
+	"ITEM_DEFIANCE",
+	"cannot be frozen",
+	"decreased stamina drain",
+	"ITEM_REANIMATE",
+	"pierce",
+	"fires magic arrows",
+	"fires explosive arrows",
+	"base min throw damage",
+	"base max throw damage",
+	"SKILL_HANDOFATHENA",
+	"SKILL_STAMINAPERCENT",
+	"SKILL_PASSIVE_STAMINAPERCENT",
+	"SKILL_CONCENTRATION",
+	"SKILL_ENCHANT",
+	"SKILL_PIERCE",
+	"SKILL_CONVICTION",
+	"SKILL_CHILLINGARMOR",
+	"SKILL_FRENZY",
+	"SKILL_DECREPIFY",
+	"SKILL_ARMOR_PERCENT",
+	"ALIGNMENT",
+	"TARGET0",
+	"TARGET1",
+	"GOLDLOST",
+	"CONVERSION_LEVEL",
+	"CONVERSION_MAXHP",
+	"UNIT_DOOVERLAY",
+	"druid skills",
+	"assassin skills",
+	"ITEM_ADDSKILL_SINGLE4",
+	"ITEM_ADDSKILL_SINGLE5",
+	"ITEM_ADDSKILL_SINGLE6",
+	"ITEM_ADDSKILL_SINGLE7",
+	"ITEM_ADDSKILL_SINGLE8",
+	"ITEM_ADDSKILL_SINGLE9",
+	"ITEM_ADDSKILL_SINGLE10",
+	"plus skill tree",
+	"plus skill tree",
+	"plus skill tree",
+	"plus skill tree",
+	"plus skill tree",
+	"plus skill tree",
+	"sockets",
+	"cast on attack",
+	"cast on attack",
+	"cast on attack",
+	"cast on striking",
+	"cast on striking",
+	"cast on striking",
+	"cast on being hit",
+	"cast on being hit",
+	"cast on being hit",
+	"skill charges",
+	"skill charges",
+	"skill charges",
+	"skill charges",
+	"skill charges",
+	"skill charges",
+	"skill charges",
+	"skill charges",
+	"skill charges",
+	"skill charges",
+	"increased armor class per level",
+	"%increased armor class per level",
+	"increased life per level",
+	"increased mana per level",
+	"increased max damage per level",
+	"%increased max damage per level",
+	"increased strength per level",
+	"increased dexterity per level",
+	"increased energy per level",
+	"increased vitality per level",
+	"increased attack rating per level",
+	"%increased attack rating per level",
+	"increased cold max damage per level",
+	"increased fire max damage per level",
+	"increased lightning max damage per level",
+	"increased poison max damage per level",
+	"increased cold resistances per level",
+	"increased fire resistances per level",
+	"increased lightning resistances per level",
+	"increased poison resistances per level",
+	"cold absorb per level",
+	"fire absorb per level",
+	"lightning absorb per level",
+	"poison absorb per level",
+	"increase attacker takes damage per level",
+	"increase gold find per level",
+	"increase magic find per level",
+	"increase stamina recovery per level",
+	"increase stamina per level",
+	"damage to demons per level",
+	"damage to undead per level",
+	"attack rating vs. demons per level",
+	"attack rating vs. undead per level",
+	"increased crushing blow per level",
+	"increased open wounds per level",
+	"increased kick damage per level",
+	"increased deadly strike per level",
+	"ITEM_FIND_GEMS_PERLEVEL",
+	"replenish durability",
+	"replenish quanity",
+	"increased stack size",
+	"ITEM_FIND_ITEM",
+	"ITEM_SLASH_DAMAGE",
+	"ITEM_SLASH_DAMAGE_PERCENT",
+	"ITEM_CRUSH_DAMAGE",
+	"ITEM_CRUSH_DAMAGE_PERCENT",
+	"ITEM_THRUST_DAMAGE",
+	"ITEM_THRUST_DAMAGE_PERCENT",
+	"ITEM_ABSORB_SLASH",
+	"ITEM_ABSORB_CRUSH",
+	"ITEM_ABSORB_THRUST",
+	"ITEM_ABSORB_SLASH_PERCENT",
+	"ITEM_ABSORB_CRUSH_PERCENT",
+	"ITEM_ABSORB_THRUST_PERCENT",
+	"ITEM_ARMOR_BYTIME",
+	"ITEM_ARMORPERCENT_BYTIME",
+	"ITEM_HP_BYTIME",
+	"ITEM_MANA_BYTIME",
+	"ITEM_MAXDAMAGE_BYTIME",
+	"ITEM_MAXDAMAGE_PERCENT_BYTIME",
+	"ITEM_STRENGTH_BYTIME",
+	"ITEM_DEXTERITY_BYTIME",
+	"ITEM_ENERGY_BYTIME",
+	"ITEM_VITALITY_BYTIME",
+	"ITEM_TOHIT_BYTIME",
+	"ITEM_TOHITPERCENT_BYTIME",
+	"ITEM_COLD_DAMAGEMAX_BYTIME",
+	"ITEM_FIRE_DAMAGEMAX_BYTIME",
+	"ITEM_LTNG_DAMAGEMAX_BYTIME",
+	"ITEM_POIS_DAMAGEMAX_BYTIME",
+	"ITEM_RESIST_COLD_BYTIME",
+	"ITEM_RESIST_FIRE_BYTIME",
+	"ITEM_RESIST_LTNG_BYTIME",
+	"ITEM_RESIST_POIS_BYTIME",
+	"ITEM_ABSORB_COLD_BYTIME",
+	"ITEM_ABSORB_FIRE_BYTIME",
+	"ITEM_ABSORB_LTNG_BYTIME",
+	"ITEM_ABSORB_POIS_BYTIME",
+	"ITEM_FIND_GOLD_BYTIME",
+	"ITEM_FIND_MAGIC_BYTIME",
+	"ITEM_REGENSTAMINA_BYTIME",
+	"ITEM_STAMINA_BYTIME",
+	"ITEM_DAMAGE_DEMON_BYTIME",
+	"ITEM_DAMAGE_UNDEAD_BYTIME",
+	"ITEM_TOHIT_DEMON_BYTIME",
+	"ITEM_TOHIT_UNDEAD_BYTIME",
+	"ITEM_CRUSHINGBLOW_BYTIME",
+	"ITEM_OPENWOUNDS_BYTIME",
+	"ITEM_KICK_DAMAGE_BYTIME",
+	"ITEM_DEADLYSTRIKE_BYTIME",
+	"ITEM_FIND_GEMS_BYTIME",
+	"ITEM_PIERCE_COLD",
+	"ITEM_PIERCE_FIRE",
+	"ITEM_PIERCE_LTNG",
+	"ITEM_PIERCE_POIS",
+	"ITEM_DAMAGE_VS_MONSTER",
+	"ITEM_DAMAGE_PERCENT_VS_MONSTER",
+	"ITEM_TOHIT_VS_MONSTER",
+	"ITEM_TOHIT_PERCENT_VS_MONSTER",
+	"ITEM_AC_VS_MONSTER",
+	"ITEM_AC_PERCENT_VS_MONSTER",
+	"FIRELENGTH",
+	"BURNINGMIN",
+	"BURNINGMAX",
+	"PROGRESSIVE_DAMAGE",
+	"PROGRESSIVE_STEAL",
+	"PROGRESSIVE_OTHER",
+	"PROGRESSIVE_FIRE",
+	"PROGRESSIVE_COLD",
+	"PROGRESSIVE_LIGHTNING",
+	"extra charges",
+	"PROGRESSIVE_TOHIT"];
+
+const IM_ItemTypes=[
+	"none",
+	"none",
+	"shield",
+	"armor",
+	"gold",
+	"bow quiver",
+	"crossbow quiver",
+	"player body part",
+	"herb",
+	"potion",
+	"ring",
+	"elixir",
+	"amulet",
+	"charm",
+	"Not Used",
+	"boots",
+	"gloves",
+	"Not Used",
+	"book",
+	"belt",
+	"gem",
+	"torch",
+	"scroll",
+	"Not Used",
+	"scepter",
+	"wand",
+	"staff",
+	"bow",
+	"axe",
+	"club",
+	"sword",
+	"hammer",
+	"knife",
+	"spear",
+	"polearm",
+	"crossbow",
+	"mace",
+	"helm",
+	"missile potion",
+	"quest",
+	"body part",
+	"key",
+	"throwing knife",
+	"throwing axe",
+	"javelin",
+	"weapon",
+	"melee weapon","missile weapon","thrown weapon","combo weapon",
+	"any armor","any shield",
+	"miscellaneous",
+	"socket filler",
+	"second hand",
+	"staves and rods",
+	"missile",
+	"blunt",
+	"jewel",
+	"class specific",
+	"amazon item","barbarian item","necromancer item","paladin item","sorceress item","assassin item","druid item",
+	"hand to hand",
+	"orb",
+	"voodoo heads",
+	"auric shields",
+	"primal helm",
+	"pelt",
+	"cloak",
+	"rune",
+	"circlet",
+	"healing potion","mana potion","rejuv potion","stamina potion","antidote potion","thawing potion",
+	"small charm","medium charm","large charm",
+	"amazon bow","amazon spear","amazon javelin",
+	"hand to hand 2",
+	"magic bow quiv","magic xbow quiv",
+	"chipped gem","flawed gem","standard gem","flawless gem","perfect gem",
+	"amethyst","diamond","emerald","ruby","sapphire","topaz","skull"];
+
+
+const IM_Skills=[
+	"none","none","none","none","none","none",
+	"magic arrow","fire arrow","inner sight","critical strike","jab","cold arrow","multiple shot","dodge","power strike","poison javelin",
+	"exploding arrow","slow missiles","avoid","impale","lightning bolt","ice arrow","guided arrow","penetrate","charged strike","plague javelin",
+	"strafe","immolation arrow","decoy","evade","fend","freezing arrow","valkyrie","pierce","lightning strike","lightning fury",
+
+	"fire bolt","warmth","charged bolt","ice bolt","frozen armor","inferno","static field","telekinesis","frost nova","ice blast","blaze","fire ball",
+	"nova","lightning","shiver armor","fire wall","enchant","chain lightning","teleport","glacial spike","meteor","thunderstorm","energy shield",
+	"blizzard","chilling armor","fire mastery","hydra","lightning mastery","frozen orb","cold mastery",
+
+	"amplify damage","teeth","bone armor","skeleton mastery","raise skeleton","dim vison","weaken","poison dagger","corpse explosion","clay golem",
+	"iron maiden","terror","bone wall","golem mastery","skeletal mage","confuse","life tap","poisonE explosion","bone spear","blood golem","attract",
+	"decrepify","bone prison","summon resist","iron golem","lower resist","poison nova","bone spirit","fire golem","revive",
+
+	"sacrifice","smite","might","prayer","resist fire","holy bolt","holy fire","thorns","defiance","resist cold","zeal","charge","blessed aim",
+	"Cleansing","resist lightning","vengeance","blessed hammer","concentration","holy freeze","vigor","conversion","holy shield","holy shock",
+	"sanctuary","meditation","fist of the heavens","fanaticism","conviction","redemption","salvation",
+
+	"bash","sword mastery","axe mastery","mace mastery","howl","find potion","leap","double swing","polearm mastery","throwing mastery","spear mastery",
+	"taunt","shout","stun","double throw","increased stamina","find item","leap attack","concentrate","iron skin","battle cry","frenzy",
+	"increased speed","battle orders","grim ward","whirlwind","berserk","natural resistance","war cry",
+	"battle command",			// <--155
+
+	"werewolf",	// <--223
+	"lycanthropy","firestorm","oak sage","summon spirit wolf","werebear","molten boulder","arctic blast","carrion vine","feral rage","maul","fissure",
+	"cyclone armor","heart of wolverine","summon dire wolf","rabies","fire claws","twister","solar creeper","hunger","shock wave","volcano","tornado",
+	"spirit of barbs","summon grizzly","fury","armageddon","hurricane",
+
+	"fire blast","claw mastery","psychic hammer","tiger strike","dragon talon","shock web","blade stinel","burst of speed","fists of fire",
+	"dragon claw","charged bolt sentry","wake of fire","weapon block","cloak of shadows","cobra strike","blade fury","fade","shadow warrior",
+	"claws of thunder",	"dragon tail","lightning sentry","wake of inferno","mind blast","blades of ice","dragon flight","death sentry","blade shield",
+	"venom","shadow master"];
+
+const IM_SkillTrees=[
+	"bow and crossbow skills","passive and magic skills","javelin and spear skills",
+	"fire spells","lightning spells","cold spells",
+	"curses","poison and bone spells","summoning spells",
+	"pally combat skills","offensive auras","defensive auras",
+	"combat skills","combat masteries","warcries",
+	"summoning skills","shape shifting skills","elemental skills",
+	"traps","shadow disciplines","martial arts"];
+
+const IM_CharClasses=["amazon","sorceress","necromancer","paladin","barbarian","druid","assassin"];
+
+const IM_Areas=[
+	"none",
+	// ACT 1:
+	"Rogue Encampment","Blood Moor","Cold Plains","Stony Field","Dark Wood","Black Marsh","Tamoe Highland","Den of Evil","Cave 1",
+	"Underground Passage 1","Hole 1","Pit 1","Cave 2","Underground Passage 2","Hole 2","Pit 2","Burial Grounds","Crypt","Mausoleum",
+	"Forgotten Tower","Towe Cellar 1","Towe Cellar 2","Towe Cellar 3","Towe Cellar 4","Towe Cellar 5","Monastery Gate","Outer Cloister","Barracks",
+	"Jail 1","Jail 2","Jail 3","Inner Cloister","Cathedral","Catacombs 1","Catacombs 2","Catacombs 3","Catacombs 4","Tristram","Moo Moo Farm",
+	// ACT2:
+	"Lut Gholein","Rocky Waste","Dry Hills","Far Oasis","Lost City","Valley of Snakes","Canyon of the Magi","Sewers 1","Sewers 2","Sewers 3",
+	"Harem 1","Harem 2","Palace Cellar 1","Palace Cellar 2","Palace Cellar 3","Stony Tomb 1","Halls of the Dead 1","Halls of the Dead 2",
+	"Claw Viper Temple 1","Stony Tomb 2","Halls of the Dead 3","Claw Viper Temple 2","Maggot Lair 1","Maggot Lair 2","Maggot Lair 3",
+	"Ancient Tunnels","Tal Rasha's Tomb 1","Tal Rasha's Tomb 2","Tal Rasha's Tomb 3","Tal Rasha's Tomb 4","Tal Rasha's Tomb 5","Tal Rasha's Tomb 6",
+	"Tal Rasha's Tomb 7","Duriel's Lair","Arcane Sanctuary",
+	// ACT3:
+	"Kurast Docktown","Spider Forest","Great Marsh","Flayer Jungle","Lower Kurast","Kurast Bazaar","Upper Kurast","Kurast Causeway","Travincal",
+	"Spider Cave","Spider Cavern","Swampy Pit 1","Swampy Pit 2","Flayer Dungeon 1","Flayer Dungeon 2","Swampy Pit 3","Flayer Dungeon 3","Sewers 1",
+	"Sewers 2","Ruined Temple","Disused Fane","Forgotten Reliquary","Forgotten Temple","Ruined Fane","Disguised Reliquary","Durance of Hate 1",
+	"Durance of Hate 2","Durance of Hate 3",
+	// ACT 4:
+	"The Pandemonium Fortress","Outer Steppes","Plains of Despair", "City of the Damned","River of Flame","Chaos Sanctum",
+	// ACT 5:
+	"Harrogath","Bloody Foothills","Frigid Highlands","Arreat Plateau","Crystal Cavern 1","Cellar of Pity","Crystal Cavern 2","Echo Chamber",
+	"Tundra Wastelands","Glacial Caves 1","Glacial Caves 2","Rocky Summit","Nihlathak's Temple","Halls of Anguish","Halls of Death's Calling",
+	"Halls of Vaught","Halls 1","Halls 2","Halls 3","Worldsine Keep 1","Worldsine Keep 2","Worldsine Keep 3","Throne of Destruciton",
+	"The Worldstone Chamber"];
+
+const itemColors=["ÿc0","ÿc0","ÿc0","ÿc0","ÿc3","ÿc2","ÿc9","ÿc4","ÿc8"];
+
+/* ææææææææææææææææææææææææææææ
+ShopIt! section:
+ææææææææææææææææææææææææææææ */
+
+function ShopIt(who,npc)
+{
+	var checkprint=0;
+	var shopdesc="";
+	var goldprev=0;
+	var itemsBought=new Array();
+	var itemName="";
+	var shopitem = getUnit(4,null,0);
+	if (shopitem) do
+	{
+		var owner = shopitem.getParent();
+		if (owner && owner.name==who)
+		{
+			if(checkprint == 0)
+			{
+				//print("Shopping at: " +who);
+				checkprint++;
+			}
+			if (CheckItem(shopitem, ShopItINIfile))
+			{
+				if (logging >= 1)
+					shopdesc=itemColors[shopitem.quality]+shopitem.fname;
+				else shopdesc="";
+				if (logging >= 2)
+					shopdesc+=getAllStats(shopitem);
+				writedesc=shopdesc;
+				itemName=shopitem.fname;
+				// check if enough room
+				if (IM_CheckSpace(getBaseStat(0,shopitem.classid,D2JSP_BASE_ITEMS_INVWIDTH), getBaseStat(0,shopitem.classid,D2JSP_BASE_ITEMS_INVHEIGHT)))
+				{
+					goldprev=me.getStat(14)+me.getStat(15);
+					if(goldprev<shopitem.getItemCost(0))
+					{
+						itemsBought.push([itemName,"not enough gold ("+goldprev+"/"+shopitem.getItemCost(0)+")"]);
+						Slog(shopitem,"buygold");
+					}
+					else
+					{
+						delay(500);
+						var retry = 0;
+						do {
+							shopitem.shop(npc,2);
+							DoDel(1000);
+						}while( ( goldprev == (me.getStat(14) + me.getStat(15)) ) && ( retry++ < 10 ) );
+						if(goldprev!=me.getStat(14)+me.getStat(15))
+						{
+							itemsBought.push([itemName,"success"]);
+							Slog(shopitem,"buy");
+						}
+						else
+						{
+							itemsBought.push([itemName,"uknown failture"]);
+							Slog(shopitem,"buyweird");
+							//return itemsBought;
+						};
+					}
+				}
+				else {
+					itemsBought.push([itemName,"not enough space"]);
+					Slog(shopitem,"buyspace");
+					//return itemsBought;
+				};
+			}
+			if (logging >= 3)
+			{
+				writedesc=shopitem.fname+getAllStats(shopitem);
+				if(!debugLogging)
+					HtmlLogFile("none");
+				else
+					PrintFile(STime()+" " +writedesc+"<br>");
+			}
+		}
+		//shopitem.fname="";                                          // wtf?
+	} while(shopitem && shopitem.getNext(null,0));
+	if(checkprint == 0) print("Shopping at " +who +" failed!");
+	return itemsBought;   //return sthShopped; //1.60a
+}
+
+/* ææææææææææææææææææææææææææææ
+SnagIt! section:
+ææææææææææææææææææææææææææææ */
+
+function SnagIt(which)
+{
+	var reloop=true;
+	var Status=0;
+	snagqual=5;
+	prevsnagqual=snagqual;
+	NormalItem=0;
+	SkipGID=new Array();
+	while(reloop)
+	{
+		clearcursor();
+		var snagitem = getUnit(4);
+		var y=0;
+		reloop=false;
+		if (snagitem) itemloop : do
+		{
+			if((snagitem.mode==3 || snagitem.mode==5) && snagitem.quality >= snagqual)
+			{
+				for(m=0; m<SkipType.length; m++)
+				{
+					if(SkipType[m]==getBaseStat(0,snagitem.classid,D2JSP_BASE_ITEMS_TYPE))
+						continue itemloop;
+				}
+				for(y=0; y<IgnoreGID.length; y++)
+				{
+					if(IgnoreGID[y]==snagitem.gid)
+						continue itemloop;
+				}
+				for(y=0; y<SkipGID.length; y++)
+				{
+					if(SkipGID[y]==snagitem.gid)
+						continue itemloop;
+				}
+				SkipGID.push(snagitem.gid);
+				if(snagitem.code!="gld" && (getBaseStat(0,snagitem.classid,D2JSP_BASE_ITEMS_TYPE)<76 || getBaseStat(0,snagitem.classid,D2JSP_BASE_ITEMS_TYPE)>81))
+				{
+					if(CheckItem(snagitem, which, snagqual))
+					{
+						if(IM_CheckSpace(getBaseStat(0,snagitem.classid,D2JSP_BASE_ITEMS_INVWIDTH), getBaseStat(0,snagitem.classid,D2JSP_BASE_ITEMS_INVHEIGHT)))
+						{
+							if (calcrange(snagitem.x, snagitem.y) <= snagrad)
+							{
+								reloop=true;
+								if(!PickUpItem(snagitem))
+								{
+									Slog(snagitem,"snag error");
+									Status|=1;
+									continue itemloop;
+								}
+								Slog(snagitem,"snag");
+								Status|=8;
+							} else
+							{
+								if(me.classid==1)
+								{
+									if(!GoToItem(snagitem))
+									{
+										Slog(snagitem,"snag error");
+										Status|=1;
+										continue itemloop;
+									}
+									Slog(snagitem,"snag");
+									Status|=8;
+								}
+								else
+								{
+									Status|=4;
+									Slog(snagitem,"snag range");
+								}
+							}
+						}
+						else if(itemGodly && IMgodlyPickup)
+						{
+							if(typeof(guiOnExit)!="undefined" || include("d2jspLoader.d2l"))
+							{
+
+								if (calcrange(snagitem.x, snagitem.y) <= snagrad)
+								{
+									if(!PickUpItem(snagitem,1))
+									{
+										Slog(snagitem,"snag error");
+										Status|=1;
+										continue itemloop;
+									}
+									Slog(snagitem,"snag godly");
+									guiOnExit("kill&stop");
+									quit();
+								} else
+								{
+									if(me.classid==1)
+									{
+										if(!GoToItem(snagitem,1))
+										{
+											Slog(snagitem,"snag error");
+											Status|=1;
+											continue itemloop;
+										}
+										Slog(snagitem,"snag godly");
+										guiOnExit("kill&stop");
+										quit();
+										Status|=8;	// unused now...
+									}
+									else
+									{
+										Status|=4;
+										Slog(snagitem,"snag range");
+									}
+								}
+							}
+							else Slog(snagitem,"snag godly failture");
+						}
+						else
+						{
+							Status|=3;
+							Slog(snagitem,"snag space");
+						}
+					}
+				}else if(!INICached[which])getINI(which);
+				if(calcrange(snagitem.x, snagitem.y) <= snagrad && snagqual==0 && NormalItem < 6 && CheckItem(snagitem, which, snagqual))
+				{
+					if(snagitem.code=="gld" && snagitem.getStat(14) >= mingoldpickup && me.getStat(14) != (me.getStat(12) * 10000) && (bitcheck&2)) //1.60a
+					{
+						var tr;
+						var currgold=me.getStat(14);
+						if(textToScreen)
+							print("Your gold is not full!  Picking up gold!");
+						reloop=true;
+						NormalItem++;
+						if( me.classid != 1 || !IM_TeleItem(snagitem))
+						{
+							MoveTo(snagitem.x, snagitem.y);
+							if(snagitem.mode==3 || snagitem.mode==5) IM_click(snagitem);
+						}
+						for(tr=0;tr<50 && currgold==me.getStat(14);tr++)
+							DoDel(10);
+					}
+					if(snagitem.code!="gld" && countpotions())
+					{
+						if(snagitem.code=="rvl" && (bitcheck&8))
+						{
+							if(textToScreen)
+								print("Picking up a Full Rejuv potion");
+							reloop=true;
+							PickUpItem(snagitem);
+						}
+						if(snagitem.code=="rvs" && (bitcheck&4))
+						{
+							if(textToScreen)
+								print("Picking up a Rejuv potion");
+							reloop=true;
+							PickUpItem(snagitem);
+						}
+					}
+				}
+			}
+		} while(snagitem && snagitem.getNext());
+		if(snagqual==5) reloop=true;
+		snagqual=0;
+	}
+	if(!IM_CheckSpace(2,4))Status|=2;
+	return Status;
+}
+
+function AutoIDit(item)
+{
+	if(item.quality==5) file = fileOpen("settings/snagset.ini", 0);
+	else if(item.quality==7) file = fileOpen("settings/snagunique.ini", 0);
+	else file=false;
+	if (file)
+	{
+		while(!file.eof)
+		{
+			line = file.readLine();
+			a = line.split("=");
+			if (a.length == 2)
+			{
+				if (a[0] == item.code)
+				{
+						file.close();
+						return a[1];
+				}
+			}
+		}
+		file.close();
+	}
+	return itemColors[item.quality]+" "+itemQual[item.quality]+" "+item.fname.replace("\n"," - ");
+}
+
+
+function PickUpItem(snagitem,toCursor)
+{
+	clearcursor();
+	if(getBaseStat(0,snagitem.classid,D2JSP_BASE_ITEMS_TYPE)>=76 && getBaseStat(0,snagitem.classid,D2JSP_BASE_ITEMS_TYPE)<=81 && me.classid == 1 && IM_TeleItem(snagitem))
+	{
+		var tr;
+		for(tr=0;snagitem.mode!=2 && snagitem.mode!=0 && tr< 10;tr++)
+			DoDel(10);
+		return true;
+	}
+	MoveTo(snagitem.x, snagitem.y);
+	if(snagitem.mode==3 || snagitem.mode==5)
+	{
+		if(!toCursor)
+			IM_click(snagitem);
+		else
+			snagitem.interact(1);
+	}
+	DoDel(50);
+	attemptnum=0;
+	tryagain=20;
+	while(snagitem.mode==3 || snagitem.mode==5)
+	{
+		DoDel(20);
+		attemptnum++;
+		if(attemptnum>=200) return false;
+		if(attemptnum>=tryagain)
+		{
+			tryagain+=20;
+			if(snagitem.mode==3 || snagitem.mode==5)
+			{
+				clearcursor();
+				if(snagitem.mode==3 || snagitem.mode==5)
+				{
+				if(!toCursor)
+					IM_click(snagitem);
+				else
+					snagitem.interact(1);
+				}
+			}
+		}
+	}
+	return true;
+}
+
+function GoToItem(item,toCursor)
+{
+	if(!item) return false;
+	ITEMxd=(item.x - me.x);
+	ITEMyd=(item.y - me.y);
+
+	HOPx=Math.abs(Math.ceil(ITEMxd / 30));
+	HOPy=Math.abs(Math.ceil(ITEMyd / 30));
+
+	if(HOPx < HOPy)
+	{
+		checkx=Math.ceil(ITEMxd / HOPy);
+		checky=Math.ceil(ITEMyd / HOPy);
+	}
+	else if(HOPx < HOPy)
+	{
+		checkx=Math.ceil(ITEMxd / HOPx);
+		checky=Math.ceil(ITEMyd / HOPx);
+	}
+	else
+	{
+		checkx=Math.ceil(ITEMxd / HOPx);
+		checky=Math.ceil(ITEMyd / HOPy);
+	}
+
+	onitem=false;
+	while(!onitem)
+	{
+		if(calcrange(item.x, item.y) <= 24) onitem=true;
+		else Telejump(HOPx,HOPy,checkx,checky);
+	}
+	return PickUpItem(item,toCursor);
+}
+
+function Telejump(HOPx,HOPy,checkx,checky)
+{
+	if(HOPx == 0 || checkx == NaN || checkx == "Infinity")
+		MoveTo(me.x, me.y + checky);
+	else if(HOPy == 0 || checky == NaN || checky == "Infinity")
+		MoveTo(me.x + checkx, me.y);
+	else MoveTo(me.x + checkx, me.y + checky);
+	GoToItem();
+}
+
+/* ææææææææææææææææææææææææææææ
+SnagIt! belt management section:
+ææææææææææææææææææææææææææææ */
+/* ææææææææææææææææææææææææææææ
+Taken from Sherpya's common library's
+ææææææææææææææææææææææææææææ */
+
+function countpotions()
+{
+	if(bitcheck&16) return true;
+	count = 0;
+	start = getUnit(4,null,2);
+	if (start) do
+	{
+		owner = start.getParent();
+		if (owner)
+		{
+			if(start.mode==2 && owner.name==me.name)
+				count++;
+		}
+	} while (start.getNext(null,2));
+	if(FindBelt()>count) return true;
+	return false;
+}
+
+var beltscap = {
+	"lbl":   8, // Sash
+	"vbl":   8, // Light Belt
+	"mbl":   12, // Belt
+	"tbl":   12  // Heavy Belt
+}
+
+/* Returns the belt capability in rows */
+function BeltCapabilty(belt)
+{
+	if (beltscap[belt.code])
+		return beltscap[belt.code]
+
+	return 16;
+}
+
+/* Find the item of equiped belt */
+function FindBelt()
+{
+	belt = false;
+	item = getUnit(4,null,1);
+	if (item) do
+	{
+		if (item.itemloc == 8) // Belt
+		{
+			belt = item;
+			break;
+		}
+	} while (item && item.getNext(null,1));
+
+	if (!belt) return 4;
+	return BeltCapabilty(belt);
+}
+
+/* ææææææææææææææææææææææææææææ
+ParseIt! section:
+ææææææææææææææææææææææææææææ */
+
+function ParseIt(which, cx, cy, DoLog)
+{
+	var parseitem = getUnit(4,null,0);
+	if (parseitem) do
+	{
+		var owner = parseitem.getParent();
+		if (owner && owner.name==me.name && parseitem.getFlag(0x10))
+		{
+			if ((parseitem.x == cx) && (parseitem.y == cy) && (parseitem.itemloc == 0))
+			{
+				KeepIt=CheckItem(parseitem, which);
+				//if(parseitem.quality!=4) writedesc=parseitem.fname +" " +parseitem.name;
+				//else writedesc=(parseitem.prefix==""?"":parseitem.prefix +" ") +parseitem.name +(parseitem.suffix==""?"":" "+parseitem.suffix);	//BUG ?
+				if(!writedesc)writedesc=itemColors[parseitem.quality]+parseitem.fname.replace("\n"," - ");
+				if (logging >= 2) writedesc+=getAllStats(parseitem);
+				if(KeepIt)
+				{
+					if (logging == 1)
+						Slog(parseitem,"keep");
+					if (logging >= 2)
+						Slog(parseitem,"keep");
+					return KeepIt;
+				}
+				if (DoLog>=1 && logging >= 3)
+				{
+					HtmlLogFile("drop");
+					if(GUIlog)
+						guiLog("drop");
+					print("Found and dropped a " +parseitem.fname.replace("\n"," - "));
+				}
+				return false;
+			}
+		}
+		parseitem.suffix=false; parseitem.prefix=false; parseitem.fname=false;
+	} while(parseitem && parseitem.getNext(null,0));
+}
+
+/* ææææææææææææææææææææææææææææ
+SnagIt! and ParseIt! item parsing section:
+ææææææææææææææææææææææææææææ */
+
+function CheckItem(item, which, snagqual)
+{
+	if(WhichINI!=which) getINI(which);
+
+	lloop : for(i=1;i<INI.length;i++)
+	{
+		nKeys=INI[i].length;
+		idValid=false;
+		writedesc=false;
+		DontLog=false;
+		GUIlog=false;
+		fontColor=false;
+		backColor=false;
+		itemNumber=-1;
+		loganyhow=false;
+		itemGodly=false;
+		var OrSkip=new Array();
+		for(j=2;j<nKeys;j++)
+		{
+			type=INI[i][j][0];
+			key=INI[i][j][1];
+			val=INI[i][j][2];
+		    if(type=="|")
+			{
+				if(!OrCase(val,item,OrSkip))
+				{
+					if(INI[i][1])i=INI[i][1]-1;
+					continue lloop;
+				}
+			}
+			else
+			{
+				if(!KeyCase(type,key,val,item))
+				{
+					if(INI[i][1])i=INI[i][1]-1;
+					continue lloop;
+				}
+			}
+		}
+		if (loganyhow)
+		{
+			IgnoreGID.push(item.gid);
+			if(writedesc!=false && snagqual==5)
+			{
+				GetDesc(item);
+				print("Ignoring a "+writedesc+"!");
+				if(!DontLog)
+					HtmlLogFile("ignore");
+				if(GUIlog)
+					guiLog("ignore");
+			}
+			continue;
+		}
+		debugprint("!!Keeping an item from section: " +INI[i][0],0);
+		if(itemNumber!=-1)
+			decreaseItemNumber();
+	    if(!INI[i][1])
+			return INI[i][0];
+		else continue;
+	}
+	return false;
+}
+
+function OrCase(string,item,OrSkip)
+{
+	LastOne=true;
+	divider=string.indexOf("|");
+	lastloop : while(LastOne)
+	{
+		debugprint(string,0);
+		if(divider==-1) LastOne=false;
+		if(LastOne)
+		{
+			cursub=string.substring(0,divider);
+			string=string.substring(divider+1);
+		} else cursub=string;
+		var TypeTable=["=",">","<","!"];
+		for (oi=0;oi<TypeTable.length;oi++)
+		{
+			nEndOfKey = cursub.indexOf(TypeTable[oi]);
+			if (nEndOfKey!=-1)
+			{
+				KeyName=cursub.substring(0,nEndOfKey);
+				KeyValue=StripQuotes(cursub.substring(nEndOfKey+1));
+				typeval=oi;
+				break;
+			}
+		}
+		debugprint("Argument: "+TypeTable[typeval]+" -- Entering KeyName: "+KeyName+" -- and KeyValue: "+KeyValue,0);
+		if(KeyCase(TypeTable[typeval],KeyName,KeyValue,item))
+		{
+			for (oi=0;oi<OrSkip.length;oi++)
+			{
+				if(OrSkip[oi][0]==TypeTable[typeval] && OrSkip[oi][1]==KeyName && OrSkip[oi][2]==KeyValue) continue lastloop;
+			}
+			OrSkip.push(TypeTable[typeval],KeyName,KeyValue)
+			return true;
+		}
+		divider=string.indexOf("|");
+	}
+	return false;
+}
+
+function KeyCase(type,key,val,item)
+{
+	switch(key)
+	{
+		case "description":	//Printed value for snagit
+			writedesc=val;
+			return true;
+		case "show":	//Place holder, in case someone uses the old command
+			writedesc=val;
+			return true;
+		case "pickup":	//If set to 0, it will log it but not pick it up
+			if (val==0) loganyhow=true;
+			return true;
+		case "iditem":	//If set to 1, will id the item if it is in your inventory
+			if (val==1) idValid=true;
+			return true;
+		case "log":	//If set to 0, the item will be picked up, but not logged
+			if (val==0) DontLog=true;
+			return true;
+		case "guilog":
+			if (val==1) GUIlog=true;
+			return true;
+		case "colfont":		// logging colors
+			fontColor=val;
+			return true;
+		case "colback":
+			backColor=val;
+			return true;
+		case "code":	//Item type, item code, or an items name
+			return CodeCase(type,val,item);
+		case "type":	//I have to set this up still
+			return CodeCase(type,val,item);
+		case "mod":	//Specific mod names, like cruel
+			if(!item.getFlag(0x10)) return false;
+			if(item.fname.toLowerCase().indexOf(val) == -1) return false;
+			return true;
+		case "isethereal":	//Ethereal check
+			if (val==1 && item.getFlag(0x400000) == 0) return false;
+			if (val==0 && item.getFlag(0x400000)) return false;
+			return true;
+		case "hassockets":	//Socket check
+			if (val==1 && !item.getFlag(0x800)) return false;
+			if (val==0 && item.getFlag(0x800)) return false;
+			return true;
+		case "identified":	//Identified check
+			if (val==0 && item.getFlag(0x10)) return false;
+			if (val==1 && item.getFlag(0x10) == 0) return false;
+			return true;
+		case "item":	//Item type, item code, or an items name
+			return CodeCase(type,val,item);
+		case "def%":
+			return CompareCase(type,item.getStat(16,0),val);
+		case "dmg%":
+			return CompareCase(type,item.getStat(18,0),val);
+		case "needprefix":
+			if (val==1 && !item.prefix) return false;
+			return true;
+		case "needsuffix":
+			if (val==1 && !item.suffix) return false;
+			return true;
+		case "prefix":
+			if(val!=item.prefix.toLowerCase()) return false;
+			return true;
+		case "suffix":
+			if(val!=item.suffix.toLowerCase()) return false;
+			return true;
+		case "qual":	//Item quality, Such as magic or unique.  Number or name accepted.
+			return QualCase(type,val,item);
+		case "level":	//Item quality, Such as magic or unique.  Number or name accepted.
+			return QualCase(type,val,item);
+		case "classlevel":	//Normal, elite, or exceptional.  Number or name accepted.
+			return ClassCase(type,val,item);
+		case "weight":	//Light, medium, or heavy.  Number or name accepted.
+			return WeightCase(type,val,item);
+		case "ilvl":	//The items ilvl.
+			return CompareCase(type,item.ilvl,parseInt(val));
+		case "eval-pu":
+			return eval(val);
+		case "eval-id":
+			if (item.getFlag(0x10) == 0) return false; // not ID'd
+			return eval(val);
+		case "eval-pro":
+			return eval(val);
+		case "maxdmg":
+			return CompareCase(type,(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM)?getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM):getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXDAM))*item.getStat(18,0)*(item.getFlag(0x400000)?0.015:0.01)+(item.getStat(24)?item.getStat(24):item.getStat(22))+item.getStat(218)/8*IM_CharLvl,val);
+		case "mindmg":
+			return CompareCase(type,(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMINDAM)?getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMINDAM):getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MINDAM))*item.getStat(17)*(item.getFlag(0x400000)?0.015:0.01)+(item.getStat(23)?item.getStat(23):item.getStat(21)),val);
+		case "dmg":
+		case "damage":
+		case "avgdmg":
+			return CompareCase(type,((getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM)?getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM):getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXDAM))*item.getStat(18,0)+(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMINDAM)?getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMINDAM):getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MINDAM))*item.getStat(17))*(item.getFlag(0x400000)?0.015:0.01)+(item.getStat(24)?item.getStat(23)+item.getStat(24):item.getStat(21)+item.getStat(22))+item.getStat(218)/8*IM_CharLvl,2*val);
+		case "onehmax":
+			return CompareCase(type,getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXDAM)*item.getStat(18,0)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(22)+item.getStat(218)/8*IM_CharLvl,val);
+		case "onehmin":
+			return CompareCase(type,getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MINDAM)*item.getStat(17)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(21),val);
+		case "onehdmg":
+		case "onehavg":
+			return CompareCase(type,(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MINDAM)*item.getStat(17)+getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXDAM)*item.getStat(18,0))*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(21)+item.getStat(22)+item.getStat(218)/8*IM_CharLvl,2*val);
+		case "throwmax":
+			return CompareCase(type,getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXMISDAM)*item.getStat(18,0)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(160),val);
+		case "throwmin":
+			return CompareCase(type,getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MINMISDAM)*item.getStat(17)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(159),val);
+		case "throwdmg":
+		case "throwavg":
+			return CompareCase(type,(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MINMISDAM)*item.getStat(17)+getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXMISDAM)*(item.getStat(18)+item.getStat(219)/8*IM_CharLvl))*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(159)+item.getStat(160)+item.getStat(218)/8*IM_CharLvl,2*val);
+		case "plusmax":
+			return CompareCase(type,(item.getStat(24)?item.getStat(24):item.getStat(22))+item.getStat(218)/8*IM_CharLvl-(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM)?getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM):getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXDAM))*(item.getFlag(0x400000)?1.5:1),val);
+		case "plusmin":
+			return CompareCase(type,(item.getStat(23)?item.getStat(23):item.getStat(21))-(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMINDAM)?getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMINDAM):getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MINDAM))*(item.getFlag(0x400000)?1.5:1),val);
+		case "plusdmg":
+			return CompareCase(type,(item.getStat(24)?item.getStat(24):item.getStat(22))+item.getStat(218)/8*IM_CharLvl-(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM)?getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM):getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXDAM))*(item.getFlag(0x400000)?1.5:1)+(item.getStat(23)?item.getStat(23):item.getStat(21))-(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMINDAM)?getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMINDAM):getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MINDAM))*(item.getFlag(0x400000)?1.5:1),val);
+		case "def":
+		case "defense":
+			return CompareCase(type,(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXAC)+1)*item.getStat(16,0)*(item.getFlag(0x400000)?0.015:0.01)+item.getStat(31)+item.getStat(214)/8*IM_CharLvl,val);
+		case "plusdef":
+			return CompareCase(type,item.getStat(31)+item.getStat(214)/8*IM_CharLvl-(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXAC)?getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXAC)+1:0)*(item.getFlag(0x400000)?1.5:1),val);
+		case "hand":
+			if(val==0 && getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXDAM))return true;
+			if(val==1 && getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXDAM) && !getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM))return true;
+			if(val==2 && !getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_MAXDAM) && getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_2HANDMAXDAM))return true;
+			return false;
+		case "speed":
+			return CompareCase(type,item.getStat(68),val);
+		case "skillattack":
+			return ItemSkillCase(val,"attack",item);
+		case "skillhit":
+			return ItemSkillCase(val,"hit",item);
+		case "skillgethit":
+			return ItemSkillCase(val,"gethit",item);
+		case "skillcharges":
+			return ItemSkillCase(val,"charges",item);
+		case "skills":
+			return ItemPlusSkill(val,type,"skills",item);
+		case "skill":
+			return ItemPlusSkill(val,type,"skill",item);
+		case "skilltree":
+			return ItemPlusSkill(val,type,"skilltree",item);
+		case "poison":
+			return CompareCase(type,Math.round(item.getStat(57)*item.getStat(59)/256),val);
+		case "strreq":
+			return CompareCase(type,getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_REQSTR)*(100+item.getStat(91))/100-item.getFlag(0x400000)/419430.4,val);
+		case "dexreq":
+			return CompareCase(type,getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_REQDEX)*(100+item.getStat(91))/100-item.getFlag(0x400000)/419430.4,val);
+		case "lvlreq":
+			return CompareCase(type,item.lvlreq,val);
+		case "number":
+			print(val);
+			return itemNumberCheck(val);
+		case "range":
+			return CompareCase(type,getDistance(me,item),val);
+		case "godly":
+			if(val==1)itemGodly=true;
+			return true;
+		default:	//Specific mod values, in numeric form.
+			return CompareCase(type,item.getStat(key),val);
+			//return TypeCase(type,val,key,item);
+	}
+	return false;
+}
+function CompareCase(type,val1,val2)
+{
+	switch(type)
+	{
+		case "=":
+			if (val1!=val2) return false;
+			return true;
+		case ">":
+			if (val1<val2) return false;
+			return true;
+		case "<":
+			if (val1>val2) return false;
+			return true;
+		case "!":
+			if (val1==val2) return false;
+			return true;
+	}
+	return false;
+}
+
+function CodeCase(type,val,item)
+{
+	switch(type)
+	{
+		case "=":
+			if (val!=item.code && val!=getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_TYPE) && val!=item.name.toLowerCase() ) return false;
+			return true;
+		case ">":
+			if (getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_TYPE)<val) return false;
+			return true;
+		case "<":
+			if (getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_TYPE)>val) return false;
+			return true;
+		case "!":
+			if (val==item.code || val==getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_TYPE) || val==item.name.toLowerCase() ) return false;
+			return true;
+	}
+	return false;
+}
+
+/*function TypeCase(type,val,key,item)
+{
+	if(isNaN(parseInt(key) || isNaN(parseInt(val)) return false;
+	return CompareCase(type,item.getStat(parseInt(key),parseInt(val));
+}*/
+
+function QualCase(type,val,item)
+{
+	QualPOS=getPosition(val,itemQual);
+	switch(type)
+	{
+		case "=":
+			if (item.quality!=QualPOS) return false;
+			return true;
+		case ">":
+			if (item.quality<QualPOS) return false;
+			return true;
+		case "<":
+			if (item.quality>QualPOS || QualPOS==-1) return false;
+			return true;
+		case "!":
+			if (item.quality==QualPOS) return false;
+			return true;
+	}
+	return false;
+}
+
+function ClassCase(type,val,item)
+{
+	var itemClass=["normal","exceptional","elite"];
+	var itemCodes=[getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_NORMCODE),
+				getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_UBERCODE),
+				getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_ULTRACODE)];
+	var ClassPos=getPosition(val,itemClass);
+	var CodePos=getPosition(getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_CODE),itemCodes);
+	switch(type)
+	{
+		case "=":
+			if (CodePos!=ClassPos) return false;
+			return true;
+		case ">":
+			if (CodePos<ClassPos) return false;
+			return true;
+		case "<":
+			if (CodePos>ClassPos || ClassPos==-1) return false;
+			return true;
+		case "!":
+			if (CodePos==ClassPos) return false;
+			return true;
+	}
+	return false;
+}
+
+function WeightCase(type,val,item)
+{
+	var itemWeights=["light","medium","heavy"];
+	var WeightPOS=getPosition(val,itemWeights);
+	var itemWeight;
+	switch(item.getStat(67))
+	{
+		case 0:
+			itemWeight=0; break;
+		case -5:
+			itemWeight=1; break;
+		case -10:
+			itemWeight=2; break;
+	}
+	switch(type)
+	{
+		case "=":
+			if (itemWeight!=WeightPOS) return false;
+			return true;
+		case ">":
+			if (itemWeight<WeightPOS) return false;
+			return true;
+		case "<":
+			if (itemWeight>WeightPOS || WeightPOS==-1) return false;
+			return true;
+		case "!":
+			if (itemWeight==WeightPOS) return false;
+			return true;
+	}
+	return false;
+}
+
+function ItemSkillCase(val,type,item)
+{
+	var value=0;
+	var skill=0;
+	var level=0;
+	var percent=0;
+	var itemskill=0;
+	var itemlevel=0;
+	var itempercent=0;
+	var minStat=0;
+	var maxStat=0;
+	var i;
+	i=val.indexOf(",");
+	value=i+1+val.substring(i+1,val.length).indexOf(",");
+	skill=parseInt(val.substring(0,i));
+	level=parseInt(val.substring(i+1,value));
+	percent=parseInt(val.substring(value+1,val.length));
+	switch(type)
+	{
+		case "attack":
+			minStat=195;
+			maxStat=197;
+			break;
+		case "hit":
+			minStat=198;
+			maxStat=200;
+			break;
+		case "gethit":
+			minStat=201;
+			maxStat=203;
+			break;
+		case "charges":
+			minStat=204;
+			maxStat=213;
+			break;
+	}
+	for(i=minStat;i<=maxStat;i++)
+	{
+		if(!item.getStat(i))return false;
+		value=item.getStat(i);
+		if(type=="charges")
+		{
+			itempercent=Math.floor(value / 4194304);
+			value-=itempercent*4194304;
+			value%=16384;
+		}
+		else
+		{
+			itempercent=Math.floor(value / 16384);
+			value-=itempercent*16384;
+		}
+		itemlevel=Math.floor(value / 512);
+		itemskill=value-itemlevel*512;
+		if(itemskill==skill && itemlevel>=level && itempercent >= percent) return true;
+	}
+	return false;
+}
+
+function ItemPlusSkill(val,type,mode,item)
+{
+	var value=0;
+	var skill=0;
+	var level=0;
+	var stat=0;
+	var skills=0;
+	var i,j;
+
+	i=val.indexOf(",");
+	skill=val.substring(0,i);
+	if(skill==parseInt(skill))skill=parseInt(skill);
+	level=parseInt(val.substring(i+1,val.length));
+
+	switch(mode)
+	{
+		case "skills":
+			stat=83;
+			skills=7;
+			break;
+		case "skill":
+			stat=107;
+			skills=357;
+			break;
+		case "skilltree":
+			stat=188;
+			break;
+	}
+	if(skill=="all")
+		return CompareCase(type,item.getStat(127),level);
+	if(skill!="any")
+		return CompareCase(type,item.getStat(stat,skill),level);
+	if(mode=="skilltree")
+	{
+		value=0;
+		for(i=0;i<7;i++)
+			for(j=0;j<3;j++)
+				value=Math.max(value,item.getStat(stat,i*8+j));
+	}
+	else
+	{
+		value=0;
+		for(i=0;i<skills;i++)
+			value=Math.max(value,item.getStat(stat,i));
+	}
+
+	return CompareCase(type,value,level);
+}
+
+function itemNumberCheck(val)
+{
+	var k;
+	stop();
+	if(!numbersINI.length)
+	{
+		var line;
+		var a;
+		file= fileOpen(numbersFile,0);
+		if(!file)
+		{
+			print("ÿc1Couldn't open item numbers file to read.");
+			return false;
+		}
+		print("file opened");
+		while(!file.eof)
+		{
+			line = file.readLine();
+			a = line.split("=");
+			if (a.length == 2)
+				numbersINI.push([a[0], parseInt(a[1])]);
+		}
+		file.close();
+	}
+	for (k=0; k<numbersINI.length; k++)
+		if (val==numbersINI[k][0])break;
+	if(k>=numbersINI.length)
+		return false;
+	if(numbersINI[k][1]>0)
+	{
+		itemNumber=k;
+		return true;
+	}
+	return false;
+}
+
+function decreaseItemNumber()
+{
+	numbersINI[itemNumber][1]--;
+	var k;
+	file= fileOpen(numbersFile,1);
+	if(!file)
+	{
+		print("ÿc1Couldn't open item numbers file to write.");
+		return;
+	}
+	for(k=0;k<numbersINI.length;k++)
+		file.writeLine(numbersINI[k][0]+"="+numbersINI[k][1]);
+	file.close();
+}
+
+function IM_CheckSpace( itemX, itemY )
+{
+	var i,j,x,y,sx,sy;
+	var inv=new Array(10);
+	for(i=0;i<10;i++) {
+		inv[i]=new Array(4);
+		for(j=0;j<4;j++)
+			inv[i][j]=0;
+	};
+	var item=getUnit(4,null,100);
+	if(item)do {
+		if(item.getParent() && item.getParent().name==me.name) {
+			sx=getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_INVWIDTH);
+			sy=getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_INVHEIGHT);
+			for(i=0;i<sx;i++)
+				for(j=0;j<sy;j++)
+					inv[item.x+i][item.y+j]=1;
+		}
+	}while(item && item.getNext(null,100));
+	for(j=0;j<5-itemY;j++) {
+		invloop2: for(i=0;i<11-itemX;i++) {
+			for(x=0;x<itemX;x++)
+				for(y=0;y<itemY;y++)
+					if(inv[i+x][j+y])
+						continue invloop2;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+/* ææææææææææææææææææææææææææææ
+Utility functions:
+ææææææææææææææææææææææææææææ */
+
+function clearcursor()
+{
+	if (!me.itemoncursor) return false;
+	cursoritem = getUnit(4,null,4);
+	if (cursoritem)
+	{
+		tryloop : for (mc = 1; mc <= 10; mc++)
+		{
+			cursoritem.cancel();
+			for (cm = 0; cm < 25; cm++)
+			{
+				if(!me.itemoncursor) return true;
+				DoDel(20);
+			}
+		}
+	}
+	return false;
+}
+
+/* ææææææææææææææææææææææææææææ
+INI and logging section:
+ææææææææææææææææææææææææææææ */
+
+function STime()
+{
+	timer=new Date();
+	newtime=timer.toString();
+	GMT = newtime.indexOf("GMT");
+	ptimer=newtime.substring(4, GMT-1);
+	return ptimer;
+}
+
+function Slog(item,mode)
+{
+	if (writedesc!=false)
+	{
+		GetDesc(item);
+		if(mode && mode!="none")print("Just found " +writedesc+"ÿc  on "+STime());
+		if(!DontLog)
+		{
+			if(!debugLogging)
+				HtmlLogFile(mode);
+			else
+				PrintFile("!!"+STime()+" " +writedesc+"<br>");
+		}
+		if(GUIlog)
+			guiLog(mode);
+	} else print("Just found a "+itemQual[item.quality]+" "+item.name+"!");
+}
+
+// convert a D2 color into an HTML color
+function ConvertColors()
+{
+	var htmlColors = ["000080", "FF0000", "00FF00", "0000FF", "666600", "666666", "000000", "999900", "FF9900", "BBBB00"];
+
+	while ((Color = writedesc.indexOf("ÿ")) != -1)
+	{
+		var htmlColor = "#"+htmlColors[parseInt(writedesc[Color+2])];
+		writedesc = writedesc.substring(0,Color)+writedesc.substring(Color+3);
+		Color = writedesc.indexOf("ÿ");
+	}
+	return(htmlColor);
+}
+
+function GetDesc(item)
+{
+	rExp = /<autoid>/gi;
+	if(writedesc.search(rExp) != -1)
+		writedesc=writedesc.replace(rExp, AutoIDit(item));
+	if(item.getFlag(0x400000))writedesc+=" (ethereal)";
+}
+
+function calcrange(x, y)
+{
+	xdiff = Math.abs(me.x - x);
+	ydiff = Math.abs(me.y - y);
+	xyrange = Math.sqrt((Math.pow(xdiff,2)) + (Math.pow(ydiff,2)));
+	return parseInt(xyrange);
+}
+
+// just doing a log file, the item is already picked and so..
+function HtmlLogFile(type)
+{
+	// Settings
+	var HtmlLogTitle = "D2JSP SnagIt HTML Log File";
+
+	// defines the action depending on what snagit did
+	switch(type)
+	{
+		case "drop":
+			var TypeName = "dropped";
+			var bgColor = "#FFFFFF";
+			break;
+		case "ignore":
+			var TypeName = "ignored";
+			var bgColor = "#FFFFFF";
+			break;
+		case "snag":
+			var TypeName = "snagged";
+			var bgColor = "#E0EDFF";
+			if(idValid)TypeName+="<br>for ident."
+			break;
+		case "snag godly":
+			var TypeName = "snagged godly item<br>and stopped bot";
+			var bgColor = "#D0DDFF";
+			break;
+		case "snag error":
+			if(!IMlogErrors)return;
+			var TypeName = "item not snagged<br>couldn't pick up";
+			var bgColor = "#FFDDC0";
+			break;
+		case "snag space":
+			if(!IMlogErrors)return;
+			var TypeName = "item not snagged<br>not enough space";
+			var bgColor = "#FFDDD0";
+			break;
+		case "snag range":
+			if(!IMlogErrors)return;
+			var TypeName = "item not snagged<br>too far away";
+			var bgColor = "#FFDDD0";
+			break;
+		case "snag godly failture":
+			if(!IMlogErrors)return;
+			var TypeName = "godly item not snagged<br>d2jspLoader.d2l not loaded";
+			var bgColor = "#FFDDD0";
+			break;
+		case "keep":
+			var TypeName = "kept";
+			var bgColor = "#E0FFED";
+			break;
+		case "buy":
+			var TypeName = "bought";
+			var bgColor = "#E0FFED";
+			break;
+		case "buyspace":
+			var TypeName = "buying failed<br>not enough space";
+			var bgColor = "#FFDDD0";
+			break;
+		case "buygold":
+			var TypeName = "buying failed<br>not enough gold";
+			var bgColor = "#FFDDC0";
+			break;
+		case "buyweird":
+			var TypeName = "buying failed<br>unknown failture";
+			var bgColor = "#FFDDB0";
+			break;
+		case "none":
+			var TypeName = "";
+			var bgColor = "#FFFFFF";
+			break;
+		default:
+			return;
+	}
+
+	// checking for existing html log file, if non exists -> create new one with head
+	FileReadTest=fileOpen(fLog, 0);
+	if (!FileReadTest)
+	{
+	FileWriteLog=fileOpen(fLog, 2);
+	FileWriteLog.writeLine("<html><head><title>"+HtmlLogTitle+"</title></head><body>");
+	//FileWriteLog.writeLine("<table border=\"1\" align=\"center\"><tr><td>Action</td><td>Time</td><td>Item Description</td></tr>");
+	FileWriteLog.close();
+	}
+	else FileReadTest.close();
+
+	// changes the bnet colors in html colors
+	htmlColor = ""; // used in function ConvertColors() we need it "" here when the function doesnt do something
+	Color = writedesc.indexOf("ÿ");
+	if(Color != -1) htmlColor = ConvertColors();
+	// when the color is not any special, in the html log file we use black
+	if (htmlColor == "") htmlColor="#000000";
+
+	switch(actLogging)
+	{
+		case 0:
+			break;
+		case 1:
+			TypeName+=" -"+me.act;
+			break;
+		case 2:
+			TypeName+=" -Act "+me.act;
+	}
+	switch(areaLogging)
+	{
+		case 0:
+			break;
+		case 1:
+			TypeName+=", "+me.area;
+			break;
+		case 2:
+			TypeName+=", "+IM_Areas[me.area];
+	}
+	// printing the whole line in the html log file
+	if(fontColor)
+		htmlColor=fontColor;
+	if(backColor)
+		bgColor=fontColor;
+	if(IM_logsnagident || !idValid)
+		PrintFile("<tr><td bgColor=\""+bgColor+"\"><font color=\""+htmlColor+"\"><nobr>"+TypeName+"</nobr></font></td><td bgColor=\""+bgColor+"\"><font color=\""+htmlColor+"\"><nobr>"+STime()+"</nobr></font></td><td bgColor=\""+bgColor+"\"><font color=\""+htmlColor+"\">"+writedesc+"</font></td></tr>");
+}
+
+function guiLog(type)
+{
+	if(typeof(guiPrint)=="undefined" || !include("d2jspLoader.d2l"))
+	{
+		print("d2jspLoader.d2l couldn't be loaded");
+		return false;
+	}
+	switch(type)
+	{
+		case "drop":
+			var TypeName = "dropped";
+			break;
+		case "ignore":
+			var TypeName = "ignored";
+			break;
+		case "snag":
+			var TypeName = "snagged";
+			break;
+		case "keep":
+			var TypeName = "kept";
+			break;
+		case "buy":
+			var TypeName = "bought";
+			break;
+		case "buyspace":
+			var TypeName = "buying failed, not enough space";
+			break;
+		case "buygold":
+			var TypeName = "buying failed, not enough gold";
+			break;
+		case "buyweird":
+			var TypeName = "buying failed, unknown failture";
+			break;
+		case "none":
+			var TypeName = "";
+			break;
+		default:
+			var TypeName = "";
+			break;
+	}
+	guiPrint(me.name+","+STime()+": "+TypeName+" "+writedesc,true);
+}
+
+function PrintFile(string)
+{
+	FileWriteLog=fileOpen(fLog, 2);
+	if (FileWriteLog)
+	{
+		FileWriteLog.writeLine(string +" \n");
+		//FileWriteLog.writeLine(string +"<br> \n");
+		FileWriteLog.close();
+	}
+}
+
+// added cache in 1.60a
+function getINI(which) {
+	if (INICached[which] && WhichINI != which)
+	{
+		WhichINI=which;
+        INI = INICached[which];
+		initConfig();
+		return 0;
+	};
+
+	INI = new Array();
+	ipLoadFile(which);
+	if (INI && (INI.length)) {
+        INICached[which] = INI;
+		WhichINI=which;
+		initConfig();
+		return 0;
+	} else {
+		print("Error loading INI");
+		return 1;
+	}
+}
+
+function initConfig() {
+	var logLevels=["none","useful","all","full"];
+	var logAreas=["none","code","name"];
+	var logActs=["none","num","full"];
+	for (i=0;i<INI.length;i++)
+	{
+		keyloop : for (j=0;j<INI[i].length;j++)
+		{
+			key=INI[i][j][1];
+			val=INI[i][j][2];
+			switch(key)
+			{
+				case "loglevel":
+					logging=getPosition(val.toLowerCase(),logLevels);
+					continue keyloop;
+				case "logareas":
+					areaLogging=getPosition(val.toLowerCase(),logAreas);
+					continue keyloop;
+				case "logacts":
+					actLogging=getPosition(val.toLowerCase(),logActs);
+					continue keyloop;
+				case "logfile":
+					fLog="output/"+me.name+val;
+					continue keyloop;
+				case "logsnagident":
+					IM_logsnagident=parseInt(val);
+					continue keyloop;
+				case "goldenabled":
+					if(val==1) GrabGold=true;
+					continue keyloop;
+				case "skip":
+					SkipType.push(val);
+					continue keyloop;
+				case "pickupradius":
+					snagrad=parseInt(val);
+					continue keyloop;
+				case "fillbelt":
+					if(val==0) bitcheck|=16;
+					continue keyloop;
+				case "mingoldpickup":
+					mingoldpickup=parseInt(val);
+					continue keyloop;
+				case "noparsing":
+					if(val==1)noParsing=true;
+					continue keyloop;
+				case "useteleitem":
+					useTeleItem=parseInt(val);
+					continue keyloop;
+				case "minteledist":
+					IM_MinTkRange=parseInt(val);
+					continue keyloop;
+				case "maxteledist":
+					IM_MaxTkRange=parseInt(val);
+					continue keyloop;
+				case "debuglog":
+					if(val==1) debugLogging=true;
+					continue keyloop;
+				case "logerrors":
+					if(val==1) IMlogErrors=true;
+					continue keyloop;
+				case "clickmin":
+					IM_clickMin=parseInt(val);
+					continue keyloop;
+				case "clickmax":
+					IM_clickMax=parseInt(val);
+					continue keyloop;
+				case "charlvl":
+					if(val=="me")IM_CharLvl=me.getStat(12);
+						else IM_CharLvl=parseInt(val);
+					continue keyloop;
+			}
+			switch(val)
+			{
+				case "gld":
+					bitcheck|=2;
+					continue keyloop;
+				case "rvl":
+					bitcheck|=8;
+					continue keyloop;
+				case "rvs":
+					bitcheck|=4;
+					continue keyloop;
+			}
+		}
+	}
+}
+
+function debugprint(String,dlevel) {
+	if (dlevel == 1 || dlevel > 2)
+		print(String);
+	if (dlevel >= 2)
+	{
+		fDebug = fileOpen("output/parseit-debug.txt", 2);
+		if(fDebug)
+		{
+			fDebug.writeLine(String);
+			fDebug.close
+		}
+	}
+}
+
+function getPosition(value,table) {
+	for (var k=0; k<table.length; k++) {
+		if (value==table[k])return k;
+		if (value==String(k)) return k;
+	}
+	return -1;
+}
+
+function getAllStats(item) {
+	var output="--Stats: ";
+	var statval="";
+	var statnum=0;
+	var i,j,tmp;
+	for (i=0;i<324;i++)
+	{
+		statval=false;
+		if (item.getStat(i))
+		{
+			switch(i)
+			{
+				case 17:
+				case 18:
+					break;
+				case 7:
+				case 9:
+				case 11:
+					statval=item.getStat(i)>>8;
+					break;
+				case 57:
+			//		break;	// ???
+				case 58:
+					statval=Math.round(item.getStat(i)*item.getStat(59)/256);
+					break;
+				case 83:
+				case 188:
+					break;
+				default:
+					statval=item.getStat(i);
+			}
+		}
+		switch(i)
+		{
+			case 16:
+			case 18:
+				statval=item.getStat(i,0);
+				break;
+			case 83:
+				statval="";
+				for(j=0;j<7;j++)
+					if(item.getStat(83,j))statval+="|+"+item.getStat(83,j)+" to "+IM_CharClasses[j]+"|";
+				break;
+			case 188:
+				staval="";
+				for(j=0;j<21;j++)
+				{
+					tmp=item.getStat(188,Math.floor(j/3)*8+(j%3));
+					if(tmp)
+						statval+=" =lvl "+tmp+" "+IM_SkillTrees[j]+"=";
+				}
+				break;
+		}
+		if(statval)output += "("+Sy_StatNumberToName(i)+"="+ statval+") ";
+	}
+	return output;
+}
+
+function Sy_StatNumberToName(stat) {
+  return [
+	"Strength",
+	"Energy",
+	"Dexterity",
+	"Vitality",
+	"STATPTS",
+	"NEWSKILLS",
+	"HITPOINTS",
+	"Life",
+	"MAXMANA",
+	"Mana",
+	"STAMINA",
+	"Stamina",
+	"LEVEL",
+	"EXPERIENCE",
+	"GOLD",
+	"GOLDBANK",
+	"%Enhanced Defense",
+	"ITEM_MAXDAMAGE_PERCENT",
+	"Enhanced Damage",
+	"Attack Rating",
+	"%To Block",
+	"1-handed Min Damage",
+	"1-handed Max Damage",
+	"2-handed Min Damage",
+	"2-handed Max Damage",
+	"DAMAGEPERCENT",
+	"MANARECOVERY",
+	"%Mana Regeneration",
+	"%Stamina Recovery",
+	"LASTEXP",
+	"NEXTEXP",
+	"Base Armor Class",
+	"Missile Defense",
+	"Melee Defense",
+	"Reduced Damage",
+	"Magic Damage Reduction",
+	"%Damage Reduction",
+	"MAGICRESIST",
+	"MAXMAGICRESIST",
+	"Fire Resistance",
+	"Max Fire Resistance",
+	"Lightning Resistance",
+	"Max Lightning Resistance",
+	"Cold Resistance",
+	"Max Cold Resistance",
+	"Poison Resistance",
+	"Max Poison Resistance",
+	"DAMAGEAURA",
+	"Min Fire Damage",
+	"Max Fire Damage",
+	"Min Lightning Damage",
+	"Max Lightning Damage",
+	"Min Magic Damage",
+	"Max Magic Damage",
+	"Min Cold Damage",
+	"Max Cold Damage",
+	"Cold Duration[25=second]",
+	"Min Poison Damage",
+	"Max Poison Damage",
+	"Poison Duration[25=second]",
+	"Life Leach",
+	"LIFEDRAINMAXDAM",
+	"Mana Leach",
+	"MANADRAINMAXDAM",
+	"STAMDRAINMINDAM",
+	"STAMDRAINMAXDAM",
+	"STUNLENGTH",
+	"Speed Reduction",
+	"Base Attack Rate",
+	"OTHER_ANIMRATE",
+	"Quantity",
+	"VALUE",
+	"Durability",
+	"Max Durabilty",
+	"Replenish Life",
+	"%Enhanced Durability",
+	"%Max Life",
+	"%Max Mana",
+	"Attacker Takes Damage",
+	"%Gold Find",
+	"%Magic Find",
+	"KnockBack",
+	"ITEM_TIMEDURATION",
+	"Added Skills",
+	"unused 84",
+	"unused 85",
+	"unused 86",
+	"unused 87",
+	"ITEM_DOUBLEHERBDURATION",
+	"Light Radiues",
+	"ITEM_LIGHTCOLOR",
+	"Minus Requirements",
+	"ITEM_FASTATTACKRATE",
+	"Increased Attack Speed",
+	"ITEM_FASTESTATTACKRATE",
+	"ITEM_FASTMOVEVELOCITY",
+	"Increased Run/Walk Speed",
+	"ITEM_FASTESTMOVEVELOCITY",
+	"ITEM_FASTGETHITRATE",
+	"Faster Hit Recovery",
+	"ITEM_FASTESTGETHITRATE",
+	"ITEM_FASTBLOCKRATE",
+	"Increased Block Speed",
+	"ITEM_FASTESTBLOCKRATE",
+	"ITEM_FASTCASTRATE",
+	"Faster Cast Rate",
+	"ITEM_FASTESTCASTRATE",
+	"Increase Single Skill",
+	"Increase Single Skill",
+	"Increase Single Skill",
+	"Reduce Poison Length",
+	"ITEM_NORMALDAMAGE",
+	"Hit Causes Monster to Flea[96=75%]",
+	"Hit Blinds Target",
+	"%Damage Goes to Mana",
+	"Ignores Target Defense",
+	"%Defense Reduction",
+	"Prevent Monster Heal",
+	"Half Freeze Duration",
+	"%Attack Rating",
+	"ITEM_DAMAGETARGETAC",
+	"Enhanced Damage to Demons",
+	"Enhanced Damage to Undead",
+	"Attack Rating to Demons",
+	"Attack Rating to Undead",
+	"ITEM_THROWABLE",
+	"Increases Fire Skills",
+	"To All skills",
+	"Attacker Takes Lightning Damage",
+	"IRONMAIDEN_LEVEL",
+	"LIFETAP_LEVEL",
+	"THORNS_LEVEL",
+	"BONEARMOR",
+	"BONEARMORMAX",
+	"Freezes Target",
+	"Open Wounds",
+	"Crushing Blow",
+	"ITEM_KICKDAMAGE",
+	"Mana After kill",
+	"ITEM_HEALAFTERDEMONKILL",
+	"ITEM_EXTRABLOOD",
+	"Deadly Strike",
+	"%Fire Absorb",
+	"Fire Absorb",
+	"%Lightning Absorb",
+	"Lightning Absorb",
+	"%Magic Absorb",
+	"Magic Absorb",
+	"%Cold Absorb",
+	"Cold Absorb",
+	"Slows Target",
+	"ITEM_BLESSEDAIM",
+	"ITEM_DEFIANCE",
+	"Cannot Be Frozen",
+	"Decreased Stamina Drain",
+	"ITEM_REANIMATE",
+	"Pierce",
+	"Fires Magic Arrows",
+	"Fires Explosive Arrows",
+	"Base Min Throw Damage",
+	"Base Max Throw Damage",
+	"SKILL_HANDOFATHENA",
+	"SKILL_STAMINAPERCENT",
+	"SKILL_PASSIVE_STAMINAPERCENT",
+	"SKILL_CONCENTRATION",
+	"SKILL_ENCHANT",
+	"SKILL_PIERCE",
+	"SKILL_CONVICTION",
+	"SKILL_CHILLINGARMOR",
+	"SKILL_FRENZY",
+	"SKILL_DECREPIFY",
+	"SKILL_ARMOR_PERCENT",
+	"ALIGNMENT",
+	"TARGET0",
+	"TARGET1",
+	"GOLDLOST",
+	"CONVERSION_LEVEL",
+	"CONVERSION_MAXHP",
+	"UNIT_DOOVERLAY",
+	"Druid Skills",
+	"Assassin Skills",
+	"ITEM_ADDSKILL_SINGLE4",
+	"ITEM_ADDSKILL_SINGLE5",
+	"ITEM_ADDSKILL_SINGLE6",
+	"ITEM_ADDSKILL_SINGLE7",
+	"ITEM_ADDSKILL_SINGLE8",
+	"ITEM_ADDSKILL_SINGLE9",
+	"ITEM_ADDSKILL_SINGLE10",
+	"Plus Skill Tree",
+	"Plus Skill Tree",
+	"Plus Skill Tree",
+	"Plus Skill Tree",
+	"Plus Skill Tree",
+	"Plus Skill Tree",
+	"Sockets",
+	"Cast On Attack",
+	"Cast On Attack",
+	"Cast On Attack",
+	"Cast On Striking",
+	"Cast On Striking",
+	"Cast On Striking",
+	"Cast On Being Hit",
+	"Cast On Being Hit",
+	"Cast On Being Hit",
+	"Skill Charges",
+	"Skill Charges",
+	"Skill Charges",
+	"Skill Charges",
+	"Skill Charges",
+	"Skill Charges",
+	"Skill Charges",
+	"Skill Charges",
+	"Skill Charges",
+	"Skill Charges",
+	"Increased Armor Class Per Level",
+	"%Increased Armor Class Per Level",
+	"Increased Life Per Level",
+	"Increased Mana Per Level",
+	"Increased Max Damage Per Level",
+	"%Increased Max Damage Per Level",
+	"Increased Strength Per Level",
+	"Increased Dexterity Per Level",
+	"Increased Energy Per Level",
+	"Increased Vitality Per Level",
+	"Increased Attack Rating Per Level",
+	"%Increased Attack Rating Per Level",
+	"Increased Cold Max Damage Per Level",
+	"Increased Fire Max Damage Per Level",
+	"Increased Lightning Max Damage Per Level",
+	"Increased Poison Max Damage Per Level",
+	"Increased Cold Resistances Per Level",
+	"Increased Fire Resistances Per Level",
+	"Increased Lightning Resistances Per Level",
+	"Increased Poison Resistances Per Level",
+	"Cold Absorb Per Level",
+	"Fire Absorb Per Level",
+	"Lightning Absorb Per Level",
+	"Poison Absorb Per Level",
+	"Increase Attacker Takes Damage Per Level",
+	"Increase Gold Find Per Level",
+	"Increase Magic Find Per Level",
+	"Increase Stamina Recovery Per Level",
+	"Increase Stamina Per Level",
+	"Damage to Demons Per Level",
+	"Damage to Undead Per Level",
+	"Attack Rating vs. Demons Per Level",
+	"Attack Rating vs. Undead Per Level",
+	"Increased Crushing Blow Per Level",
+	"Increased Open Wounds Per Level",
+	"Increased Kick Damage Per Level",
+	"Increased Deadly Strike Per Level",
+	"ITEM_FIND_GEMS_PERLEVEL",
+	"Replenish Durability",
+	"Replenishes Quanity",
+	"Increased Stack Size",
+	"ITEM_FIND_ITEM",
+	"ITEM_SLASH_DAMAGE",
+	"ITEM_SLASH_DAMAGE_PERCENT",
+	"ITEM_CRUSH_DAMAGE",
+	"ITEM_CRUSH_DAMAGE_PERCENT",
+	"ITEM_THRUST_DAMAGE",
+	"ITEM_THRUST_DAMAGE_PERCENT",
+	"ITEM_ABSORB_SLASH",
+	"ITEM_ABSORB_CRUSH",
+	"ITEM_ABSORB_THRUST",
+	"ITEM_ABSORB_SLASH_PERCENT",
+	"ITEM_ABSORB_CRUSH_PERCENT",
+	"ITEM_ABSORB_THRUST_PERCENT",
+	"ITEM_ARMOR_BYTIME",
+	"ITEM_ARMORPERCENT_BYTIME",
+	"ITEM_HP_BYTIME",
+	"ITEM_MANA_BYTIME",
+	"ITEM_MAXDAMAGE_BYTIME",
+	"ITEM_MAXDAMAGE_PERCENT_BYTIME",
+	"ITEM_STRENGTH_BYTIME",
+	"ITEM_DEXTERITY_BYTIME",
+	"ITEM_ENERGY_BYTIME",
+	"ITEM_VITALITY_BYTIME",
+	"ITEM_TOHIT_BYTIME",
+	"ITEM_TOHITPERCENT_BYTIME",
+	"ITEM_COLD_DAMAGEMAX_BYTIME",
+	"ITEM_FIRE_DAMAGEMAX_BYTIME",
+	"ITEM_LTNG_DAMAGEMAX_BYTIME",
+	"ITEM_POIS_DAMAGEMAX_BYTIME",
+	"ITEM_RESIST_COLD_BYTIME",
+	"ITEM_RESIST_FIRE_BYTIME",
+	"ITEM_RESIST_LTNG_BYTIME",
+	"ITEM_RESIST_POIS_BYTIME",
+	"ITEM_ABSORB_COLD_BYTIME",
+	"ITEM_ABSORB_FIRE_BYTIME",
+	"ITEM_ABSORB_LTNG_BYTIME",
+	"ITEM_ABSORB_POIS_BYTIME",
+	"ITEM_FIND_GOLD_BYTIME",
+	"ITEM_FIND_MAGIC_BYTIME",
+	"ITEM_REGENSTAMINA_BYTIME",
+	"ITEM_STAMINA_BYTIME",
+	"ITEM_DAMAGE_DEMON_BYTIME",
+	"ITEM_DAMAGE_UNDEAD_BYTIME",
+	"ITEM_TOHIT_DEMON_BYTIME",
+	"ITEM_TOHIT_UNDEAD_BYTIME",
+	"ITEM_CRUSHINGBLOW_BYTIME",
+	"ITEM_OPENWOUNDS_BYTIME",
+	"ITEM_KICK_DAMAGE_BYTIME",
+	"ITEM_DEADLYSTRIKE_BYTIME",
+	"ITEM_FIND_GEMS_BYTIME",
+	"ITEM_PIERCE_COLD",
+	"ITEM_PIERCE_FIRE",
+	"ITEM_PIERCE_LTNG",
+	"ITEM_PIERCE_POIS",
+	"ITEM_DAMAGE_VS_MONSTER",
+	"ITEM_DAMAGE_PERCENT_VS_MONSTER",
+	"ITEM_TOHIT_VS_MONSTER",
+	"ITEM_TOHIT_PERCENT_VS_MONSTER",
+	"ITEM_AC_VS_MONSTER",
+	"ITEM_AC_PERCENT_VS_MONSTER",
+	"FIRELENGTH",
+	"BURNINGMIN",
+	"BURNINGMAX",
+	"PROGRESSIVE_DAMAGE",
+	"PROGRESSIVE_STEAL",
+	"PROGRESSIVE_OTHER",
+	"PROGRESSIVE_FIRE",
+	"PROGRESSIVE_COLD",
+	"PROGRESSIVE_LIGHTNING",
+	"Extra Charges",
+	"PROGRESSIVE_TOHIT"
+  ][stat];
+}
+
+// Ini library v0.2 - by blue mind
+// 0.3 modification - Ven0m
+// -----------------------------------------------------------------------------
+// History :
+//
+// 0.3 : support for names, modified "eval"
+// s.2 : accepts > and <, not only =
+//       returns a slightly different structure
+// 0.2 : bug corrections, now it works ;)
+// 0.1 : first draft, should get the job done at least. it only returns one big
+//       array containing all the info
+
+// The actual parsed content of the INI
+// this contains one array per section nItem in the ini
+// each section array is formed like this :
+// INI[0]=["Section Name",[TYPE,"First key name","First key value"],...]
+
+////////////////////////////////////////////////////////////////////////////////
+// ipLoadFile(strFileName)                                                    //
+////////////////////////////////////////////////////////////////////////////////
+// Loads the ini and fills INI with it                                        //
+// Will consider ; or // on the beginning of lines as a comment               //
+////////////////////////////////////////////////////////////////////////////////
+function ipLoadFile(strFileName) {
+	nDebug=0;
+	var nLines=0;
+    var st=new Array();
+
+	ipFile=fileOpen(strFileName, 0);
+	if (!ipFile) {
+		for (oi=0;oi<10;oi++) print("ÿc1Failed to open "+strFileName+" for reading");
+		delay(10000);
+		return;
+	}
+
+	FileLoop : while (!ipFile.eof) {
+		strCurrentLine = ipStripSpaces(ipFile.readLine());
+		nLines++;
+		debugprint("ÿc7Line "+nLines+" ÿc@"+strCurrentLine,nDebug);
+
+		// Check to see if this line is actually a comment, or is empty
+		if ((strCurrentLine=="") || (strCurrentLine[0]==";") || (strCurrentLine.indexOf("//")==0)) {
+			debugprint("ÿc9Skipping useless line, line n°"+nLines,nDebug);
+			continue;
+		}
+
+		// Check to see if it's a new section
+		if (strCurrentLine[0]=="[") {
+			// check if section name is actually valid
+			nEndOfSection = strCurrentLine.lastIndexOf("]");
+
+			// invalid section name, skip to next line and warn user
+			if (nEndOfSection < 2) {
+				print("Error at line "+nLines+" in "+strFileName+" : invalid section name");
+				continue;
+			}
+
+			nIniLen=INI.length;
+			debugprint("ÿc/Starting section "+nIniLen+" at line "+nLines,nDebug);
+			INI[nIniLen] = new Array();
+			INI[nIniLen].push(strCurrentLine.substring(1,nEndOfSection));
+			INI[nIniLen].push(0);
+			continue;
+		}
+	    if(strCurrentLine[0]=="{")
+		{
+			st.push(INI.length-1);
+			continue;
+		}
+		if(strCurrentLine[0]=="}")
+		{
+			INI[st.pop()][1]=INI.length;
+			continue;
+		}	 
+		// to add extra eval functions
+		strCurrentLine=ParseLine(strCurrentLine,nLines);
+		if(strCurrentLine.substring(0,4)!="eval" && strCurrentLine.indexOf("|")!=-1)
+		{
+			nIniLen=INI.length;
+			debugprint("ÿc\"Entering new or block: ("+strCurrentLine+") at line "+nLines+", inserting in section "+INI[nIniLen-1][0],nDebug);
+			INI[nIniLen-1].push(["|","orblock",strCurrentLine]);
+			continue;
+		}
+
+		// Then it must be a key
+		// Four types of keys : =, >, <, and !
+		var TypeTable=["=",">","<","!"];
+		for (oi=0;oi<TypeTable.length;oi++)
+		{
+			nEndOfKey = strCurrentLine.indexOf(TypeTable[oi]);
+			if (nEndOfKey!=-1) {
+				FillINI(nEndOfKey,strCurrentLine,nLines,TypeTable[oi]);
+				continue FileLoop;
+			}
+		}
+
+		print("Some parsing error occurred at line "+nLines+" in "+strFileName+" : unknown case");
+	}
+	ipFile.close();
+}
+
+function FillINI(nEndOfKey,cString,nLines,keyval)
+{
+	var nIniLen=INI.length;
+	var strKeyName=cString.substring(0,nEndOfKey);
+	if(!isNaN(strKeyName))
+		strKeyName=parseInt(strKeyName);
+	var strKeyValue=cString.substring(nEndOfKey+1);
+	if(!isNaN(strKeyValue))
+		strKeyValue=parseInt(strKeyValue);
+	debugprint("ÿc\"Entering new key ("+strKeyName+" "+keyval+" "+strKeyValue+") at line "+nLines+", inserting in section "+INI[nIniLen-1][0],0);
+	INI[nIniLen-1].push([keyval,strKeyName,strKeyValue]);
+}
+
+function ParseLine(cString,nLines)
+{
+	var keyNameVal=0;
+	var strKeyName;
+	var keyval;
+	var skillName;
+	var i=0;
+	var l,r;
+	var newline="";
+	var section="";
+	var nEndOfKey;
+	var TypeTable=["=",">","<","!"];
+	while(cString.length)
+	{
+		l=cString.indexOf("|");
+		if(cString.substring(0,4) == "eval") l=-1;
+		if(l!=-1)
+		{
+			r=l;
+			while(cString.charAt(l-1)==' ')l--;
+			section=cString.substring(0,l);
+			while(cString.charAt(r+1)==' ')r++;
+			cString=cString.substring(r+1);
+		}
+		else
+		{
+			section=cString;
+			cString="";
+		}
+		for (i=0;i<TypeTable.length;i++)
+		{
+			nEndOfKey = section.indexOf(TypeTable[i]);
+			if (nEndOfKey!=-1)
+				break;
+		}
+		if(nEndOfKey!=-1)
+			keyval=TypeTable[i];
+		else
+		{
+			print("Some parsing error occurred at line "+nLines+" in "+strFileName+" : unknown case");
+			stop();
+		}
+
+		strKeyName=section.substring(0,nEndOfKey).toLowerCase();
+		if (strKeyName!="description" && strKeyName!="number" && strKeyName.substring(0,4) != "eval")
+		{
+			section=section.toLowerCase();
+			strKeyValue=StripQuotes(section.substring(nEndOfKey+1),nLines);
+			if(!noParsing && (strKeyName.charAt(0)<"0" || strKeyName.charAt(0)>"9"))
+				if(getPosition(strKeyName,keyTypes)==-1)
+				{
+					switch(strKeyName)						// fast search for common values
+						{
+						case "%enhanced damage":
+							keyNameVal=18; break;
+						case "%magic find":
+							keyNameVal=80; break;
+						case "increased run/walk speed":
+							keyNameVal=96; break;
+						case "faster hit recovery":
+							keyNameVal=99; break;
+						case "sockets":
+							keyNameVal=194; break;
+						default:							// comprehensive search for rest
+							keyNameVal=getPosition(strKeyName,IM_Stats);
+						}
+					if(keyNameVal==-1)print("ÿc1Error in configuration file, unknown stat: ÿc0"+cString+", line: "+nLines);
+					strKeyName=keyNameVal.toString();
+				}
+				else
+					switch(strKeyName)
+					{
+						case "code":
+						case "item":
+						case "type":
+							if(strKeyValue.length>3 || strKeyValue=="bow" || strKeyValue=="axe" || strKeyValue=="orb" || strKeyValue=="gem" || strKeyValue=="key")
+							{
+								keyNameVal=getPosition(strKeyValue,IM_ItemTypes);
+								if(keyNameVal==-1)print("ÿc1Error in configuration file, unknown item type:ÿc0 "+strKeyValue);
+								strKeyValue=keyNameVal.toString();
+							}
+							break;
+						case "skills":
+							i=strKeyValue.indexOf(",");
+							skillName=strKeyValue.substring(0,i);
+							if(skillName==parseInt(skillName) || skillName=="any" || skillName=="all")
+								break;
+								//keyNameVal=skillName;
+							else
+							{
+								keyNameVal=getPosition(skillName,IM_CharClasses);
+								if(keyNameVal==-1)print("ÿc1Error in configuration file, unknown skill:ÿc0 "+strKeyValue.substring(0,i));
+							}
+							strKeyValue=keyNameVal.toString()+strKeyValue.substring(i,strKeyValue.length);
+							break;
+						case "skill":
+						case "skillattack":
+						case "skillhit":
+						case "skillgethit":
+						case "skillcharges":
+							i=strKeyValue.indexOf(",");
+							skillName=strKeyValue.substring(0,i);
+							if(skillName==parseInt(skillName) || skillName=="any")
+								break;
+								//keyNameVal=skillName;
+							else
+							{
+								keyNameVal=getPosition(skillName,IM_Skills);
+								if(keyNameVal==-1)print("ÿc1Error in configuration file, unknown skill:ÿc0 "+strKeyValue.substring(0,i));
+								if(keyNameVal>155)keyNameVal+=67;
+							}
+							strKeyValue=keyNameVal.toString()+strKeyValue.substring(i,strKeyValue.length);
+							break;
+						case "skilltree":
+							i=strKeyValue.indexOf(",");
+							skillName=strKeyValue.substring(0,i);
+							if(skillName==parseInt(skillName) || skillName=="any")
+								break;
+								//keyNameVal=skillName;
+							else
+							{
+								keyNameVal=getPosition(skillName,IM_SkillTrees);
+								if(keyNameVal==-1)print("ÿc1Error in configuration file, unknown skill tree:ÿc0 "+strKeyValue.substring(0,i));
+								keyNameVal=Math.floor(keyNameVal/3)*8+(keyNameVal%3);
+							}
+							strKeyValue=keyNameVal.toString()+strKeyValue.substring(i,strKeyValue.length);
+							break;
+					}
+			switch(strKeyName)
+			{
+				case "7":
+				case "9":
+				case "11":
+				case "216":
+				case "217":
+					strKeyValue=(parseInt(strKeyValue)*256).toString();
+					break;
+				case "16":
+					strKeyName="def%";
+					break;
+				case "18":
+					strKeyName="dmg%";
+					break;
+			}
+		}
+		else
+		{
+			strKeyValue=section.substring(nEndOfKey+1);
+			if(strKeyName!="description" && strKeyName!="number" && strKeyName.substring(6,9) != "pro")strKeyValue = PreparseEvalString(strKeyValue);
+		}
+		newline+=strKeyName+keyval+strKeyValue;
+		if(l!=-1)newline+="|";
+
+	}
+	return newline;
+
+}
+
+function StripQuotes(string,nLines)
+{
+	Quotes = string.indexOf("\"");
+	if (Quotes!=-1)
+	{
+		EndQuotes=string.lastIndexOf("\"");
+		if(EndQuotes==-1)
+		{
+			if(arguments.length>=2) print("ÿc1Invalid quotes at line #"+nLines+"!!!");
+			return string;
+		}
+		return string.substring(Quotes+1,EndQuotes);
+	}
+	return string;
+}
+
+// Removes the spaces and tabs at the beginning of the string
+function ipStripSpaces(strLine) {
+	var nLength=strLine.length;
+	var nPos=0;
+	while (nPos<nLength && ((strLine[nPos]==" ") || (strLine[nPos]=="	"))) {
+		nPos++;
+	}
+	return strLine.substring(nPos);
+}
+
+function PreparseEvalString(val)
+{
+	//val = val.toLowerCase();
+	var n,op=0,cl=0,badEval=0;
+	var prev=0;
+	var pChar="";
+	var nChar="";
+	var varS=0;
+	var varE=0;
+	var Poutput="";
+	if(IMcheckParenthesis)
+	{
+		for(n=0;n<val.length;n++)
+		{
+			if(val.charAt(n)=="(")op++;
+			else if(val.charAt(n)==")")cl++;
+		}
+		if(op>cl)
+			print("ÿc1Invalid parenthesis in eval - more opening than closing",val);
+		if(op<cl)
+			print("ÿc1Invalid parenthesis in eval - more closing than opening",val);
+		if(op!=cl)
+			badEval=1;
+	}
+	while((varS=findWordS(val,prev))!=-1)
+	{
+		varE=findWordE(val,varS);
+		Poutput+=val.substring(prev,varS);
+		pChar=val.charAt(varS-1);
+		nChar=val.charAt(varE);
+		//print(varS+"-"+varE);
+		if(pChar!="=" && pChar!=">" && pChar!="<" && (pChar!="(" || nChar!=")"))Poutput+=PreparseEvalVar(val.substring(varS,varE));
+			else Poutput+=val.substring(varS,varE);
+		prev=varE;
+	}
+	Poutput+=val.substring(varE);
+	if(IMcheckParenthesis && !badEval)
+	{
+		op=0;
+		cl=0;
+		for(n=0;n<Poutput.length;n++)
+		{
+			if(Poutput.charAt(n)=="(")op++;
+			else if(Poutput.charAt(n)==")")cl++;
+		}
+		if(op>cl)
+			print("ÿc1Invalid parenthesis in eval after parsing - more opening than closing, please report this error",val);
+		if(op<cl)
+			print("ÿc1Invalid parenthesis in eval after parsing - more closing than opening, please report this error",val);
+	}
+	return Poutput;
+}
+
+function PreparseEvalVar(val)
+{
+	switch(val)
+	{
+		case "ethereal":
+			return "item.getFlag(0x400000)";
+		case "identified":
+			return "item.getFlag(0x10)";
+		case "strreq":
+			return "getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_REQSTR)*(100+item.getStat(91))/100-item.getFlag(0x400000)/419430.4";
+		case "dexreq":
+			return "getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_REQDEX)*(100+item.getStat(91))/100-item.getFlag(0x400000)/419430.4";
+		case "range":
+			return "getDistance(me,item)";
+		case "type":
+			return "getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_TYPE)";
+		case "itemclass":
+			return "getPosition(item.code,[getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_NORMCODE),getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_UBERCODE),getBaseStat(0,item.classid,D2JSP_BASE_ITEMS_ULTRACODE)])";
+		case "16":
+		case "18":
+			return "item.getStat("+val+",0)";
+		case "7":
+		case "9":
+		case "11":
+		case "216":
+		case "217":
+			return "item.getStat("+val+")/256";
+	}
+	if(val.charAt(0)>="0" && val.charAt(0)<="9") return "item.getStat("+val+")";
+	return "item."+val;
+}
+function findWordS(str,n)
+{
+	for(;n<str.length;n++)
+		if((str.charAt(n)>="0" && str.charAt(n)<="9")||(str.charAt(n)>="a" && str.charAt(n)<="z")||(str.charAt(n)>="A" && str.charAt(n)<="Z")|| str.charAt(n)=="\"" || str.charAt(n)=="," || str.charAt(n)=="." || (str.charAt(n)=="-" && (str.charAt(n-1)=="=" || str.charAt(n-1)=="<" || str.charAt(n-1)==">"))) return n;
+	return -1;
+}
+
+function findWordE(str,n)
+{
+	for(;n<str.length;n++)
+		if((str.charAt(n)<"0" || str.charAt(n)>"9")&&(str.charAt(n)<"a" || str.charAt(n)>"z")&&(str.charAt(n)<"A" || str.charAt(n)>"Z")&& str.charAt(n)!="\"" && str.charAt(n)!="," && str.charAt(n)!="." && str.charAt(n)!="-") return n;
+	return -1;
+}
+
+
+function findNum(str,n)
+{
+	for(;n<str.length;n++)
+		if(str.charAt(n)>="0" && str.charAt(n)<="9") return n;
+	return -1;
+}
+
+function findNonNum(str,n)
+{
+	for(;n<str.length;n++)
+		if(str.charAt(n)<"0" || str.charAt(n)>"9") return n;
+	return -1;
+}
+
+function findChr(str,n)
+{
+	for(;n<str.length;n++)
+		if(str.charAt(n)>="a" && str.charAt(n)<="z") return n;
+	return -1;
+}
+
+function findNonChr(str,n)
+{
+	for(;n<str.length;n++)
+		if(str.charAt(n)<"a" || str.charAt(n)>"z") return n;
+	return -1;
+}
+
+
+function IM_TeleItem(item)
+{
+	if((rnd(1,100)>useTeleItem && me.getSkill(2)!=43) || !me.getSkill(43) || me.mp<20 || calcrange(item.x,item.y)>IM_MaxTkRange || calcrange(item.x,item.y)<IM_MinTkRange)return false;
+	var i;
+	var j;
+	for (i = 0; i < 50; i++)
+	{
+		if(!me.itemoncursor) break;
+		DoDel(20);
+	}
+	if(me.itemoncursor)
+		return false;
+	for(i=0;i<3 && me.getSkill(2)!=43;i++)
+	{
+		me.setSkill(43,0);
+		for(j=0;j<25 && me.getSkill(2)!=43;j++)
+			DoDel(10);
+	}
+	if(me.getSkill(2)!=43) return false;
+	DoDel(20);
+	//item.useSkill(0);
+	IM_click(item,"right");
+	for(i=0;i<50 && me.mode!=10;i++)
+		DoDel(10);
+	while(me.mode==10)
+		DoDel(10);
+	return true;
+}
+
+function DoDel(x)
+{
+	delay(x+rnd(0,IM_RandDel));
+}
+
+function IM_click(x,y)
+{
+	var rand=rnd(IM_clickMin,IM_clickMax);
+	if(y)
+	{
+		if(y=="right")
+		{
+			clickMap(3,0,x);
+			delay(rand);
+			clickMap(5,0,x);
+		}
+		else
+		{
+			clickMap(0,0,x,y);
+			delay(rand);
+			clickMap(2,0,x+Math.round(rnd(-rand,rand)/50),y+Math.round(rnd(-rand,rand)/50));
+		}
+	}
+	else
+	{
+		clickMap(0,0,x);
+		delay(rand);
+		clickMap(2,0,x);
+	}
+}

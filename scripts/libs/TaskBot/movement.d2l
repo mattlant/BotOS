@@ -1,0 +1,638 @@
+
+//movement.d2l
+
+include("BotOS/Pathing/BotOS.Pathing.d2l");
+
+var waypoints = [[0x01,0x03,0x04,0x05,0x06,0x1b,0x1d,0x20,0x23],[0x28,0x30,0x2a,0x39,0x2b,0x2c,0x34,0x4a,0x2e],[0x4b,0x4c,0x4d,0x4e,0x4f,0x50,0x51,0x53,0x65],[0x67,0x6a,0x6b],[0x6d,0x6f,0x70,0x71,0x73,0x7b,0x75,0x76,0x81]];
+var classreduction = [0,1,0,0,0,0,0];
+var classmaxdist = [5,5,5,5,5,5,5];
+var classrepathmaxdist = [2,2,2,2,2,2,2];
+var townmaxdist = 5;
+
+const mlMOVEJUMP = 1;
+
+var nextx=0;
+var nexty=0;
+var lastx=0;
+var lasty=0;
+var movecount=0;
+var myoldx = 0;
+var myoldy = 0;
+var maxmovecount = 25; //sets how many Core loops it will take before your chacter will try to move if stuck
+var randommovetries = 0;
+var mbq = new Array(); //movement backup queue, to be used for backtracking when desync'd
+
+var stamdelay = false;
+var Map;
+
+
+function oGoalMove(_p, _function, _data, _tasks, _tag)
+{
+	/*
+	oGoalMove Revision History
+	------------------------------------------------------------------------
+	v0.1.0
+	- Changed to use the new TaskMove->PathMove function
+	
+	oGoalMove Todo's:
+	------------------------------------------------------------------------
+	*/
+	this.temp = oGoal;
+	this.temp(_p, _function, _data, _tasks, _tag);
+	delete this.temp;
+
+	//methods for adding to task queue
+	this.PathToXY = oGoalMove_pathtoxy;
+	this.PathToWarp = oGoalMove_pathtowarp;
+	this.PathToLevel = oGoalMove_pathtolevel;
+	this.PathToRoom = oGoalMove_pathtoroom;
+	this.ExploreArea = 	oGoalMove_explorearea;
+	this.GoToArea = 	oGoalMove_GoToArea;
+
+	//Private members
+	this._initpathing = oGoalMove_initpathing;
+	this._addpath = oGoalMove_addpath;
+	this.reduc = mlREDUCEWALK;
+	this.maxdist = classmaxdist[me.classid];
+	
+	var _started = false;
+	var _ptcurrarea = 0;
+	var _finalareamove = false;
+
+	function oGoalMove_pathtoxy()
+	{
+		this._initpathing();
+		var _pather = new BotOS.Pathing.Pather({Pathable:Map, Logger:TempLog});
+		Log.Write(mlLOGMOVEMENT, "oGoalMove_pathtoxy -> About to path to XY", boLOGINFO);
+		var temppath = _pather.FindPath(this.Data.sx, this.Data.sy, this.Data.dx, this.Data.dy, this.maxdist, this.Data.Algo, this.reduc, this.FH, this.Factor);
+		if(!temppath) Log.Write(mlLOGMOVEMENT, "PathToXY-didnt find a path" + Map.LastError, boLOGERROR);
+		this._addpath(temppath);
+	}
+	function oGoalMove_pathtolevel()
+	{
+		this._initpathing();
+		var _pather = new BotOS.Pathing.Pather({Pathable:Map, Logger:TempLog});
+		var temppath = _pather.FindPathToArea(this.Data.Level, this.Data.sx, this.Data.sy, this.maxdist, this.Data.Algo, this.reduc, this.FH, this.Factor);
+		if(!temppath) Log.Write(mlLOGMOVEMENT, "PathToLevel-didnt find a path" + Map.LastError, boLOGERROR);
+		this._addpath(temppath);
+	}
+
+	function oGoalMove_pathtowarp()
+	{
+		Log.Write(mlLOGMOVEMENT, "In movement:oGoalMove_pathtowarp");
+		this._initpathing();
+		var _pather = new BotOS.Pathing.Pather({Pathable:Map, Logger:TempLog});
+		//Map.Dump(1);
+		var temppath = _pather.FindPathToWarp(this.Data.WarpType, this.Data.sx, this.Data.sy, this.maxdist, this.Data.Algo, this.reduc, this.FH, this.Factor);
+		if(!temppath) Log.Write(mlLOGMOVEMENT, "PathToWarp-didnt find a path" + Map.LastError, boLOGERROR);
+		this._addpath(temppath);
+		if(this.Data.Interact) new oTaskInteract(this.Data.p--, "InteractWarp", {WarpType:this.Data.WarpType}).Insert();
+		Log.Write(mlLOGMOVEMENT, "Out movement:oGoalMove_pathtowarp");
+	}
+
+	function oGoalMove_pathtoroom()
+	{
+		Log.Write(mlLOGMOVEMENT, "In movement:oGoalMove_pathtoroom");
+		this._initpathing();
+		var _pather = new BotOS.Pathing.Pather({Pathable:Map, Logger:TempLog});
+		var room = getRoom();
+		do{
+			if (room.number == this.Data.Room) break;
+		}while(room && room.getNext());
+		var rc = _pather.Pathable.FindClosestWalkable(room.x*5+/*Map.roomsizex/2*/20, room.y*5+/*Map.roomsizey/2*/20);
+		var temppath = _pather.FindPath(this.Data.sx, this.Data.sy, rc.x, rc.y, this.maxdist, this.Data.Algo, this.reduc, this.FH, this.Factor);
+		if(!temppath) Log.Write(mlLOGMOVEMENT, "PathToRoom-didnt find a path" + Map.LastError, boLOGERROR);
+		this._addpath(temppath);
+		Log.Write(mlLOGMOVEMENT, "Out movement:oGoalMove_pathtoroom");
+	}
+
+	function oGoalMove_initpathing()
+	{
+		Log.Write(mlLOGMOVEMENT, "In movement:oGoalMove_initpathing");
+		if(!this.Data.Algo) this.Data.Algo = mlASTAR;
+		if(!this.Data.Factor) this.Data.Factor = 1;
+		if(!this.Data.FH) this.Data.FH = 3;
+		if(this.Data.Recalc) this.maxdist = classrepathmaxdist[me.classid];
+		else this.Data.Recalc = false;
+		if(InTown(me)) {
+			this.maxdist = townmaxdist;
+			this.reduc = mlREDUCEWALK;
+		}
+		//Changed to new mlMap structures
+		if (!Map || me.area != Map.Number)	{
+			Map = new BotOS.Pathing.Map({AreaNumber:me.area, Logger:TempLog});
+			Map.Initialize();
+		}
+		if(!this.Data.sx || !this.Data.sy){
+			this.Data.sx = me.x;
+			this.Data.sy = me.y;
+		}
+		Log.Write(mlLOGMOVEMENT, "Out movement:oGoalMove_initpathing");
+	}
+
+	function oGoalMove_addpath(pathtoadd)
+	{
+		Log.Write(mlLOGMOVEMENT, "In movement:oGoalMove_addpath");
+		if(!this.Data.p) this.Data.p = 300;
+		//if(this.Data.lowp) this.Data.p = this.Data.lowp + pathtoadd.length + 2;
+		//for (var i = 0; i< pathtoadd.length; i++)
+		//	new oTaskMove(this.Data.p--, "MoveTo", {x:pathtoadd[i].x, y:pathtoadd[i].y, Type:0, Recalc:this.Data.Recalc}).Insert();
+		new oTaskMove(this.Data.p, "PathMove", {Path:pathtoadd, Type:0, Recalc:this.Data.Recalc}).Insert();
+		//new oTaskCommon(this.Data.p-1, "Delay", {Amount:1, Reason:"TEST"}).Insert();
+		Log.Write(mlLOGMOVEMENT, "Out movement:oGoalMove_addpath");
+	}
+
+	function oGoalMove_explorearea()
+	{
+		if(!this.Data._initflag) {
+			if(!this.Data.Threshold) this.Data.Threshold = 80;
+			if (!Map || me.area != Map.Number)	{
+				Map = new BotOS.Pathing.Map({AreaNumber:me.area, Logger:TempLog});
+				Map.Initialize();
+			}
+			this.Data._numexplored = 0;
+			this.Data._rooms = new Array();
+			var room = Map.GetRooms();
+			var ac = 0;
+			do {
+				this.Data._rooms[this.Data._rooms.length] =
+					{x:room[ac].x+room[ac].Width/2, y:room[ac].y+room[ac].Height/2, explored:false};
+					ac++
+			}while(room[ac]);
+			if(!this.Data.p) this.Data.p = 300;
+			this.Data._origp = this.Data.p;
+			this.Data._initflag = true;
+		}
+		this.Data.p = this.Data._origp;
+		if(this.Data._numexplored*100/this.Data._rooms.length > this.Data.Threshold)
+			return;
+		// find the closest room..
+		var expclosest = -1;
+		for (var ii=0;ii<this.Data._rooms.length;ii++) {
+			if (!this.Data._rooms[ii].explored &&
+				(expclosest==-1 || Dist2(me.x, me.y, this.Data._rooms[ii].x, this.Data._rooms[ii].y)
+				< Dist2(me.x, me.y, this.Data._rooms[expclosest].x, this.Data._rooms[expclosest].y)))
+					expclosest = ii;
+		}
+		if (expclosest == -1) return;
+
+		// find a path to the closest point.
+		var dtcoord =  Map.FindClosestWalkable(this.Data._rooms[expclosest].x, this.Data._rooms[expclosest].y);
+		if(!dtcoord){
+//			print("Explore Area: No close coordinate found, skipping explore");
+			Log.Write(mlLOGMOVEMENT, "Explore Area: No close coordinate found, skipping explore", boLOGERROR);
+			delay(1000);
+			return;
+		}
+		this.Data.dx = dtcoord.x; this.Data.dy = dtcoord.y; this.Data.sx = me.x; this.Data.sy = me.y;
+		this.PathToXY();
+		//if(this.Data.KillAll) {
+		//	if(!this.Data.Range) this.Data.Range = 10;
+		//	new oTaskAttack(750, "Kill", {x:dtcoord.x, y:dtcoord, Range:this.Data.Range}).Insert();
+		//}
+
+		this.Data._rooms[expclosest].explored = true;
+		this.Data._numexplored++;
+		this.Insert();
+	}
+	
+	function oGoalMove_GoToArea () {
+		
+		Log.Write(mlLOGMOVEMENT, "Entering oGoalMove_GotoArea", boLOGINFO);
+
+		if(!this.LinkPath) {
+			this.LinkPath = BotOS.Pathing.AreaLinker.GetLinkPath(me.area, this.Data.Area, (this.Data.NoWP?false:true));
+			if(!this.LinkPath) {
+//				print("No LInk Path Found");
+				Log.Write(mlLOGMOVEMENT, "No Link Path Found", boLOGERROR);
+				delay(5000);
+			}
+			_ptcurrarea = 0;
+//			print("Starting Area: " + this.LinkPath[0].Link.Name);
+			Log.Write(mlLOGMOVEMENT, "Starting Area: " + this.LinkPath[0].Link.Name, boLOGINFO);
+			
+		}
+		if(!this.Data.p) this.Data.p = 300;
+
+		if (!Map || me.area != Map.Number)	{
+			Map = new BotOS.Pathing.Map({AreaNumber:me.area, Logger:TempLog});
+			Map.Initialize();
+		}
+		
+		if(this.LinkPath[_ptcurrarea] && this.LinkPath[_ptcurrarea+1]) {
+			//get linkage specs
+			var _linkspec = null;
+			if(!this.LinkPath[_ptcurrarea].UseWP) {
+				for(var i = 0; i < this.LinkPath[_ptcurrarea].Link.Links.length; i++) {
+					if(this.LinkPath[_ptcurrarea].Link.Links[i].Area == this.LinkPath[_ptcurrarea+1].Area) {
+						_linkspec = this.LinkPath[_ptcurrarea].Link.Links[i];
+						break;
+					}
+				}
+				if(!_linkspec) 
+					throw new BotOS.MoverException("oGoalMove_GoToArea -> Could not resolve link", 1, "movement.d2l");
+			}
+			//process linkage
+			if(this.LinkPath[_ptcurrarea].UseWP) {
+				Log.Write(mlLOGMOVEMENT, "Waypoint Area: " + this.LinkPath[_ptcurrarea+1].Area, boLOGINFO);
+				var actwp = Waypoints.getWPbyArea(this.LinkPath[_ptcurrarea+1].Area);
+				Log.Write(mlLOGMOVEMENT, "Act: " + actwp.act, boLOGINFO);
+				Log.Write(mlLOGMOVEMENT, "WP: " + actwp.waypoint, boLOGINFO);
+				new oGoalMove(this.p+1, "PathToWarp", {sx:me.x, sy:me.y, WarpType:mlWARPWAYPOINT}, 
+					new oTaskInteract(0, "InteractWaypoint", {Act:actwp.act, Waypoint:actwp.waypoint})   ).Insert();
+			}
+			else if(_linkspec.Tiles) {
+				//we have a warp to go to
+				//calculate which tile and where
+				Log.Write(mlLOGMOVEMENT, "In Tiles Calc", boLOGINFO);
+				var _tile = null;
+				var _arooms = new Array();
+				var _atiles = new Array();
+				//preprocess tiles
+				var _alltiles = getPresetUnits(me.area, 5, null, null);
+				if(!_alltiles) print ("Damn no tiles");
+				for(var i = 0; i < _alltiles.length; i++) {
+					for(var j = 0; j < _linkspec.Tiles.length; j++) {
+						if(_alltiles[i].id == _linkspec.Tiles[j])
+							_alltiles[i].x;
+							_alltiles[i].y;
+							_atiles.push(_alltiles[i]);
+					}
+				}
+				if(!_atiles.length)
+					throw new BotOS.MoverException("oGoalMove_GoToArea -> Error preprocessing tiles", 1, "movement.d2l");
+				
+				//xref tiles to rooms
+				var rooms = getRoom();
+				roomloop: 
+				do {
+					for(var r = 0; r < _linkspec.Rooms.length; r++) {
+						if(_linkspec.Rooms[r] == rooms.number) {
+							Log.Write(mlLOGMOVEMENT, "Room numbers equal", boLOGINFO);
+							for(var j = 0; j < _atiles.length; j++) {
+								if(IsInRoom(_atiles[j].x + _atiles[j].roomx*5, _atiles[j].y + _atiles[j].roomy*5, rooms)) {
+									_tile = _atiles[j];
+									break roomloop;
+								}
+							}
+							
+						}
+					}
+				} while(rooms.getNext());
+				
+				if(!_tile) {
+					throw new BotOS.MoverException("oGoalMove_GoToArea -> Could not resolve tile", 1, "movement.d2l");
+				}
+				
+				var tc = Map.FindClosestWalkable(_tile.x + _tile.roomx*5, _tile.y + _tile.roomy*5);
+				
+//				print("We are going to: " + tc.x + ", " + tc.y);
+				Log.Write(mlLOGMOVEMENT, "We are going to: " + tc.x + ", " + tc.y, boLOGINFO);
+				new oGoalMove(this.p+1, "PathToXY", {sx:me.x, sy:me.y, dx:tc.x, dy:tc.y}, 
+					new Array(
+					(_linkspec.Object.InteractFirst ?					
+					new oTaskInteract(0, "InteractObject", {ID:_linkspec.Object.InteractFirst, Mode:0}) : null),						
+					new oTaskInteract(0, "InteractWarp", {WarpType:-1}))).Insert();
+			}
+			else if(_linkspec.Object.Portal) {
+				//we have a portal/object to go to
+			}
+			else if(_linkspec.Rooms) {
+				//we have rooms, but this is gay, dont add
+			}
+			else {
+//				print("Need to go to Area: " + AreaLinks[_linkspec.Area].Name);
+				Log.Write(mlLOGMOVEMENT, "Need to go to Area: " + BotOS.Pathing.AreaLinker.Areas[_linkspec.Area].Name, boLOGINFO);
+				new oGoalMove(this.p+1, "PathToLevel", {Level:_linkspec.Area, p:this.Data.p}).Insert();
+			}
+			_ptcurrarea++;
+			this.Insert();
+			return;
+		}
+		//Destination Area Movement Post Processing :)
+		if(!_finalareamove) {
+			if(this.Data.dx && this.Data.dy) {
+				//now we need to path to the specific xy
+				//sLog.Write(mlLOGMOVEMENT, "Pathing to specific X,Y 0 final: " + tc.x + ", " + tc.y, boLOGINFO);
+
+				new oGoalMove(this.p+1, "PathToXY", {sx:me.x, sy:me.y, dx:this.Data.dx, dy:this.Data.dy}).Insert();
+			}
+			
+			_finalareamove = true;
+			this.Insert();
+			return;
+		}
+		//Destination Area Action Post Processing :)
+		
+		
+		//done
+	}		
+
+
+}
+
+function oTaskMove(_p, _function, _data, _object, _tag)
+{
+	/*
+	oTaskMove Revision History
+	------------------------------------------------------------------------
+	v0.1.0
+	- Added in a PathMove function to hold an entire path
+	
+	oTaskMove Todo's:
+	- Continue adding in the new clickMap stuff
+	------------------------------------------------------------------------
+	*/
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.MoveTo = oTaskMove_moveto;
+	this.PathMove = oTaskMove_pathmove;
+	
+	this._lastmovetime = new Date();
+	this._move = 1;
+	this._moveid = rnd(0,65536);
+	_attempts = 0;
+	Log.Write(mlLOGMOVEMENT, "movement task instantiated");
+
+	function oTaskMove_moveto()
+	{
+		if(me.getStat(10)*256 < dstaminaamt)
+			new oTaskCommon(this.p+1, "Delay", {Amount:dstamina, Reason:"Delaying for stamina regen"}).Insert();
+		if(!this.Data._repath) this.Data._repath = 1;
+
+		if(!this.Data.MinDistance) this.Data.MinDistance = 4;
+		if(Math.abs(me.x-this.Data.x) < this.Data.MinDistance && Math.abs(me.y-this.Data.y) < this.Data.MinDistance)
+		{
+			//print("Made Destination - Original: " + this.Data.x + ", " + this.Data.y + " Actual: " + me.x + ", " + me.y);
+			if(mbq.length > 100)
+				for(var mb = 0;mb<50;mb++)
+					mbq.shift();
+			mbq.push({x:this.Data.x, y:this.Data.y});
+			if(dynwalkdelay && !this.Data.DisableDelay)
+				new oTaskCommon(this.p, "Delay", {Amount:dynwalkdelay, Reason:"Dynamic Walk Delay"}).Insert();
+			return;
+		}
+
+
+		if(me.mode == 1 || me.mode == 5) {
+			if(this.Data._oldx == me.x && this.Data._oldy == me.y && (LastTask._id = this._id)) {
+				//print("in repath attampt");
+				if(this._attempts > maxmovecount && this._move == 0) {
+					this._attempts = 0;
+					if(!this.Data.Recalc) {
+						var a = Math.floor(Math.atan2(nextx - me.x, nexty - me.y) * 100) + 157;  // + pi/2;
+						var rndX = Math.floor(Math.sin(rnd(a, a+314)/100)*10) + me.x;
+						var rndY = Math.floor(Math.cos(rnd(a, a+314)/100)*10) + me.y;
+						var tc = Map.FindClosestWalkable(rndX, rndY);
+						new oTaskMove(this.p+1, "MoveTo", {x:tc.x, y:tc.y, Recalc:true}).Insert();
+					}
+					this.Data._repath++;
+					if(this.Data._repath > 3 && this.Data._repath < 6 && !this.Data.Recalc) {
+//						print("Stuck: Trying a repath");
+						Log.Write(mlLOGMOVEMENT, "Stuck: Trying a repath", boLOGWARNING);
+						new oGoalMove(0, null, {sx:me.x, sy:me.y, dx:this.Data.x, dy:this.Data.y, lowp:this.p, Recalc:true}).PathToXY();
+					}
+					else if(this.Data._repath > 5) { //giveup and try next path point
+						print("Stuck: Tryed to long and will skip this point");
+						Log.Write(mlLOGMOVEMENT, "Stuck: Tryed too long and will skip this point", boLOGWARNING);
+						return;
+					}
+					this._move = 1;
+				}
+				else this._move = 0;
+				this._attempts++;
+			}
+			if(this._move) {
+				if(myclassid == 1 && !InTown(me) && Map.UseTeleport)
+					new oTaskCommon(this.p+1, "Cast", {Skill:"Teleport", x:this.Data.x, y:this.Data.y}).Insert();
+				else if(this.Data.Type){
+						switch(this.Data.Type){
+							case 1: //Jump
+								new oTaskCommon(this.p+1, "Cast", {Skill:"Leap Attack", x:this.Data.x, y:this.Data.y}).Insert();
+								break;
+						}
+				}
+				else {
+						//print("Executing a me.move at " + new Date());
+						clickMap(0, 0, this.Data.x, this.Data.y);
+						delay(1);
+						clickMap(2, 0, this.Data.x, this.Data.y);
+						//me.move(this.Data.x, this.Data.y);
+						this._lastmovetime = new Date();
+				}
+			}
+			this.Data._oldx = me.x; this.Data._oldy=me.y;
+		}
+		this.Insert();
+		return;
+	}
+	
+	function oTaskMove_pathmove()
+	{
+		Log.Write(mlLOGMOVEMENT, "IN PATHMOVE");
+		//Log.Write(mlLOGMOVEMENT, "Path length: " + this.Data.Path.length);
+		
+		/***********************************************
+		Error control, check data structure for validity
+		***********************************************/
+		
+		
+		//if no MinDistance given to tell how far we need to be to the next point, then assign
+		if(!this.Data.MinDistance) this.Data.MinDistance = 4;
+		
+		
+		
+		
+		//Pause for Stamina Regen
+		//if(me.getStat(10)*256 < AI.StaminaRegenAmount) {
+		//	new oTaskCommon(this.p+1, "Delay", {Amount:dstamina, Reason:"Delaying for stamina regen"}).Insert();
+		//	this.Insert();
+		//	return;
+		//}
+			
+		//Are we repathing ?!?!?!?! --> dont know hy this is here
+		if(!this.Data._repath) this.Data._repath = 1;
+
+		if(!this.Data._started) {
+			Log.Write(mlLOGMOVEMENT, "First Time starting");
+			this.Data._started = true;
+			//check for Path
+			if(!this.Data.Path) {
+				print("No path");
+				Log.Write(mlLOGMOVEMENT, "No path", boLOGCRITICALERROR);
+				return false; //TODO: return error somehow
+			}
+			Log.Write(mlLOGMOVEMENT, "Path length: " + this.Data.Path.length);
+			if(!this.Data.StartPathPoint) this.Data.StartPathPoint = 0;
+			this.Data.CurrentPathPoint = this.Data.StartPathPoint;
+			this.Data.LastPathPoint = this.Data.Path.length-1;
+			
+		}
+		
+		//if(AI.IsUsingSkill) {
+		//	this.Insert();
+		//	return;
+		//}
+		
+		//check to see if we are at the next point
+		if(Math.abs(me.x-this.Data.Path[this.Data.CurrentPathPoint].x) < this.Data.MinDistance 
+			&& Math.abs(me.y-this.Data.Path[this.Data.CurrentPathPoint].y) < this.Data.MinDistance)	{
+				
+			Log.Write(mlLOGMOVEMENT, "We are close enough so lets goto next point");
+			
+			_attempts = 0;
+			_randomattempts = 0;
+				
+			// Add in a walk delay if set
+			if(AI.DynamicWalkDelay && !this.Data.DisableDelay)
+				new oTaskCommon(this.p+1, "Delay", {Amount:AI.DynamicWalkDelay, Reason:"Dynamic Walk Delay"}).Insert();
+				
+			//Check to see if we are at last point, if not readd and increment point counter;
+			if(this.Data.CurrentPathPoint == this.Data.LastPathPoint) {
+				Log.Write(mlLOGMOVEMENT, "Returning because current = last");
+				return true;
+			}
+			else {
+				Log.Write(mlLOGMOVEMENT, "Readding and incrementing pointer");
+				this.Data.CurrentPathPoint++;
+				this.Insert();
+				return;
+			}
+		}
+
+
+		if(me.mode == 1 || me.mode == 5 && ((!AI.IsAttacking && !AI.IsUsingSkill) || this.Data.SpecialAction)) {
+			
+			//add in more error handling than this (which does nothing
+			if(!this.Data.Recalc && DistEuclidian(me.x, me.y, this.Data.Path[this.Data.CurrentPathPoint].x, this.Data.Path[this.Data.CurrentPathPoint].y) > 15) {
+				var sdist = 10000;
+				var lowesti = this.Data.CurrentPathPoint;
+				for(var i = 0; i < this.Data.Path.length; i++) {
+					var mdist = DistEuclidian(me.x, me.y, this.Data.Path[i].x, this.Data.Path[i].y);
+					if(mdist < sdist) {
+						sdist = mdist;
+						lowesti = i;
+					}
+				}
+				this.Data.CurrentPathPoint = lowesti
+				//if(DistEuclidian(me.x, me.y, this.Data.Path[lowesti].x, this.Data.Path[lowesti].y) > 30) {
+					new oGoalMove(0, null, {sx:me.x, sy:me.y, dx:this.Data.Path[lowesti].x, dy:this.Data.Path[lowesti].y, p:this.p+1, Recalc:false}).PathToXY();
+
+				//}
+					this.Insert();
+					return;
+				
+			}
+			if(me.x == this.Data._oldx && me.y == this.Data._oldy) {
+				if(_attempts > 4) {
+					Log.Write(mlLOGMOVEMENT, "Attempting a random move");
+					if(_randomattempts > 4) {
+						Log.Write(mlLOGMOVEMENT, "Attempting a recalc");
+						new oGoalMove(0, null, {sx:me.x, sy:me.y, dx:this.Data.Path[this.Data.CurrentPathPoint].x, 
+							dy:this.Data.Path[this.Data.CurrentPathPoint].y, p:this.p+1, Recalc:true}).PathToXY();
+						this.Data.CurrentPathPoint++;
+						_attempts = 0;
+						_randomattempts = 0;
+						this.Insert();
+						return;
+					}
+					var a = Math.floor(Math.atan2(this.Data.Path[this.Data.CurrentPathPoint].x - me.x, 
+						this.Data.Path[this.Data.CurrentPathPoint].y - me.y) * 100) + 157;  // + pi/2;
+					var rndX = Math.floor(Math.sin(rnd(a, a+314)/100)*10) + me.x;
+					var rndY = Math.floor(Math.cos(rnd(a, a+314)/100)*10) + me.y;
+					var tc = Map.FindClosestWalkable(rndX, rndY);
+					me.move(tc.x, tc.y);
+					_randomattempts++;
+					_attempts = 0;
+					this.Data._oldx = me.x; 
+					this.Data._oldy = me.y;
+					this.Insert();
+					return;
+					//delay(200);
+					
+				
+				
+				
+				}
+				Log.Write(mlLOGMOVEMENT, "OLDXY TRUE");
+				_attempts++;
+				this.Data._oldx = me.x; 
+				this.Data._oldy = me.y;
+				new oTaskCommon(this.p+1, "Delay", {Amount:100, Reason:"Stuck Delay"}).Insert();
+				if(!this._clickmapnohold(this.Data.Path[this.Data.CurrentPathPoint].x, this.Data.Path[this.Data.CurrentPathPoint].y))
+					return;
+				this.Insert();
+				return;
+			}
+			
+			if(myclassid == 1 && !InTown(me) && Map.UseTeleport)
+				new oTaskCommon(this.p+1, "Cast", {Skill:"Teleport", x:this.Data.Path[this.Data.CurrentPathPoint].x, 
+					y:this.Data.Path[this.Data.CurrentPathPoint].y}).Insert();
+			else if(this.Data.Type){
+					switch(this.Data.Type){
+						case 1: //Jump
+							if(myclassid == 4)
+								new oTaskCommon(this.p+1, "Cast", {Skill:"Leap Attack", x:this.Data.x, y:this.Data.y}).Insert();
+							break;
+					}
+			}
+			else {
+					//print("Executing a me.move at " + new Date());
+					if(!this._clickmapnohold(this.Data.Path[this.Data.CurrentPathPoint].x, this.Data.Path[this.Data.CurrentPathPoint].y))
+						return;
+					//me.move(this.Data.x, this.Data.y);
+					this._lastmovetime = new Date();
+			}
+		}
+		this.Data._oldx = me.x; 
+		this.Data._oldy = me.y;
+		this.Insert();
+	}
+	
+	this._clickmapnohold = function(x, y) {
+		
+//		if(!this.Data.Recalc && mlDist(me.x, me.y, x, y) > 30) {
+			//var sdist = 10000;
+			//var lowesti = this.Data.CurrentPathPoint;
+			//for(var i = 0; i < this.Data.Path.Length; i++) {
+			//	var mdist = mldist(me.x, me.y, this.Data.Path.Length[i].x, this.Data.Path.Length[i].y);
+			//	if(mdist < sdist) {
+			//		sdist = mdist;
+			//		lowesti = i;
+			//	}
+			//}
+			
+			
+//			new oGoalMove(0, null, {sx:me.x, sy:me.y, dx:x, dy:y, p:this.p+1, Recalc:true}).PathToXY();
+//			this.Insert();
+//			return false;
+//		}
+			
+			
+		clickMap(0, 0, x, y);
+		delay(5);
+		clickMap(2, 0, x, y);
+		return true;
+	}
+		
+
+}
+
+function mlCoord()
+{
+	this.x;
+	this.y;
+}
+
+function mlroom()
+{
+	this.x=0;
+	this.y=0;
+	this.number=0;
+	this.explored = false;
+}
+
+
+

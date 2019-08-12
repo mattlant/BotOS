@@ -1,0 +1,202 @@
+
+
+//##################################################
+//######   BotOS Framework - Out of Game    ########
+//##################################################
+/*
+----------------------------------------------------*/
+/*----------------------------------------------------
+Copyright (C) 2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as permission is 
+granted by the author, Matt Lanteigne.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG) != 'function') {
+	BotOS.OOG = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+print("Including BotOS.Variable");
+include("BotOS/BotOS.Variable.d2l");
+
+print("Including BotOS.Logging");
+include("BotOS/BotOS.Logging.d2l");
+
+print("Including BotOS.Exceptions");
+include("BotOS/BotOS.Exceptions.d2l");
+
+print("Including BotOS.OOG.Controls.d2l");
+include("BotOS/OOG/BotOS.OOG.Controls.d2l");
+
+print("Including BotOS.OOG.Controls.Buttons.d2l");
+include("BotOS/OOG/BotOS.OOG.Controls.Buttons.d2l");
+
+print("Including BotOS.OOG.Screen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screen.d2l");
+
+print("Including BotOS.OOG.Screens.MainScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.MainScreen.d2l");
+
+print("Including BotOS.OOG.Screens.RealmSelectScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.RealmSelectScreen.d2l");
+
+print("Including BotOS.OOG.Screens.LoginScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.LoginScreen.d2l");
+
+
+print("Including BotOS.OOG.Screens.OtherMultiScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.OtherMultiScreen.d2l");
+
+print("Including BotOS.OOG.Screens.CharacterScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.CharacterScreen.d2l");
+
+print("Including BotOS.OOG.Screens.ChannelSubScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.ChannelSubScreen.d2l");
+
+print("Including BotOS.OOG.Screens.CreateGameSubScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.CreateGameSubScreen.d2l");
+
+print("Including BotOS.OOG.Screens.JoinGameSubScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.JoinGameSubScreen.d2l");
+
+print("Including BotOS.OOG.Screens.ChatScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.ChatScreen.d2l");
+
+print("Including BotOS.OOG.Screens.LobbyScreen.d2l");
+include("BotOS/OOG/BotOS.OOG.Screens.LobbyScreen.d2l");
+
+BotOS.OOG.IsMainScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.BattleNetButton))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsRealmSelectScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.RealmListBox))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsLoginScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.AccountTextBox))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsCharacterScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.CreateNewCharacterButton))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsLobbyScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.EnterChatButton))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsChatScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.WhisperButton))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsCreateGameSubScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.GameNameTextBox))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsJoinGameSubScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.JoinGameButton))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsChannelSubScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.ChannelNameTextBox))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsOtherMultiScreenShowing = function() {
+	if(BotOS.OOG.IsShowing(BotOS.OOG.Controls.OpenBattleNetButton))
+		return true;
+	else return false;
+}
+
+BotOS.OOG.IsPleaseWaitShowing = function () {
+	var t = new BotOS.OOG.Controls.Control(0, 0, 0, 0, 0, false, false, "Please Wait");
+	try {
+		t.GetByName();
+		return true;
+	}
+	catch (e) {
+		return false;
+	}
+}
+
+
+
+BotOS.OOG.IsInGame = function() {
+	return me.ingame;
+}
+
+BotOS.OOG.IsShowing = function(type) {
+	if(!BotOS.Variable.IsFunction(type)) {
+		throw new BotOS.ArgumentException("type is not an valid parameter", 0, "BotOS.OOG.d2l");
+	}
+	var c = new type();
+	try {
+		c.Get();
+	}
+	catch(e) {
+		return false;
+	}
+	return true;
+}
+
+BotOS.OOG.WaitForGameEnd = function() {
+	delay(1000);
+	while(me.ingame) {
+		delay(100);
+	}
+	delay(1000);
+	while(1) {
+		var pw;
+		if(pw = find_control_by_name("Please Wait")) {
+			delay(200);
+			//print(type, pw.x, pw.y, pw.sizex, pw.sizey);
+			continue;
+		}
+		break;
+	}
+}
+
+function find_control_by_name(str) {
+	control = getControl();
+	if(control) do {
+		if(control.text == str) return control;
+	} while(control.getNext());
+	return 0;
+}
+
+

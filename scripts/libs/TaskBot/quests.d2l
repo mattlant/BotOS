@@ -1,0 +1,487 @@
+/*
+Usage:
+include("quests.d2l");
+include("TownMove.d2l");
+questc = new oQuestLib();
+
+questc.getQuest(boolean highest, int importance);
+//returns the highest quest which is recommended for your character or if highest=true, the highest available quest at all
+//importance:
+//0 = any
+//1 = important quest that gives i.e. skillpoints or statpoint
+//2 = quest which is required to proceed in the game (i.e. andariel)
+
+questc.getNextQuest();
+//returns the next quest which you can do
+	
+questc.getLevel(boolean highest);
+//returns an area to exp which is recommended for your char (or the highest available area if highest = true)
+
+*/
+
+var quarray = [1,2,4,5,3,6, 9,10,11,12,13,14, 20,19,18,17,21,22, 25,27,26,0,0,0, 35,36,37,38,39,40];
+
+function oQuestLib() {
+	
+	this.getQuest = fgetQuest;
+	this.getNextQuest = fgetNextQuest;
+	this.getLevel = fgetLevel;
+	this.getRatedLevel = fgetRatedLevel;
+	this.init = initialize;
+	this.quests = new Array();
+	this.areas = new Array();
+	this.setTasks = fsetTasks;
+	
+	this.init();
+	this.setTasks();
+	
+	function initialize() {
+		// 0-5 = act1 
+		// 6-13 = act2 (8 quests because quest 2 is more or less separated into cube, staff and amu)
+		// 14-24 = act3 (more than 6 quests because of khalims will)
+		// 25-26 = act4
+		// 28-33 = act5
+		for(var i=0; i<=33; i++) {
+			this.quests.push(new Quest());
+		}
+		
+		for(var i=0; i<=150; i++) {
+			this.areas.push(new oLevel());
+		}
+				
+		this.quests[0].setQuest("Den of Evil", 1, 1, 0, 2, null, null, 1, 1);
+		this.quests[0].completestate = 1;
+		this.quests[1].setQuest("Sisters Burial Grounds (Blood Raven)", 1, 2, 0, 4, null, null, 0, 2);
+		this.quests[1].completestate = 1;
+		this.quests[2].setQuest("The search for Cain", 1, 3, 0, 6, null, null, 1, 3);
+		this.quests[2].completestate = 1;
+		this.quests[3].setQuest("The Forgotten Tower (Countess)", 1, 4, 0, 7, null, null, 0, 4);
+		this.quests[3].completestate = 1;
+		this.quests[4].setQuest("Tools of the Trade (Imbue)", 1, 5, 0, 8, null, null, 0, 5);
+		this.quests[4].completestate = 1;
+		this.quests[5].setQuest("Sisters of the Slaughter (Andariel)", 1, 6, 0, 10, null, null, 2, 6);
+		
+		this.quests[6].setQuest("Radaments Lair", 2, 1, 0, 12, [[1,6]], null, 1, 7);
+		this.quests[0].completestate = 1;
+		this.quests[7].setQuest("The Horadric Staff (Cube)", 2, 2, 0, 14, [[1,6]], null, 2, 8, ["box"]);
+		this.quests[8].setQuest("The Horadric Staff (Shaft)", 2, 2, 0, 16, [[1,6]], null, 2, 9, ["msf","hst"]);
+		this.quests[9].setQuest("Tainted Sun (Amu)", 2, 3, 0, 18, [[1,6]], null, 2, 10, ["vip","hst"]);
+		this.quests[10].setQuest("The Horadric Staff (Staff Complete)", 2, 2, 0, 18, [[2,3]], ["box", "msf", "vip"], 2, 11, ["hst"]);
+		this.quests[11].setQuest("Arcane Sanctuary", 2, 4, 0, 20, [[2,2]], null, 2, 12);
+		this.quests[12].setQuest("The Summoner", 2, 5, 0, 20, [[2,4]], null, 2, 13);
+		this.quests[13].setQuest("The Seven Tombs (Duriel)", 2, 5, 0, 22, [[2,5]], ["hst"], 2, 14);
+		
+		this.quests[14].setQuest("The Golden Bird", 3, 1, 0, 22, [[2,6]], null, 1, 15);
+		this.quests[14].completestate = 1;
+		this.quests[15].setQuest("Blade of the Old Religion", 3, 3, 0, 23, [[2,6]], null, 0, 16);
+		this.quests[15].completestate = 1;
+		this.quests[16].setQuest("Khalims Will (Flail)", 3, 2, 0, 24, [[2,6]], null, 2, 17, ["qf1"]);
+		this.quests[17].setQuest("Khalims Will (Eye)", 3, 2, 0, 24, [[2,6]], null, 2, 18, ["qey"]);
+		this.quests[18].setQuest("Khalims Will (Heart)", 3, 2, 0, 24, [[2,6]], null, 2, 19, ["qhr"]);
+		this.quests[19].setQuest("Khalims Will (Brain)", 3, 2, 0, 24, [[2,6]], null, 2, 20, ["qbr"]);
+		this.quests[20].setQuest("Putting Khalims parts together", 3, 2, 0, 24, [[2,6]], ["qf1","qey","qhr","qbr",], 2, 21, ["qf2"]);
+		this.quests[21].setQuest("Khalims Will", 3, 2, 0, 24, [[2,6]], ["qf2"], 2, 22);	
+		this.quests[22].setQuest("Lam Esens Tome", 3, 4, 0, 24, [[2,6]], null, 1, 23);
+		this.quests[22].completestate = 1;
+		this.quests[23].setQuest("The Blackened Temple", 3, 5, 0, 25, [[2,6]], null, 2, 24);
+		this.quests[24].setQuest("The Guardian (Mephisto)", 3, 6, 0, 25, [[3,3]], null, 2, 25);
+		
+		this.quests[25].setQuest("The Fallen Angel (Izual)", 4, 1, 0, 25, [[3,6]], null, 1, 26);
+		this.quests[25].completestate = 1;
+		this.quests[26].setQuest("Hells Forge", 4, 2, 0, 26, [[3,6]], ["mss"], 0, 27);
+		this.quests[26].completestate = 1;
+		this.quests[27].setQuest("Terrors End (Diablo)", 4, 3, 0, 26, [[3,6]], null, 2, 28);
+		
+		this.quests[28].setQuest("Siege on Harrogath (Shenk)", 5, 1, 0, 26, [[4,3]], null, 1, 29);
+		this.quests[28].completestate = 1;
+		this.quests[29].setQuest("Rescue on Mount Arreat", 5, 2, 0, 26, [[4,3]], null, 0, 30);
+		this.quests[0].completestate = 1;
+		this.quests[30].setQuest("Prison of Ice (Anya)", 5, 3, 0, 26, [[4,3]], null, 1, 31);
+		this.quests[31].setQuest("Betreyal of Harrogath (Nihlatak)", 5, 4, 0, 26, [[5,3]], null, 0, 32);
+		this.quests[32].setQuest("Rite of Passage (Ancients)", 5, 5, 0, 28, [[4,3]], null, 0, 33);
+		this.quests[33].setQuest("Eve of Destruction (Baal)", 5, 6, 0, 30, [[5,5]], null, 2, 34);
+		
+		
+		this.areas[2].setArea("Blood Moor", 1, 2, 1, 1, null);
+		this.areas[3].setArea("Cold Plains", 1, 3, 2, 2, null);
+		this.areas[4].setArea("Stony Field", 1, 5, 5, 3, null);
+		this.areas[5].setArea("Dark Wood", 1, 5, 5, 4, null);
+		this.areas[8].setArea("Den of Evil", 1, 8, 2, 1, null);
+		this.areas[35].setArea("Catacombs Level 2", 1, 36, 9, 5, null);
+		this.areas[39].setArea("Cow Level", 1, 39, 20, 9, [[1, 3]]);
+		this.areas[46].setArea("Canyon", 2, 46, 20, 6, [[2,5]]);
+		this.areas[48].setArea("Sewers", 2, 48, 11, 7, [[1,6]]);
+		this.areas[74].setArea("Arcane Sanctuary", 2, 74, 20, 8, [[2,3],[2,2]]);
+		this.areas[80].setArea("Kurast Bazar", 3, 80, 20, 10, [[2,6]]);
+		this.areas[106].setArea("City of the damned", 4, 106, 25, 20, [[3,6]]);
+		this.areas[110].setArea("Bloody Foothills", 5, 110, 26, 30, [[4,3]]);
+		
+		
+		for(var i=this.quests.length-1; i>0; i--) {
+			if(this.quests[i].name==null) {
+				this.quests.pop();
+			} else {
+				break;
+			}
+		}
+		
+		for(var i=this.areas.length-1; i>0; i--) {
+			if(this.areas[i].name==null) {
+				this.areas.pop();
+			} else {
+				break;
+			}
+		}
+	}
+	
+	
+	function fgetQuest(highest, main) {
+	// highest returns the highest possible quest, otherwise one that matches the recommended char-level
+	// main can be 0 for any quests, 2 for quests which are required to proceed in the game or 1 for stat/skill or other important quests
+		var lastgood = new Quest();
+		lastgood.setQuest("None", 1, 1, 0, 1, null, null, 0, 0);
+		if(highest == true) {
+			for(var i=0; i<this.quests.length; i++) {
+				if(this.quests[i].name && this.quests[i].possible() == true && this.quests[i].mainQuest >= main) {
+					lastgood.setQuest(this.quests[i].name, this.quests[i].act, this.quests[i].quest, this.quests[i].area, this.quests[i].level_unchanged, this.quests[i].QuestsRequired, this.quests[i].ItemsRequired, this.quests[i].mainQuest, this.quests[i].diff, this.quests[i].not_items);
+					lastgood.task = this.quests[i].task;
+				}
+			}
+			print("Found quest: "+lastgood.info());
+			return lastgood;
+		} else {
+			for(var i=0; i<this.quests.length; i++) {
+//				print("Checking: "+this.quests[i].name);
+				if(this.quests[i].name && this.quests[i].recommended() == true && this.quests[i].mainQuest >= main) {
+					lastgood.setQuest(this.quests[i].name, this.quests[i].act, this.quests[i].quest, this.quests[i].area, this.quests[i].level_unchanged, this.quests[i].QuestsRequired, this.quests[i].ItemsRequired, this.quests[i].mainQuest, this.quests[i].diff, this.quests[i].not_items);
+					lastgood.task = this.quests[i].task;
+				}
+			}
+			print("Found quest: "+lastgood.info());
+			return lastgood;
+		}
+	}
+	
+	function fgetNextQuest() {
+		var lastgood = new Quest();
+		lastgood.setQuest("None", 1, 1, 0, 1, null, null, 0, 0);
+		for(var i=0; i<this.quests.length; i++) {
+			if(this.quests[i].name && this.quests[i].possible() == true) {
+				lastgood.setQuest(this.quests[i].name, this.quests[i].act, this.quests[i].quest, this.quests[i].area, this.quests[i].level_unchanged, this.quests[i].QuestsRequired, this.quests[i].ItemsRequired, this.quests[i].mainQuest, this.quests[i].diff, this.quests[i].not_items);
+				lastgood.task = this.quests[i].task;
+				print("Found quest: "+lastgood.info());
+				return lastgood;
+			}
+		}
+	}
+	
+	function fgetLevel(highest) {
+		var lastgood = new oLevel();
+		lastgood.setArea("None", 1, 1, 0, 0, null);
+		if(highest == true) {
+			for(var i=0; i<this.areas.length; i++) {
+				if(this.areas[i].name && this.areas[i].possible() == true) {
+					lastgood.setArea(this.areas[i].name, this.areas[i].act, this.areas[i].area, this.areas[i].level_unchanged, this.areas[i].diff, this.areas[i].questsRequired);
+				}
+			}
+			print("Found area: "+lastgood.info());
+			return lastgood;
+		} else {
+			for(var i=0; i<this.areas.length; i++) {
+				if(this.areas[i].name && this.areas[i].recommended() == true) {
+					lastgood.setArea(this.areas[i].name, this.areas[i].act, this.areas[i].area, this.areas[i].level_unchanged, this.areas[i].diff, this.areas[i].questsRequired);
+				}
+			}
+			print("Found area: "+lastgood.info());
+			return lastgood;
+		}
+	}
+	
+	function fgetRatedLevel(maxrating) {
+		var lastgood = new oLevel();
+		lastgood.setArea("None", 1, 1, 0, 0, null);
+		for(var i=0; i<this.areas.length; i++) {
+			if(this.areas[i].name && this.areas[i].possible() == true && this.areas[i].diff <= maxrating) {
+				lastgood.setArea(this.areas[i].name, this.areas[i].act, this.areas[i].area, this.areas[i].level_unchanged, this.areas[i].diff, this.areas[i].questsRequired);
+			}
+		}
+		print("Found area: "+lastgood.info());
+		return lastgood;
+	}
+	
+	function fsetTasks() {
+		this.quests[D2JSP_QUEST_DEN_OF_EVIL].task.push(
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_DEN_OF_EVIL}),
+			new oGoalMove(0, "ExploreArea", {p:300, Threshold:100, KillAll:true, Range:90}),
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_ROGUE_ENCAMPMENT}),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractNPC", {NPC:"Akara", Quest:true}))));
+		
+		this.quests[D2JSP_QUEST_BURIAL_GROUNDS].task.push(
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_BURIAL_GROUNDS}),
+			new oGoalMove(0, "ExploreArea", {p:300, Threshold:100, KillAll:true, Range:90}),
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_ROGUE_ENCAMPMENT}),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractNPC", {NPC:"Kashya", Quest:true}))));
+			
+		this.quests[D2JSP_QUEST_CAIN].task.push(
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_DARK_WOOD}),
+			new oGoalMove(0, "PathToRoom", {p:300, Room:161}),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskAttack(0, "Attack", {Boss:true, Range:60}), new oTaskInteract(0, "InteractObject", {ID:30}), new oTaskSnagit(0, "SnagItem", {ItemName:"bks"}))),
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_ROGUE_ENCAMPMENT}),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractNPC", {NPC:"Akara", Quest:true}))),
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_STONY_FIELD}),
+			new oGoalMove(0, "PathToRoom", {p:300, Room:160}),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractObject", {ID:17}), new oTaskInteract(0, "InteractObject", {ID:18}), new oTaskInteract(0, "InteractObject", {ID:19}), new oTaskInteract(0, "InteractObject", {ID:20}), new oTaskInteract(0, "InteractObject", {ID:21}))),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractObject", {ID:17}), new oTaskInteract(0, "InteractObject", {ID:18}), new oTaskInteract(0, "InteractObject", {ID:19}), new oTaskInteract(0, "InteractObject", {ID:20}), new oTaskInteract(0, "InteractObject", {ID:21}))),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractObject", {ID:17}), new oTaskInteract(0, "InteractObject", {ID:18}), new oTaskInteract(0, "InteractObject", {ID:19}), new oTaskInteract(0, "InteractObject", {ID:20}), new oTaskInteract(0, "InteractObject", {ID:21}))),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractObject", {ID:17}), new oTaskInteract(0, "InteractObject", {ID:18}), new oTaskInteract(0, "InteractObject", {ID:19}), new oTaskInteract(0, "InteractObject", {ID:20}), new oTaskInteract(0, "InteractObject", {ID:21}))),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractObject", {ID:17}), new oTaskInteract(0, "InteractObject", {ID:18}), new oTaskInteract(0, "InteractObject", {ID:19}), new oTaskInteract(0, "InteractObject", {ID:20}), new oTaskInteract(0, "InteractObject", {ID:21}), new oTaskCommon(0, "Delay", {Amount:5000, Reason:"Waiting for Portal to open"}), new oTaskInteract(0, "InteractPortal"))),
+			new oGoalMove(0, "PathToXY", {p:300, dx:25142, dy:5135}, new oTaskInteract(0, "InteractObject", {ID:26})),
+			new oGoalMove(0, "PathToXY", {p:300, dx:25176, dy:5090}, new oTaskInteract(0, "InteractPortal")),
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_ROGUE_ENCAMPMENT}),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractNPC", {NPC:"Akara", Quest:true}), new oTaskInteract(0, "InteractNPC", {NPC:"Cain", Quest:true}))));
+		
+		this.quests[D2JSP_QUEST_COUNTESS].task.push(
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_TOWER_CELLAR_LEVEL_5}),
+			new oGoalMove(0, "ExploreArea", {p:300, Threshold:100, KillAll:true, Range:90}),
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_ROGUE_ENCAMPMENT}),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractNPC", {NPC:"Akara", Quest:true}))));
+			
+		this.quests[D2JSP_QUEST_ANDARIEL].task.push(
+			new oGoalMove(0, "GoToArea", {p: 300, Area: D2JSP_AREA_CATACOMBS_LEVEL_4, dx:22547, dy:9574}, new oTaskAttack(0, "Attack", {Boss:true, Range:60})),
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_ROGUE_ENCAMPMENT}),
+			new oGoal(0, "AddItems", {p:300}, new Array(new oTaskInteract(0, "InteractNPC", {NPC:"Akara", Quest:true}), new oTaskInteract(0, "InteractNPC", {NPC:"Cain", Quest:true}), new oTaskInteract(0, "InteractNPC", {NPC:"Warriv", Quest:true}))));
+			
+		this.quests[D2JSP_QUEST_MEPHISTO].task.push(
+			new oGoalMove(0, "GoToArea", {p: 300, Area:D2JSP_AREA_DURANCE_OF_HATE_LEVEL_3, dx:17567, dy:8070}, new oTaskAttack(0, "Attack", {Boss:true, Range:100})),
+			new oGoalMove(0, "PathToXY", {p:300, dx:17590, dy:8059}, new oTaskInteract(0, "InteractPortal")));
+	}
+}
+
+function Quest() {
+	this.level = null;
+	this.QuestsRequired = new Array();
+	this.ItemsRequired = new Array();
+	this.mainQuest = null;
+	this.area = null;
+	this.act = null;
+	this.quest = null;
+	this.name = null;
+	this.not_items = null;
+	this.level_unchanged = null;
+	this.diff = null;
+	this.task = new Array();
+	
+	this.info = info;
+	this.setQuest = setQuest;
+	this.possible = possible;
+	this.recommended = recommended;
+	this.HaveQuests = HaveQuests;
+	this.HaveItems = HaveItems;
+	this.HaveItemsNot = HaveItemsNot;
+	
+	this.completestate = 0;
+	
+	function setQuest(name1, act1, quest1, area1, level1, quests, items, main, diff, items_will_find) {
+		this.name = name1;
+		this.act = act1;
+		this.area = area1;
+		this.quest = quest1;
+		this.level_unchanged = level1;
+		switch(me.diff) {
+			case 0:
+				this.level = level1;
+				break;
+			case 1:
+				this.level = level1+30;
+				break;
+			case 2:
+				this.level = level1+60;
+				break;
+		}
+		this.QuestsRequired = quests;
+		this.ItemsRequired = items;
+		this.mainQuest = main;
+		this.diff = diff;
+		if(arguments.length==9) {
+			this.not_items = items_will_find;
+		}
+	}
+	
+	function possible() {
+		if(this.name == "Baal" || this.name == "Ancients" || this.name == "Countess") {
+//			print(this.name+": "+Sc_DoneQuest(this.act, this.quest));
+		}
+		if(this.HaveQuests() && this.HaveItems() && !DoneQuest(this.act, this.quest, this.completestate) && this.HaveItemsNot()) {
+//			print("Okay: "+this.name);
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	function recommended() {
+		if(this.possible() && me.getStat(12) >= this.level  && !DoneQuest(this.act, this.quest, this.completestate)) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	function HaveQuests() {
+		if(this.QuestsRequired) {
+			for(var i=0; i<this.QuestsRequired.length; i++) {
+				if(!DoneQuest(this.QuestsRequired[i][0],this.QuestsRequired[i][1], 0)) {
+					return false;
+				}				
+			}
+			return true;
+		} else {
+			return true;
+		}
+	}
+	
+	function HaveItems() {
+		if(this.ItemsRequired) {
+			for(var i=0; i<this.ItemsRequired.length; i++) {
+				if(!PickupQuestItem(this.ItemsRequired[i])) {
+					return false;
+				}				
+			}
+			return true;
+		} else {
+			return true;
+		}
+	}
+	
+	function HaveItemsNot() {
+		if(this.not_items) {
+			for(var i=0; i<this.not_items.length; i++) {
+				if(PickupQuestItem(this.not_items[i])) {
+					return false;
+				}				
+			}
+			return true;
+		} else {
+			return true;
+		}
+	}
+	
+	function info() {
+		var string = "Quest: "+this.name+", in act "+this.act+" (quest number "+this.quest+"). Recommended level: "+this.level+" Quest Importance: "+this.mainQuest;
+		return string;
+	}
+}
+
+function oLevel() {
+	this.name = null;
+	this.act = null;
+	this.area = null;
+	this.level = null;
+	this.QuestsRequired = null;
+	this.level_unchanged = null;
+	this.diff = null;
+
+	this.info = info;
+	this.setArea = setArea;
+	this.possible = possible;
+	this.recommended = recommended;
+	this.HaveQuests = HaveQuests;
+	
+	function setArea(name1, act1, area1, level1, diff, quests) {
+		this.name = name1;
+		this.act = act1;
+		this.area = area1;
+		this.level_unchanged = level1;
+		this.diff = diff;
+		switch(me.diff) {
+			case 0:
+				this.level = level1;
+				break;
+			case 1:
+				this.level = level1+30;
+				break;
+			case 2:
+				this.level = level1+60;
+				break;
+		}
+		this.QuestsRequired = quests;
+	}
+	
+	function possible() {
+		if(this.HaveQuests()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	function recommended() {
+		if(this.possible() && me.getStat(12) >= this.level) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	function HaveQuests() {
+		if(this.QuestsRequired) {
+			for(var i=0; i<this.QuestsRequired.length; i++) {
+				if(!DoneQuest(this.QuestsRequired[i][0],this.QuestsRequired[i][1], 0)) {
+					return false;
+				}				
+			}
+			return true;
+		} else {
+			return true;
+		}
+	}
+	
+	function info() {
+		var string = "Area: "+this.name+", in act "+this.act+" (area number "+this.area+"). Recommended level: "+this.level+" Rating: "+this.diff;
+		if(this.QuestsRequired) { string += " Required quest: Act"+this.QuestsRequired[0][0]+", Quest"+this.QuestsRequired[0][1]; }
+		return string;
+	}
+}
+
+function PickupQuestItem(itemcode) {
+	HaveItem = getUnit(4, itemcode, 0);
+	if(HaveItem) return true;
+	WearItem = getUnit(4, itemcode, 1);
+	if(WearItem) return true;
+	Item = getUnit(4, itemcode, 3);
+	if(!HaveItem && Item) do {
+		if(Item.code == itemcode && Item.mode == 3 && getRange(me, Item) < 10) {
+			while(Item.mode == 3 && !Dead(me)) { walkto(Item.x, Item.y); Item.move(); Item.interact(0); delay(100); }
+			print("I just found the " + Item.name + "!");
+			if(HaveItem){ 
+				if(usePowerRush) say("Done");
+				return true; 
+			}
+		}
+	}while(Item.getNext(itemcode, 3));
+	return false;
+}
+
+function dprint(string)	{
+	FileWriteLog=fileOpen("quests.txt", 2);
+	print(string);
+	if (DebugToFile) {
+		FileWriteLog.writeLine(string);
+		FileWriteLog.close();
+	}
+}
+
+function DoneQuest(act, quest, state) {
+	var qnum = quest-1+(act-1)*6;
+	if(me.getQuest(quarray[qnum], 0) || me.getQuest(quarray[qnum], state)) return true;
+		else return false;
+}
+
+var D2JSP_QUEST_DEN_OF_EVIL = 0;
+var D2JSP_QUEST_BURIAL_GROUNDS = 1;
+var D2JSP_QUEST_CAIN = 2;
+var D2JSP_QUEST_COUNTESS = 3;
+var D2JSP_QUEST_CHARSI = 4;
+var D2JSP_QUEST_ANDARIEL = 5;
+var D2JSP_QUEST_MEPHISTO = 24;
+var D2JSP_QUEST_DIABLO = 27;

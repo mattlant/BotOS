@@ -1,0 +1,21 @@
+function LoadSkill()
+{
+	me.overhead("Loading Barbarian Skills");
+
+	var cList = new Array(
+	
+// Skill Name       Type       Element    Scope      Special   Weight   Mana    Range
+
+["Attack",		   gMelee,    gPhys,     gSingle,   gNone,     .8,	    0,		gShort ],
+["Bash",		   gMelee,    gPhys,     gSingle,   gNone,     1,	    0,		gShort ],
+["Double Swing",   gTwoHand,  gPhys,     gSingle,   gNone,     1,	    0,		gShort ],
+["Double Throw",   gThrow,    gPhys,     gSingle,   gNone,     1,       0,		gMedium],
+["Leap Attack",    gJump,     gPhys,     gSingle,   gNone,     1,	    0,		gMedium],
+["Concentrate",    gMelee,    gPhys,     gSingle,   gNone,     1.1,     0,		gShort ],
+["Frenzy",         gMelee,    gPhys,     gSingle,   gNone,     1.1,     0,		gShort ],
+["Whirlwind",      gMelee,    gPhys,     gNarrow,   gNone,     1.3,     0,		gMedium],
+["Berserk",        gMelee,    gMagic,    gSingle,   gNone,     1,       0,		gShort ]
+
+);
+	return cList;
+}

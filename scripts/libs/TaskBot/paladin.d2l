@@ -1,0 +1,125 @@
+
+var lastcasttime;
+include("Gshock/AutoSkills.d2l");
+
+var pal = new oSkill();
+
+function plugIKplayer(instname)
+{
+	this.temp = oPlugin;
+	this.temp("PaladinPlugin", mlPLUGINBYTIME, 333, "Paladin Char Plugin", "0.0.1a", "arathorn", instname);
+	delete this.temp;
+	this.PaladinPlugin = function()
+	{
+		if((new Date() - lastcasttime) < 5000)
+			return;
+		if(me.getSkill("Holy Shield") && !me.getState(101) && !MonsterQueue.getClosest(me.x,me.y,3) && !AI.IsAttacking)
+			TaskQueue.Insert(new oTaskCommon(480, "Cast", {Skill:"Holy Shield"}));
+		lastcasttime = new Date();
+	}
+	
+}
+
+function oTaskAttack(_p, _function, _data, _object, _tag)
+{
+	//inherit oTask
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+	
+	var _range = 0;
+	var _specific = false;
+	var _bossunique = false;
+	var _started = false;
+
+	//**********************************
+	// Now using one attack function :D
+	//**********************************
+
+	this.Kill = oTaskAttack_kill;
+	this.Attack = oTaskAttack_attack;
+	this.CharAttack = oTaskAttack_charattack;
+
+	//this.walkattack = oTaskAttack_walkattack;
+
+	function oTaskAttack_kill()
+	{
+		if(!playerkill(this.Data))
+			TaskQueue.Insert(this);
+		return;
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ASSESMENT PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_attack()
+	{
+		if(!_started) {
+			_started = true;
+			if(this.Data.Target) {
+				_specific = true;
+			}
+			else if(this.Data.Boss) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Boss:_data.Boss}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.Unique) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Unique:_data.Unique}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.ByName) {
+				_specific = true;
+				//add in a get for name
+			}
+			else if(this.Data.Range) {
+				_range = true;
+			}
+			else {
+				//raise error and return
+				return;
+			}
+				
+				
+		}
+		
+		
+		if(_range) {
+			//Check for raising first
+			this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS, Abilities:mlBITRAISES}).getClosest();
+			if(!this.Data.Target) //now check for other types
+				this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS}).getClosest();
+			if(!this.Data.Target) return;
+		}
+		
+		if(_specific && (!this.Data.Target || this.Data.Target.Monster.hp <= 0)) return;
+		
+		sctarget.UpdateText("Last target: " + this.Data.Target.Monster.name + " (" + this.Data.Target.Monster.hp/1.28 + "% hp)");
+	
+		//if(!this.charattack(mon)) {}
+		this.CharAttack(this.Data.Target);
+
+		this.Insert();
+
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ACTUAL ATTACKING PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_charattack(mon) {
+		var attack = pal.FindSkill({Type: gMelee}, mon.Monster);
+		//print("Skill: " + attack.Skill);
+
+		new oTaskSkill(this.p+1, "UseSkill", {Skill:"Zeal", Hand:1, Target:mon}).Insert();
+	}
+	
+	
+}
+

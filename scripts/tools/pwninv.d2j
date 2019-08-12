@@ -1,0 +1,789 @@
+//====================================================================
+// Mule Inventory Script by Ixoth
+// Script version 1.27 (dated: 22.1.2003)
+//
+// Thanks goes to Syadasti, HPB_Forever and Fruitbar.
+//
+// Note: Requires d2jsp v28a or greater.
+//====================================================================
+
+//====================================================================
+// LICENSE
+//
+// This code is freely redistributable, provided that all credits and
+// copyright notices are preserved.
+//
+// You may use this code in your own software without restriction, provided
+// that your software is distributed with complete source code.
+//
+// You agree by making use of this code that whatever problems you experience
+// as a result are your fault, and yours alone.
+//====================================================================
+
+//====================================================================
+// Copyright (C) 2002-2003, Arsi Rantala
+//====================================================================
+
+// If set to no, all items will be logged without statistics being recorded
+var DumpStats = true;
+var Columns=2;
+
+
+////////////////////////////////////////////////////////////
+// NO NEED CHANGE THINGS BELOW THIS!
+////////////////////////////////////////////////////////////
+
+// Arrays which hold stuff to be written to file
+Stuff2BeWritten = new Array();
+myItemArray = new Array();
+CharArray = new Array();
+
+// Purpose: The main program.
+// Return:  None.
+function main() {
+	print("ÿc8Mule inventory by Ixoth (arsirantala@hotmail.com)");
+	print("ÿc9This version edited by FruitBar!  All credit to Arsi.");
+	print("ÿc9Credits to Syadasti for wonderful get all stats and item type functions");
+	print("ÿc8Copyright (C) 2002-2003, Arsi Rantala");
+
+	// Loop the items in stash, inventory, cube, whats equipped and what merc has
+	start=getUnit(4);
+	if(!start) {
+		print("ÿc1No items found!  Stopping the script!  type .d2jsp start to try again");
+		stop();
+	}
+
+	do {
+		// Don't log items which are on the ground, being dropped, or in your belt
+		if (start.mode == 2 || start.mode == 3 || start.mode == 5 || (start.getParent() && start.getParent().name!=me.name))
+			continue;
+
+		// Assign the items name, and make sure it's a loggable item
+		var ItemName = findItemFromLists(start);
+		if(ItemName != "" && ItemName != "undefined")
+			setItemObject(start,ItemName);
+
+		// Reset these values, as it is not done in the core
+		start.prefix=""; start.suffix=""; start.fname="";
+	} while(start && start.getNext());
+
+	if(!myItemArray || myItemArray.length<1)
+	{
+		print("ÿc1No items worth logging were found!  Stopping the script");
+		stop();
+	}
+
+	// Alphabetize the array by item name
+	myItemArray=myItemArray.sort(sortByitemName);
+	// Create the array of items to be written to file
+	for (var x=0; x<myItemArray.length; x++)
+		PurgeIO(myItemArray[x]);
+
+	if(me.realm.replace(".battle.net",'') && me.realm.replace(".battle.net",''))
+		var filename = "output/PwnMules/Data/" + me.realm.replace(".battle.net",'') + "." + me.account.replace("#2","") + "." + me.name+".log";
+	else
+		var filename = "output/PwnMules/Data/" + me.name+".log";
+
+	file = fileOpen(filename,1);
+	if(!file)
+		print("ÿc1Failed to open file: " + filename + " for writing");
+	else {
+		for(var x=0; x<Stuff2BeWritten.length; x++)
+			file.writeLine(Stuff2BeWritten[x]);
+		if (Stuff2BeWritten.length < 1)
+			print("ÿc1No worthy items to written to the dump file were found.");
+		else
+			print("Inventory written to file: " + filename + " succesfully!");
+
+		file.close();
+	}
+
+/*	if(CheckUnLogged())
+	{
+		file = fileOpen("output/PwnMules/Data/pwnmulelist.log",2);
+		if(file)
+		{
+			var WriteVal=(me.realm && me.account)?(me.realm.replace(".battle.net",'')+"+"+me.name):(me.name);
+			file.writeLine(WriteVal);
+			CharArray.push(WriteVal);
+			file.close();
+		} else
+			print("ÿc1Failed to open file: output/PwnMules/Data/pwnmulelist.log for writing");
+	}
+
+	myItemArray = new Array();
+	
+	print("ÿc1Moving onto creating the main database!  This could take a while, so please be patient!");
+
+	for(var i=0; i<CharArray.length; i++)
+	{
+		print("Accessing the file for: "+CharArray[i]);
+		var file = fileOpen("output/PwnMules/Data/"+CharArray[i]+".log",0);
+		if(!file)
+		{
+			print("ÿc1Failed to open file: output/PwnMules/Data/"+CharArray[i]+".log for reading!");
+			continue;
+		}
+		var cap=0;
+		var NewItem=new Object();
+		NewItem.Stats=new Array();
+		NewItem.Attributes="";
+		MainLoop : while(!file.eof)
+		{
+			var CurLine=file.readLine();
+			if(CurLine=="")
+			{
+				if(myItemArray[NewItem.itemType] && myItemArray[NewItem.itemType].length>0)
+					MatchLoop : for(var x=0; x<myItemArray[NewItem.itemType].length; x++)
+					{
+						if(NewItem.Attributes==myItemArray[NewItem.itemType][x].Attributes
+						&& NewItem.Stats.length==myItemArray[NewItem.itemType][x].Stats.length
+						&& NewItem.itemName==myItemArray[NewItem.itemType][x].itemName)
+						{
+							for(var t=0; t<NewItem.Stats.length; t++)
+							{
+								if(myItemArray[NewItem.itemType][x].Stats[t] != NewItem.Stats[t])
+									continue MatchLoop;
+							}
+							myItemArray[NewItem.itemType][x].itemAmount+=NewItem.itemAmount;
+							myItemArray[NewItem.itemType][x].Mules+=" "+NewItem.Mules;
+							var NewItem=new Object();
+							NewItem.Stats=new Array();
+							NewItem.Attributes="";
+							continue MainLoop;
+						}
+					}
+				if(NewItem.itemName && NewItem.itemName!="" && NewItem.itemName!=" ")
+				{
+					if(myItemArray[NewItem.itemType] && myItemArray[NewItem.itemType].length>0)
+						myItemArray[NewItem.itemType].push(NewItem);
+					else
+					{
+						myItemArray[NewItem.itemType]=new Array();
+						myItemArray[NewItem.itemType].push(NewItem);
+					}
+				}
+				var NewItem=new Object();
+				NewItem.Stats=new Array();
+				NewItem.Attributes="";
+				continue;
+			}
+			if(!NewItem.itemAmount)
+			{
+				NewItem.itemAmount=FindAmount(CurLine);
+				NewItem.itemName=(CurLine.indexOf("}")>-1)?CurLine.substring(CurLine.indexOf("}")+2):CurLine;
+				NewItem.Mules=CharArray[i].substring(CharArray[i].indexOf("+")+1).replace(".log",'')+((NewItem.itemAmount>1)?" {"+NewItem.itemAmount+"}":"");
+			}
+			else if(CurLine.indexOf("Attributes: ")>-1)
+				NewItem.Attributes=CurLine.replace("Attributes: ",'');
+			else if(CurLine.indexOf("Item Type: ")>-1)
+				NewItem.itemType=parseInt(CurLine.replace("Item Type: ",''));
+			else
+				NewItem.Stats.push(CurLine);
+		}
+		if(NewItem.itemName && NewItem.itemName!="" && NewItem.itemName!=" ")
+		{
+			if(myItemArray[NewItem.itemType] && myItemArray[NewItem.itemType].length>0)
+				myItemArray[NewItem.itemType].push(NewItem);
+			else
+			{
+				myItemArray[NewItem.itemType]=new Array();
+				myItemArray[NewItem.itemType].push(NewItem);
+			}
+		}
+		var NewItem=new Object();
+		NewItem.Stats=new Array();
+		NewItem.Attributes="";
+		file.close();
+	}
+*/
+	if(!myItemArray || myItemArray.length<1)
+	{
+		print("ÿc1Failed to create array for stored mules!  Stopping the script");
+		stop();
+	}
+
+	print("Database has been created!  Writing the final output!");
+
+	WriteHTML();
+}
+
+function WriteHTML()
+{
+	file=fileOpen("output/PwnMules/Test.html", 1);
+	if(!file)
+		return false;
+
+	file.writeLine("<html><head><title>d2jsp item log by HolyCoitus</title><link rel='stylesheet' type='text/css' href='images/frame.css'><style type='text/css'></style>");
+	file.writeLine("</head><body bgcolor='#78B1F4' text='#000000' link='#000000' vlink='#000000' alink='#000000' leftmargin='0' topmargin='0' marginwidth='0' marginheight='0'>");
+	file.writeLine("<table width='100%' border='0' cellspacing='0' cellpadding='0'><tr><td background='images/TOP_BACK.jpg'><a href='http://www.d2jsp.org' target='_blank' title='d2jsp home page'><img src='images/logo.jpg' alt='d2jsp home page' border='0' width='249' height='59'></a></tr></td></table><br>");
+
+	file.writeLine("<table width='100%' border='0' cellspacing='0' cellpadding='4'>");
+	file.writeLine("<tr><td class='titlemedium'><a name='Top'>Key</a></td></tr>");
+	file.writeLine("<tr><td class='forum2' valign='top'>");
+
+	var KeyArray=new Array();
+	for(var b=0; b<102; b++)
+	{
+		if(myItemArray[b] && myItemArray[b].length>0)
+		{
+			NewKey=new Object();
+			NewKey.Num=b;
+			NewKey.itemName=ReadFileLines(b,"settings/syitemtypes.ini",104);
+			KeyArray.push(NewKey);
+		}
+	}
+
+	KeyArray.sort(sortByitemName);
+	for(var b=0; b<KeyArray.length; b++)
+		file.writeLine("<a href='#"+KeyArray[b].Num+"'>"+KeyArray[b].itemName+"</a><br>");
+
+	file.writeLine("</tr></td></table><br>");
+
+	// Alphabetize the arrays by item name and write them to file
+	for(var b=0; b<102; b++)
+	{
+		if(myItemArray[b] && myItemArray[b].length>0)
+		{
+			Stuff2BeWritten = new Array();
+			myItemArray[b]=myItemArray[b].sort(sortByitemName);
+			// Create the array of items to be written to file
+			for (var x=0; x<myItemArray[b].length; x++)
+				PurgeIO(myItemArray[b][x],true);
+			file.writeLine("<table width='100%' border='0' cellspacing='0' cellpadding='4'>");
+			file.writeLine("<tr><td class='titlemedium'><a name='#"+b+"'>Recorded "+ReadFileLines(b,"settings/syitemtypes.ini",104)+"     </a><a href='#Top'>Back to the top!</a></td>");
+			for(var c=1; c<Columns; c++)
+				file.writeLine("<td class='titlemedium'></td>");
+			file.writeLine("</tr><tr><td class='forum2' valign='top'>");
+
+			var i=0;
+			var NumLogged=0;
+			for(var c=1; c<=Columns; c++)
+			{
+				while(i<Math.floor(Stuff2BeWritten.length/Columns*c))
+				{
+					Aout=(myItemArray[b][NumLogged].itemAmount>1) ? "{Amount: " + myItemArray[b][NumLogged].itemAmount + "} "+myItemArray[b][NumLogged].itemName : myItemArray[b][NumLogged].itemName
+					file.writeLine("<table border='2' cellspacing='0' cellpadding='4'>");
+					file.writeLine("<tr><td class='titlemedium'><a>"+Aout+ "</a></td></tr>");
+					file.writeLine("<tr><td class='forum2' valign='top'>");
+					i++;
+					do
+					{
+						file.writeLine("<a>"+Stuff2BeWritten[i]+"</a><br>");
+						i++;
+					} while(Stuff2BeWritten[i]!="")
+					file.writeLine("</tr></td></table><br>");
+					i++;
+					NumLogged++;
+				}
+				file.writeLine("</td><td class='forum2' valign='top'>");
+			}
+		
+			file.writeLine("</tr></td></table><br>");
+		}
+	}
+
+	file.writeLine("</body></html>");
+	file.close();
+}
+
+function FindAmount(string)
+{
+	Holder = string.indexOf("}");
+	if (Holder>-1)
+	{
+		Space=string.indexOf(" ");
+		if(Space==-1)
+		{
+			print("ÿc1Invalid amount declaration in string: "+string);
+			return 1;
+		}
+		return parseInt(string.substring(Holder+1,Space));
+	}
+	return 1;
+}
+
+function sortByitemName(a, b) {
+    a = a.itemName.toLowerCase();
+    b = b.itemName.toLowerCase();
+    return ((a < b) ? -1 : ((a > b) ? 1 : 0));
+}
+
+function CheckUnLogged()
+{
+	var file = fileOpen("output/PwnMules/Data/pwnmulelist.log",0);
+	if(!file)
+	{
+		print("ÿc1Failed to open file: output/PwnMules/Data/pwnmulelist.log for reading!");
+		return true;
+	}
+
+	var rval=true;
+
+	while(!file.eof)
+	{
+		var CurLine=file.readLine();
+		if(CurLine=="" || CurLine==" ")
+			continue;
+		var CurIndex=CurLine.indexOf("+");
+		CharArray.push(CurLine);
+		if((me.realm.replace(".battle.net",'')==CurLine.substring(0,CurIndex) && me.name==CurLine.substring(CurIndex+1)) || me.name==CurLine)
+			rval=false;
+	}
+		
+	file.close();
+	return rval;
+}
+
+// Purpose: Identifies the provided item and returns its name with color info added as a suffix
+//          (ÿcX, X stands for the color number from 0-9).
+//
+// Parameters
+// ----------
+// item	Item object to be looked for properties.
+// Return:  Item name in case its identified.
+function findItemFromLists(item) {
+	var nologlist=[5,6,18,22,39,41,76,77,78,79,80,81];
+	for (var x=0; x<nologlist.length; x++)
+	{
+		if(item.itemtype==nologlist[x])
+			return "";
+	}
+
+	return AutoIDit(item);
+}
+
+function validfname(item)
+{
+	if(item.fname!=null && item.getFlag(0x10) != 0)
+		return true;
+	return false;
+}
+
+// Purpose: Updates array of text to be dumped to the file.
+//
+// Parameters
+// ----------
+// item item object to be looked for properties.
+// itemName name of the item (special suffix coding (color), so need to be passed to here).
+//
+// Return:  None.
+function PurgeIO(itemOBJ,DoHTML) {
+	with(itemOBJ) { //objects starting with itemOBJ are left open
+		if(parseInt(itemAmount)>1)
+			Stuff2BeWritten.push("{Amount: " + itemAmount +"} "+itemName);
+		else
+			Stuff2BeWritten.push(itemName);
+
+		if(!DoHTML && itemType)
+			Stuff2BeWritten.push("Item Type: "+itemType);
+
+		if(itemOBJ.Mules)
+			Stuff2BeWritten.push("<b>Location: "+Mules+"</b>");
+
+		if(Attributes && Attributes!="")
+			Stuff2BeWritten.push("Attributes:" + Attributes);
+
+		if(Stats && DumpStats)
+		{
+			for(var q=0; q<Stats.length; q++)
+				Stuff2BeWritten.push(Stats[q]);
+		}
+
+		Stuff2BeWritten.push("");
+	}
+}
+
+function AutoIDit(item) {
+	with(item) { // All mentions of name, fname, prefix, suffix, and quality in this function refer to the item object
+		var itemQual=["none","Low Quality","Normal","Superior","Magic","Set","Rare","Unique","Crafted"];
+
+		if ( quality!=5 && quality!=7 && validfname(item))
+		{
+			if(quality==4) {
+				return (prefix ? prefix+" " : "") +(name ? name : "") +(suffix ? " "+suffix : "");
+			} else if(quality==6) {
+				return prefix + " " + suffix + " (Rare " + name + ")";
+			} else {
+				return fname;
+			}
+		}
+
+		if(quality==5) {
+			file = fileOpen("settings/snagset.ini", 0);
+		} else if(quality==7) {
+			file = fileOpen("settings/snagunique.ini", 0);
+		} else {
+			file=false;
+		}
+
+		rval=itemQual[quality]+" "+name;
+
+		if(!file)
+			return rval;
+
+		while(!file.eof)
+		{
+			line = file.readLine();
+			a = line.split("=");
+			if (a.length==2 && a[0]==code)
+			{
+				rval=a[1];
+				break;
+			}
+		}
+		file.close();
+		return rval;
+	}
+}
+
+// Purpose: Set properties of item object.
+//
+// Parameters
+// ----------
+// item
+// itemName
+//
+// Return:  None.
+function myItem(item,itemName) {
+	this.itemName = itemName;
+	this.itemType = item.itemtype;
+	this.itemAmount = 1;
+	this.Attributes = IsEthereal(item)+RunewordItem(item)+Ided(item)+Socketed(item)
+	this.Stats = getAllStats(item);
+}
+
+// Purpose: Add new item object to object array in case if its not there. If it is there
+//          then update the amount.
+//
+// Parameters
+// ----------
+// item		Item to check
+// itemName	Name of the item
+//
+// Return:  None.
+function setItemObject(item,itemName) {
+	mainloop : for(var i=0; i<myItemArray.length; i++) {
+		if (myItemArray[i].itemName == itemName)
+		{
+			var temparr=getAllStats(item);
+			if(myItemArray[i].Stats.length == temparr.length)
+			{
+				for(var t=0; t<temparr.length; t++)
+				{
+					if(myItemArray[i].Stats[t] != temparr[t])
+						continue mainloop;
+				}
+				myItemArray[i].itemAmount++;
+				return;
+			}
+		}
+	}
+
+	myItemArray.push(new myItem(item,itemName));
+}
+
+// Purpose: Check if the item is runeword item.
+//
+// Parameters
+// ----------
+// item	Item to be checked
+//
+// Return:  "true" if item is runeword item, "false" if not.
+function RunewordItem(item) {
+	return (item.getFlag(0x4000000) ? " RuneWord" : "");
+}
+
+// Purpose: Check if the item is socketed into another item.
+//
+// Parameters
+// ----------
+// item	Item to be checked
+//
+// Return:  "true" if item is socketed, "false" if not.
+function Socketed(item) {
+	return ((item.mode==6) ? " Socketed" : "");
+}
+
+// Purpose: Check if the item is id'ed/unid.
+//
+// Parameters
+// ----------
+// item	Item to be checked
+//
+// Return:  "true" if item is id'ed, "false" if not.
+function Ided(item) {
+	return ((item.getFlag(0x10) == 0) ? " UnID" : "");
+}
+
+// Purpose: Check if the item is ethereal.
+//
+// Parameters
+// ----------
+// item	Item to be checked
+//
+// Return:  "true" if item is ethereal, "false" if not.
+function IsEthereal(item) {
+	return ((item.getFlag(0x400000)) ? " Ethereal" : "");
+}
+
+// Purpose: Convert stat number to readable form.
+// Return: Matching line to the stat
+function ReadFileLines(stat,File,cap) {
+	var syfile=fileOpen(File,0);
+	var w=-1;
+	var rval="Error!!!";
+
+	if(!syfile)
+		return rval;
+
+	while(!syfile.eof && w<cap)
+	{
+		rval=syfile.readLine();
+		w++;
+		if(w==stat)
+			break;
+	}
+	syfile.close();
+	return rval;
+}
+
+// Purpose: Checks stats of item.
+// Note: By Syadasti
+// Return: String with item's stats.
+function getAllStats(item) {
+	SkipSkills = new Array();
+	var statval;
+	var output=new Array();
+	if(getBaseStat(0,item.classid,52))
+		output.unshift("Required Strength: "+getBaseStat(0,item.classid,52));
+	if(getBaseStat(0,item.classid,53))
+		output.unshift("Required Dexterity: "+getBaseStat(0,item.classid,53));
+	if(item.lvlreq)
+		output.unshift("Required Level: "+item.lvlreq);
+	mainloop : for (var i=0; i<324; i++)
+	{
+		if(i==17 || i==73 || i==194 || !item.getStat(i))
+			continue;
+		for(var t=0; t<SkipSkills.length; t++)
+		{
+			if(i==SkipSkills[t])
+				continue mainloop;
+		}
+		if(i==83)
+		{
+			if(CheckMultiStats(item,83,84,85,86,87,179,180))
+			{
+				output.push("   +"+item.getStat(i)+" to All Skill Levels");
+				continue;
+			}
+		}
+		if(i==39)
+		{
+			if(CheckMultiStats(item,39,41,43,45))
+			{
+				output.push("   All Resistances +"+item.getStat(i));
+				continue;
+			}
+		}
+		if(i==21)
+		{
+			if(CheckMultiStats(item,21,23,159))
+			{
+				output.push("   +"+item.getStat(i)+" to Minimum Damage");
+				continue;
+			}
+		}
+		if(i==22)
+		{
+			if(CheckMultiStats(item,22,24,160))
+			{
+				output.push("   +"+item.getStat(i)+" to Maximum Damage");
+				continue;
+			}
+		}
+		with(item) switch(i)
+		{ //getStat() == item.getStat() && itemtype == item.itemtype
+			case 21:
+				statval=(getStat(17))?combinestats(item," to ",21,22,getStat(17)*.01):combinestats(item," to ",21,22);
+				if(!statval)
+				{
+					statval=getStat(i);
+					break;
+				}
+				else
+					output.unshift("One-Hand Damage: "+statval);
+				continue mainloop;
+			case 23:
+				statval=(getStat(17))?combinestats(item," to ",23,24,getStat(17)*.01):combinestats(item," to ",23,24);
+				if(!statval)
+				{
+					statval=getStat(i);
+					break;
+				}
+				else
+					output.unshift("Two-Hand Damage: "+statval);
+				continue mainloop;
+			case 159:
+				statval=(getStat(17))?combinestats(item," to ",159,160,getStat(17)*.01):combinestats(item," to ",159,160);
+				if(!statval)
+				{
+					statval=getStat(i);
+					break;
+				}
+				else
+					output.unshift("Throw Damage: "+statval);
+				continue mainloop;
+			case 48:
+				statval=combinestats(item,"-",48,49);
+				if(!statval)
+				{
+					statval=getStat(i);
+					break;
+				}
+				else
+					output.push("   Adds "+statval+ " Fire Damage");
+				continue mainloop;
+			case 54:
+				statval=combinestats(item,"-",54,55);
+				if(!statval)
+				{
+					statval=getStat(i);
+					break;
+				}
+				else
+					output.push("   Adds "+statval+ " Cold Damage");
+				continue mainloop;
+			case 50:
+				statval=combinestats(item,"-",50,51);
+				if(!statval)
+				{
+					statval=getStat(i);
+					break;
+				}
+				else
+					output.push("   Adds "+statval+ " Lightning Damage");
+				continue mainloop;
+			case 52:
+				statval=combinestats(item,"-",52,53);
+				if(!statval)
+				{
+					statval=getStat(i);
+					break;
+				}
+				else
+					output.push("   Adds "+statval+ " Magic Damage");
+				continue mainloop;
+			case 57: case 58:
+				statval=Math.ceil((getStat(i) * getStat(59)) / 256);
+				if(getStat(57) && getStat(58))
+				{
+					SkipSkills.push(57,58,59);
+					output.push("   +"+statval+" Poison Damage Over "+Math.floor(getStat(59) / 25)+" Seconds");
+					continue mainloop;
+				}
+				break;
+			case 56: case 59:
+				statval=Math.floor(getStat(i) / 25);
+				break;
+			case 72:
+				if(itemtype==85 || itemtype==27 || itemtype == 35 || itemtype==86 || itemtype==87 || itemtype==33 || itemtype==44)
+					continue mainloop;
+				output.unshift("Durability: "+getStat(72)+" of "+getStat(73));
+				continue mainloop;
+			case 70:
+				output.unshift("Quantity: "+getStat(70));
+				continue mainloop;
+			case 188:
+				output.push("   "+ReadFileLines(getStat(i)-Math.floor(getStat(i) / 32) * 32,"settings/snagskilltrees.ini",22).replace(/<stat>/gi, Math.floor(getStat(i) / 32)));
+				continue mainloop;
+			case 107: case 108: case 109:
+				output.push("   +"+Math.floor(getStat(i) / 512)+" to "+ReadFileLines(getStat(i)-Math.floor(getStat(i) / 512) * 512,"settings/snagsingleskills.ini",320));
+				continue mainloop;
+			case 195: case 196: case 197:
+				var percent=Math.floor(getStat(i)/16384);
+				var level=Math.floor((getStat(i)-percent*16384)/512);
+				var skill=ReadFileLines(getStat(i)-(level*512+percent*16384),"settings/snagsingleskills.ini",320)
+				output.push("   "+percent+"% Chance to Cast Level "+level+" "+skill+" on Attack");
+				continue mainloop;
+			case 198: case 199: case 200:
+				var percent=Math.floor(getStat(i)/16384);
+				var level=Math.floor((getStat(i)-percent*16384)/512);
+				var skill=ReadFileLines(getStat(i)-(level*512+percent*16384),"settings/snagsingleskills.ini",320)
+				output.push("   "+percent+"% Chance to Cast Level "+level+" "+skill+" When Striking");
+				continue mainloop;
+			case 201: case 202: case 203:
+				var percent=Math.floor(getStat(i)/16384);
+				var level=Math.floor((getStat(i)-percent*16384)/512);
+				var skill=ReadFileLines(getStat(i)-(level*512+percent*16384),"settings/snagsingleskills.ini",320)
+				output.push("   "+percent+"% Chance to Cast Level "+level+" "+skill+" When Struck");
+				continue mainloop;
+			case 7: case 9: case 11:
+				statval=String(getStat(i) / 256);
+				break;
+			case 218: case 219: case 220: case 221: case 222: case 223: case 214:
+			case 234: case 235: case 236: case 237: case 238: case 239: case 240:
+				statval=String(getStat(i) / 8);
+				break;
+			case 216: case 217:
+				statval=String(getStat(i) / 2048);
+				break;
+			case 20:
+				output.unshift("Chance to Block: "+String(getStat(i) + 20)+"% to "+String(getStat(i) + 30)+"% Depending on Class");
+				continue mainloop;
+			case 31:
+				if(getStat(16))
+					output.unshift("Defense: "+Math.floor(((getStat(16)*.01)*getStat(31))+getStat(31)));
+				else
+				{
+					output.unshift("Defense: "+getStat(31));
+					continue mainloop;
+				}
+				continue mainloop;
+			default:
+				statval=getStat(i);
+				break;
+		}
+
+		IDesc=ReadFileLines(i,"settings/systattable.ini",327);
+		rExp = /<stat>/gi;
+		if(IDesc.search(rExp)>-1)
+			output.push("   "+IDesc.replace(rExp, statval));
+		else
+			output.push("   "+IDesc);
+	}
+
+	if(item.getStat(194))
+		output.push("   Socketed ("+item.getStat(194)+")");
+
+	if(output.length>0)
+		return output;
+	else
+		return false;
+}
+
+function CheckMultiStats(item,fstat)
+{	
+	for(var o=2; o<arguments.length; o++)
+	{
+		if(!item.getStat(arguments[o]) || item.getStat(arguments[o])!=item.getStat(fstat))
+			return false;
+	}
+	for(var o=1; o<arguments.length; o++)
+		SkipSkills.push(arguments[o]);
+	return true;
+}
+
+function combinestats(item,string,fstat,sstat,multiplier)
+{
+	if(item.getStat(fstat) && item.getStat(sstat))
+	{
+		SkipSkills.push(fstat,sstat);
+		if(multiplier)
+			return Math.floor(item.getStat(fstat)*multiplier+item.getStat(fstat))+string+Math.floor(item.getStat(sstat)*multiplier+item.getStat(sstat));
+		else
+			return item.getStat(fstat)+string+item.getStat(sstat);
+	}
+	else
+		return false;
+}

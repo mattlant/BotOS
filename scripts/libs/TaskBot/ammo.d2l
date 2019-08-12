@@ -1,0 +1,110 @@
+// Chests opener plugin. Thanks to froggy for his work on chest ids (and his function isValidChest() for checking them)
+// Also thanks for ItemCount() which is from froggy too
+
+var gettingammo = false;
+
+function plugAmmo(instname) {
+	this.temp = oPlugin;
+	this.temp("AmmoManager", mlPLUGINBYTIME, 3000,"Ammo", "1.1", "Hellek", instname);
+	delete this.temp;
+	
+	this.AmmoManager = function () {
+		if(itemCountTotal("key") < 6) {
+			AI.needkeys = true;
+		} else {
+			AI.needkeys = false;
+		}
+		
+		if(locateItem(me, "tbk", 100) && itemCountTotal("tbk") < 15) {
+			AI.needtsc = true;
+		} else {
+			AI.needtsc = false;
+		}
+		
+		if(locateItem(me, "ibk", 100) && itemCountTotal("ibk") < 15) {
+			AI.needisc = true;
+		} else {
+			AI.needisc = false;
+		}
+//		StdOutput.Write("Ammotype: "+checkammo());
+		Log.Write(mlLOGGENERAL, "Ammotype: "+checkammo(), boLOGINFO);
+//		StdOutput.Write("Have "+itemCountTotal(checkammo())+" arrows/bolts");
+		Log.Write(mlLOGGENERAL, "Have "+itemCountTotal(checkammo())+" arrows/bolts", boLOGINFO);
+		if(!checkammo()) return false;
+		if(itemCountTotal(checkammo()) < 100) {
+			AI.needammo_urgent = checkammo();
+			AI.needammo_lowprio = checkammo();
+			if(!gettingammo) {
+				p = 380;
+				new oTaskCommon(p--, "DoCommand", {Command:"SCTown.Repair(null, true);"}).Insert();
+				new oTaskCommon(p--, "SetVariable", {Var:"gettingammo", Val:"false"}).Insert();
+				gettingammo = true;
+			}
+		} else if (itemCountTotal(checkammo()) < 500) {
+			AI.needammo_lowprio = checkammo();
+			AI.needammo_urgent = false;
+		} else {
+			AI.needammo_lowprio = false;
+			AI.needammo_urgent = false;
+		}
+	}
+}
+
+function checkammo() {
+		
+	var atype = 0;
+		
+	var item = getUnit(4);
+	do {
+		if (item && item.mode == 1 && item.getParent() && item.getParent().name == me.name) {
+
+			// weaponslot1:  4 5
+			// weaponslot2: 11 12
+			// bow:   27    crossbow: 35
+			// arrows: 5    bolts:     6
+
+			var type = getBaseStat(0, item.classid, 70);
+			if (item.itemloc == 4 || item.itemloc == 5) {
+				if (type == 27 || type == 85)
+					atype = "aqv";
+				else if (type == 35)
+					atype = "cqv";
+			}
+		}
+	}while(item && item.getNext());
+	return atype;
+}
+
+function plugMLRepairCheck(instname)
+{
+	this.temp = oPlugin;
+	this.temp("RepairCheck", mlPLUGINBYTIME, 5000, "Repair Checking", "1.1", "Mattlant/Hellek", instname);
+	delete this.temp;
+
+	this.RepairCheck = function() {
+		if(SCTown.NeedRepair()) {
+//			StdOutput.Write("Need to repair - Going to Town");
+			Log.Write(mlLOGGENERAL, "Need to repair - Going to Town", boLOGCRITICALINFO);
+			new oTaskCommon(980, "DoCommand", {Command:"SCTown.Repair(null, true);"}).Insert();
+			new oTaskPlugin(979, "Enable", {InstanceName:this.InstanceName}).Insert();
+			this.Enabled = false;
+		}
+	}
+}
+
+function plugStash(instname)
+{
+	this.temp = oPlugin;
+	this.temp("StashCheck", mlPLUGINBYTIME, 5000, "Stash Checking", "1.0", "Hellek", instname);
+	delete this.temp;
+
+	this.StashCheck = function() {
+		if(SCTown.NeedStash()) {
+//			StdOutput.Write("Need to stash - Going to Town");
+			Log.Write(mlLOGGENERAL, "Need to stash - Going to Town", boLOGCRITICALINFO);
+			new oTaskCommon(980, "DoCommand", {Command:"SCTown.Stash(null, true);"}).Insert();
+			new oTaskPlugin(979, "Enable", {InstanceName:this.InstanceName}).Insert();
+			this.Enabled = false;
+		}
+	}
+}

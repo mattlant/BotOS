@@ -1,0 +1,847 @@
+// TODO: When finding destination areas coords, use getroom with coord and area, then use findclosest walkable on it. Maybe, dunno yet.
+// THIS IS PEFECT. I can get that room and use findclosest walkable method of room objects on it :)
+
+
+//_info has these properties:
+//.Logger = oLogSIngle to use (part of mlLog)
+//.refPathable = a reference to an object that inherits Pathable
+//.PathToMap = true to have the pather add the path into the collision data.
+//useful for dumping the data to a file.
+function Pather (_info) {
+
+	if(!_info) return;
+
+	var refPathable;
+
+	//change eventually
+	if(!_info) {
+		throw new ArgumentException("Pather.ctor -> No arguments passed", 1, "Pather.d2l");
+	}
+	if(!_info.refPathable || (_info.refPathable instanceof Pathable)){
+		throw new PathingException("Pather.ctor -> An Pathable class is required", 1, "Pather.d2l");
+	}
+
+	this.refPathable = _info.refPathable;
+
+	this.AreaOverride = null;
+
+	this.Path = new Array();
+
+	this.PathToMap = _info.PathToMap;
+
+	this.FindPath = oMap_findpath;
+	this.GoToArea = oMap_gotoarea;  		//all encompassing function, does everything for you
+//	this.FindAreaPath = oMap_findareapath;  	//used to find a LinkPath
+//	this.NextAreaLinkAction = oMap_nextaction;  	//used to process the next action for an AreaLink array
+	this.FindPathToLevel = oMap_FindPathToLevel;
+	this.FindExplorePath = oMap_findexplorepath;
+	this.getMapExit = oMap_getmapexit;
+	this.getRoomExits = oMap_getroomexits;
+	this.FindPathToWarp = oMap_findpathtowarp;
+	this.getLevelWarpXY = oMap_getlevelwarpxy;
+	this.FindPathToRoom = oMap_findpathtoroom;
+	this.FindPathAlongPoints = oMap_findpathalongpoints;
+
+	this.LastError = null;
+
+//////////////////////////////////////////////////////////////////////
+	// oMap.FindPathToLevel(level, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// Finds a path from the current level to the given level
+	// returns: path on success, false on failure
+	// requires initialized map: Yes
+	//////////////////////////////////////////////////////////////////////
+	function oMap_FindPathToLevel(level, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	{
+
+
+//         if(!(this.Area.SubAreas[level] instanceof Area)) {
+//             mlMapLog.Write("mlMap:mlFindPathToLevel - Destination Area is not attached", boLOGCRITICALERROR);
+//             this.LastError = "mlMap:mlFindPathToLevel - Destination Area is not attached";
+//             return false;
+//         }
+//         if(!(this.Area.SubAreas[this.Area.Number] instanceof Area)) {
+//             mlMapLog.Write("mlMap:mlFindPathToLevel - Destination Area is not attached", boLOGCRITICALERROR);
+//             this.LastError = "mlMap:mlFindPathToLevel - Destination Area is not attached";
+//             return false;
+//         }
+
+		mlMapLog.Write("this.Area.Number: " + this.refPathable.Number, boLOGINFO);
+		mlMapLog.Write("Destination.Area.Number: " + level, boLOGINFO);
+
+		var sL = new Array;
+
+		// get exit coordinates of given level
+
+		var lroom = getRoom(level);
+
+		//get exit coords of current level
+		for (var w = 0; w < 4; w++) {
+			sL[w] = this.getMapExit(w, this.refPathable);
+		}
+
+//         var ld = {minx:this.Area.SubAreas[level].x, miny:this.Area.SubAreas[level].y, maxx:this.Area.SubAreas[level].MaxX, maxy:this.Area.SubAreas[level].MaxY};
+		try {
+			var ld = getLevelDimensions(level);
+		}
+		catch (e) {
+			throw new PathingException("Pather.FindPathToLevel -> Error occured during getLevelDimensions(level)", 1, "Pather.d2l", e);
+		}
+
+
+		mlMapLog.Write("Dest Level Dims: " + ld.minx + ", " + ld.maxx + ", " + ld.miny + ", " + ld.maxy, boLOGINFO);
+		mlMapLog.Write("Current Level Dims: " + this.refPathable.x + ", " + this.refPathable.MaxX + ", " + this.refPathable.y + ", " + this.refPathable.MaxY, boLOGINFO);
+
+
+		if(sL[mlNORTH].x && sL[mlNORTH].y) 
+		{
+			var sX = sL[mlNORTH].x; var sY = sL[mlNORTH].y - 100;
+			if(sX > ld.minx && sX < ld.maxx && sY > ld.miny && sY < ld.maxy) 
+			{
+				try {
+					//WE FOUND IT
+					mlMapLog.Write("Found Dest Coords sX, sY: " + sX + ", " + sY, boLOGINFO);
+					//y - 15
+					var destcoords = this.refPathable.FindClosestWalkable(sL[mlNORTH].x, sL[mlNORTH].y + 15);
+					mlMapLog.Write("destcolloffset: " + (destcoords.x-this.refPathable.x) + ", " + (destcoords.y-this.refPathable.y), boLOGCRITICALINFO);
+					this.refPathable.CollisionData[destcoords.y-this.refPathable.y][destcoords.x-this.refPathable.x] |= 0x400000;
+					var temppath = this.FindPath(_sx, _sy, destcoords.x, destcoords.y, _dist, _reduc, _algo, _fh, _factor, _square);
+					if(!temppath) return null;
+					return this.Path;
+				}
+				catch (e) {
+					throw new PathingException("Pather.FindPathToLevel -> Error occured while finding a path (inner)", 1, "Pather.d2l", e);
+				}
+			}
+		}
+		if(sL[mlEAST].x && sL[mlEAST].y) {
+			var sX = sL[mlEAST].x + 100; var sY = sL[mlEAST].y;
+			if(sX > ld.minx && sX < ld.maxx && sY > ld.miny && sY < ld.maxy) {
+				//WE FOUND IT
+				mlMapLog.Write("Found Dest Coords sX, sY: " + sX + ", " + sY, boLOGINFO);
+				//x + 15
+				var destcoords = this.refPathable.FindClosestWalkable(sL[mlEAST].x - 15, sL[mlEAST].y);
+				mlMapLog.Write("destcolloffset: " + (destcoords.x-this.refPathable.x) + ", " + (destcoords.y-this.refPathable.y), boLOGCRITICALINFO);
+				this.refPathable.CollisionData[destcoords.y-this.refPathable.y][destcoords.x-this.refPathable.x] |= 0x400000;
+				var temppath = this.FindPath(_sx, _sy, destcoords.x, destcoords.y, _dist, _reduc, _algo, _fh, _factor, _square);
+				if(!temppath) return null;
+				return this.Path;
+			}
+		}
+		if(sL[mlSOUTH].x && sL[mlSOUTH].y) {
+			var sX = sL[mlSOUTH].x; var sY = sL[mlSOUTH].y + 100;
+			if(sX > ld.minx && sX < ld.maxx && sY > ld.miny && sY < ld.maxy) {
+				//WE FOUND IT
+				//y + 15
+				mlMapLog.Write("Found Dest Coords sX, sY: " + sX + ", " + sY, boLOGINFO);
+				var destcoords = this.refPathable.FindClosestWalkable(sL[mlSOUTH].x, sL[mlSOUTH].y - 15);
+				mlMapLog.Write("destcolloffset: " + (destcoords.x-this.refPathable.x) + ", " + (destcoords.y-this.refPathable.y), boLOGCRITICALINFO);
+				this.refPathable.CollisionData[destcoords.y-this.refPathable.y][destcoords.x-this.refPathable.x] |= 0x400000;
+				var temppath = this.FindPath(_sx, _sy, destcoords.x, destcoords.y, _dist, _reduc, _algo, _fh, _factor, _square);
+				if(!temppath) return null;
+				return this.Path;
+			}
+		}
+		if(sL[mlWEST].x && sL[mlWEST].y) {
+			var sX = sL[mlWEST].x - 100; var sY = sL[mlWEST].y;
+			if(sX > ld.minx && sX < ld.maxx && sY > ld.miny && sY < ld.maxy) {
+				//WE FOUND IT
+				mlMapLog.Write("Found Dest Coords sX, sY: " + sX + ", " + sY, boLOGINFO);
+				//x - 15
+				var destcoords = this.refPathable.FindClosestWalkable(sL[mlWEST].x + 15, sL[mlWEST].y);
+				mlMapLog.Write("destcolloffset: " + (destcoords.x-this.refPathable.x) + ", " + (destcoords.y-this.refPathable.y), boLOGCRITICALINFO);
+				this.refPathable.CollisionData[destcoords.y-this.refPathable.y][destcoords.x-this.refPathable.x] |= 0x400000;
+				var temppath = this.FindPath(_sx, _sy, destcoords.x, destcoords.y, _dist, _reduc, _algo, _fh, _factor, _square);
+				if(!temppath) return null;
+				return this.Path;
+			}
+		}
+		mlMapLog.Write("mlMap:mlFindPathToLevel - Could not find exit coordinates", boLOGINFO);
+		this.LastError = ("mlMap:mlFindPathToLevel - Could not find exit coordinates");
+		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.getMapExit(direction)
+	// -------------------------------------------------------------------
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function oMap_getmapexit(_d, _ardata) {
+		if(_d < 0 || _d > 3) return false;
+
+		var ec = new Array();
+		var notdoneexit = false;
+		var count = 0;
+		var avgcoord = 0;
+
+		if(_d == 0) { //NORTH 	Scan for white space
+			for (var x = _ardata.x; x < _ardata.MaxX; x++){
+//				this.Area.CollisionData[_ardata.y - this.Area.y][x - this.Area.x] |= 0x400000;
+				if(_ardata.IsWalkable(x, _ardata.y)){
+					ec[ec.length] = {x:x, y:_ardata.y};
+					notdoneexit = true;
+					continue;
+				}
+				else if (notdoneexit) {
+					if (ec.length < 4){ //Too small
+						notdoneexit = false;
+						ec.length = 0;
+						continue;
+					}
+					break;
+				}
+			}
+			if (ec.length < 4) return false; //exit because we didnt find an exit
+			for(var i = 0; i < ec.length; i++) avgcoord += ec[i].x;
+			return _ardata.FindClosestWalkable(Math.floor(avgcoord / ec.length), _ardata.y+6);
+		}
+		if(_d == 1) { //EAST 	Scan for white space
+			for (var y = _ardata.y; y < _ardata.MaxY; y++){
+//				this.Area.CollisionData[y - this.Area.y][_ardata.MaxX - this.Area.x] |= 0x400000;
+				if(_ardata.IsWalkable(_ardata.MaxX, y)){
+					ec[ec.length] = {x:_ardata.MaxX, y:y};
+					notdoneexit = true;
+					continue;
+				}
+				else if (notdoneexit) {
+					if (ec.length < 4){ //Too small
+						notdoneexit = false;
+						ec.length = 0;
+						continue;
+					}
+					break;
+				}
+			}
+			if (ec.length < 4) return false; //exit because we didnt find an exit
+			for(var i = 0; i < ec.length; i++) avgcoord += ec[i].y;
+			return _ardata.FindClosestWalkable(_ardata.MaxX-6, Math.floor(avgcoord / ec.length));
+		}
+		if(_d == 2) { //South	Scan for white space
+			for (var x = _ardata.x; x < _ardata.MaxX; x++){
+//				this.Area.CollisionData[_ardata.MaxY - this.Area.y][x - this.Area.x] |= 0x400000;
+				if(_ardata.IsWalkable(x, _ardata.MaxY)){
+					ec[ec.length] = {x:x, y:_ardata.MaxY};
+					notdoneexit = true;
+					continue;
+				}
+				else if (notdoneexit) {
+					if (ec.length < 4){ //Too small
+						notdoneexit = false;
+						ec.length = 0;
+						continue;
+					}
+					break;
+				}
+			}
+			if (ec.length < 4) return false; //exit because we didnt find an exit
+			for(var i = 0; i < ec.length; i++) avgcoord += ec[i].x;
+			return _ardata.FindClosestWalkable(Math.floor(avgcoord / ec.length), _ardata.MaxY-6);
+		}
+		if(_d == 3) { //West 	Scan for white space
+			for (var y = _ardata.y; y < _ardata.MaxY; y++){
+//				this.Area.CollisionData[y - this.Area.y][_ardata.x - this.Area.x] |= 0x400000;
+				if(_ardata.IsWalkable(_ardata.x, y)){
+					ec[ec.length] = {x:_ardata.x, y:y};
+					notdoneexit = true;
+					continue;
+				}
+				else if (notdoneexit) {
+					if (ec.length < 4){ //Too small
+						notdoneexit = false;
+						ec.length = 0;
+						continue;
+					}
+					break;
+				}
+			}
+			if (ec.length < 4) return false; //exit because we didnt find an exit
+			for(var i = 0; i < ec.length; i++) avgcoord += ec[i].y;
+			return _ardata.FindClosestWalkable(_ardata.x+6, Math.floor(avgcoord / ec.length));
+		}
+	}
+
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.getRoomExits()
+	// -------------------------------------------------------------------
+	// returns: A bit field denoting which directions a room can go.
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function oMap_getroomexits(_room) {
+		var ec = 0;
+		var notdoneexit = false;
+
+		var cannorth = 1;
+		var caneast = 2;
+		var cansouth = 4;
+		var canwest = 8;
+
+		var rminx = _room.x*5;
+		var rmaxx = rminx+_room.getStat(11);
+		var rminy = _room.y*5;
+		var rmaxy = rminy+_room.getStat(12);
+		//print(rminx, rmaxx, rminy, rmaxy);
+
+		for (var x = rminx; x < rmaxx; x++){
+			if(this.IsWalkable(x, rminy)){
+				ec++;
+				notdoneexit = true;
+				continue;
+			}
+			else if (notdoneexit) {
+				if (ec < 3){ //Too small
+					notdoneexit = false;
+					ec = 0;
+					continue;
+				}
+				break;
+			}
+		}
+		if (ec < 3) cannorth = 0; //exit because we didnt find an exit
+
+		ec = 0;
+		notdoneexit = false;
+		count = 0;
+		for (var y = rminy; y < rmaxy; y++){
+			if(this.IsWalkable(rmaxx-1, y)){
+				ec++;
+				notdoneexit = true;
+				continue;
+			}
+			else if (notdoneexit) {
+				if (ec < 3){ //Too small
+					notdoneexit = false;
+					ec = 0;
+					continue;
+				}
+				break;
+			}
+		}
+		if (ec < 3) caneast = 0; //exit because we didnt find an exit
+
+		ec = 0;
+		notdoneexit = false;
+		count = 0;
+		for (var x = rminx; x < rmaxx; x++){
+			if(this.IsWalkable(x, rmaxy-1)){
+				ec++;
+				notdoneexit = true;
+				continue;
+			}
+			else if (notdoneexit) {
+				if (ec < 3){ //Too small
+					notdoneexit = false;
+					ec = 0;
+					continue;
+				}
+				break;
+			}
+		}
+		if (ec < 3) cansouth = 0; //exit because we didnt find an exit
+
+		ec = 0;
+		notdoneexit = false;
+		count = 0;
+		for (var y = rminy; y < rmaxy; y++){
+			if(this.IsWalkable(rminx, y)){
+				ec++;
+				notdoneexit = true;
+				continue;
+			}
+			else if (notdoneexit) {
+				if (ec < 3){ //Too small
+					notdoneexit = false;
+					ec = 0;
+					continue;
+				}
+				break;
+			}
+		}
+		if (ec < 3) canwest = 0; //exit because we didnt find an exit
+		var retval = 0;
+		retval = retval | cannorth;
+		retval = retval | caneast;
+		retval = retval | cansouth;
+		retval = retval | canwest;
+		return retval;
+	}
+
+
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindPathToWarp(warptype, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	// TODO:change to use specific warp numbers
+	//////////////////////////////////////////////////////////////////////
+	function oMap_findpathtowarp(warptype, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	{
+		var dx = null,dy = null;
+		if(warptype == mlWARPWAYPOINT)
+		{
+			var wpflag = false;
+			for (var w = 0; w < this.Area.PresetUnits.length; w++)
+			{
+				for (var a = 0; a < mlWAYPOINTS.length; a++)
+				{
+					if(this.Area.PresetUnits[w].id == mlWAYPOINTS[a])
+					{
+						//we've found a waypoint
+						dx = this.Area.PresetUnits[w].x;
+						dy = this.Area.PresetUnits[w].y;
+						wpflag = true;
+						break;
+					}
+				}
+			}
+			if(!wpflag)
+			{
+				mlprint("mlMap:mlFindPath - Could not find a waypoint");
+				mlReason = ("mlMap:mlFindPath - Could not find a waypoint");
+				return false;
+			}
+
+		}
+		else if(warptype != mlWARPNONE) {
+			var tcoord = this.getLevelWarpXY(warptype);
+			if(!tcoord)
+				return false;
+			dx = tcoord.x;
+			dy = tcoord.y;
+		}
+
+		return this.FindPath(_sx, _sy, dx, dy, _dist, _reduc, _algo, _fh, _factor, _square);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.getLevelWarpXY(warptype, level)
+	// -------------------------------------------------------------------
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function oMap_getlevelwarpxy(warptype, level)
+	{
+		mlprint("In mlmap:oMap_getlevelwarpxy");
+		var twarps = new Array();
+		var foundwarp = false;
+
+		for (var p = 0; p < this.Area.PresetUnits.length; p++) {
+			if(this.Area.PresetUnits[p].type == 5) twarps[twarps.length] = this.Area.PresetUnits[p];
+		}
+
+
+		if(twarps.length == 0) {
+			this.LastError = "mlMap:getLevelWarpXY - No matching warp found";
+			mlprint("Out mlmap:oMap_getlevelwarpxy - warp not found");
+			return null; //no warps found
+		}
+
+		for (var p = 0; p < twarps.length; p++)
+		{
+			mlprint("twarpinfo: id: " + twarps[p].id + " x: " + twarps[p].x + " y: " + twarps[p].y);
+			if (WARPS[twarps[p].id] == warptype)
+			{
+				mlprint("chosen twarpinfo: id: " + twarps[p].id + " x: " + twarps[p].x + " y: " + twarps[p].y);
+				foundwarp = true;
+				break;
+			}
+		}
+
+		if (!foundwarp) {
+			mlprint("Out mlmap:oMap_getlevelwarpxy - warp not found 2");
+			return null;
+		}
+
+		var tcwarp = this.FindClosestWalkable(twarps[p].x, twarps[p].y);
+		if(!tcwarp) {
+			mlprint("Out mlmap:oMap_getlevelwarpxy - findclosest did not find or errored");
+		}
+
+		mlprint("Out mlmap:oMap_getlevelwarpxy - normal");
+		return tcwarp
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindPathToRoom(room, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// Finds a path to a room
+	// room argument can be a single room number or an array of room numbers
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function oMap_findpathtoroom(rooms, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	{
+		var tc, trooms = getRoom();
+		outofhere:
+		if(trooms) do {
+			if(rooms instanceof Array) {
+				for(var i = 0; i<rooms.length; i++) {
+					if(rooms[i] == trooms.number) {
+						tc = this.FindClosestWalkable(trooms.x*5+this.roomsizex/2, trooms.y*5+this.roomsizey/2);
+						break outofhere;
+					}
+				}
+			}
+			else if(rooms == trooms.number) {
+				tc = this.FindClosestWalkable(trooms.x*5+this.roomsizex/2, trooms.y*5+this.roomsizey/2);
+				break;
+			}
+		} while(trooms.getNext());
+
+		if(!tc) {
+			mlprint("mlMap:mlFindPathToRoom - Could not find room coordinates");
+			this.LastError = ("mlMap:mlFindPathToRoom - Could not find room coordinates");
+			return false;
+		}
+		return this.FindPath(_sx, _sy, tc.x, tc.y, _dist, _reduc, _algo, _fh, _factor, _square);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindPathAlongPoints(points, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// Finds a path along the given points
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function oMap_findpathalongpoints(points, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	{
+		if(!(points instanceof Array) || !points.length) {
+			mlprint("mlMap:FindPathAlongPoints - Invalid points argument passed to function");
+			this.LastError = ("mlMap:FindPathAlongPoints - Invalid points argument passed to function");
+			return false;
+		}
+		for (var i =0; i<points.length; i++) {
+			if(!this.IsWalkable(points[i].x, points[i].y)) {
+				mlprint("mlMap:FindPathAlongPoints - One of points is out of range or not walkable");
+				this.LastError = ("mlMap:FindPathAlongPoints - One of points is out of range or not walkable");
+				return false;
+			}
+		}
+
+		var fp = new Array();
+		var tpath = this.FindPath(_sx, _sy, points[0].x, points[0].y, _dist, _reduc, _algo, _fh, _factor, _square)
+		if(!tpath) return false;
+		fp = fp.concat(tpath);
+		if(points.length >1) {
+			for(var i = 1; i<points.length; i++) {
+				tpath = this.FindPath(points[i-1].x, points[i-1].y, points[i].x, points[i].y, _dist, _reduc, _algo, _fh, _factor, _square)
+				if(!tpath) return false;
+				fp = fp.concat(tpath);
+			}
+		}
+		return fp;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindExplorePath(_sx, _sy, _dx, _dy, _type, _dist, _reduc, _algo, _fh)
+	// -------------------------------------------------------------------
+	// Use this function to find an optimized exploration path in the currently
+	// initialized area
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	// types: mlEXPLORECIRCULAR, mlEXPLOREBIDIRECTIONAL, mlEXPLORERANDOM
+	// 06-29-2003
+	//////////////////////////////////////////////////////////////////////
+	function oMap_findexplorepath(_sx, _sy, _dx, _dy, _type, _percent, _excluderooms, _dist, _reduc, _algo, _fh, _factor, _square) {
+
+		//Debug
+		for(var y = 0; y<this.RoomGrid.length; y++) {
+			for( var x = 0; x<this.RoomGrid[y].length; x++) {
+				if(this.RoomGrid[x][y])
+					print("Room " + x + ", " + y + " Coords: " + this.RoomGrid[x][y].x +
+						", " + this.RoomGrid[x][y].y);
+			}
+		}
+
+		//find start room
+		expoutloop1: for(var ry = 0; ry<this.RoomGrid.length; ry++) {
+			for( var rx = 0; rx<this.RoomGrid[ry].length; rx++) {
+				if(this.RoomGrid[rx][ry] && _sx > this.RoomGrid[rx][ry].x && _sx < this.RoomGrid[rx][ry].x+this.roomsizex &&
+					_sy > this.RoomGrid[rx][ry].y && _sy < this.RoomGrid[rx][ry].y+this.roomsizey) {}
+
+			}
+		}
+
+		var startx = 0, endx = this.RoomGrid.length-1;
+		var starty = 0, endy = this.RoomGrid[0].length-1;
+
+		for(var i = 0; i<4; i++) {
+
+
+		}
+
+	}
+
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.GoToArea(_area, _dx, _dy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// returns: True when the character reaches target area/xy
+	// Does NOT require an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function oMap_gotoarea(_area, _dx, _dy, _dist, _reduc, _algo, _fh, _factor, _square) {
+
+
+
+
+
+	}
+
+
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindPath(_sx, _sy, _dx, _dy, _dist, _reduc, _algo, _fh)
+	// -------------------------------------------------------------------
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function oMap_findpath(_sx, _sy, _dx, _dy, _dist, _reduc, _algo, _fh, _factor, _square) {
+
+		//mlprint("In mlmap:oMap_findpath");
+		if(arguments.length < 4 || isNaN(_sx) || isNaN(_sy) || isNaN(_dx) || isNaN(_dy)) 		//basic check for illegal coordinates
+			throw new PathingException("Pather.FindPath -> Not enough coordinates or invalid coords", 1, "Pather.d2l");
+		if(!this.refPathable.IsWalkable(_sx, _sy) || !this.refPathable.IsWalkable(_dx, _dy))
+			throw new PathingException("Pather.FindPath -> Either the start or end coord's are not walkable or out of range", 1, "Pather.d2l");
+		
+		if(typeof(_reduc) != "number" || _reduc < 0) _reduc = mlREDUCEWALK;
+		if(typeof(_algo) != "number" || _algo < 0 || _algo > 1) _algo = mlASTAR;
+		if(typeof(_factor) != "number" || _fh < 0) _factor = 1;
+		if(typeof(_fh) != "number" || _fh < 0 || _fh > FORWARDHEURISTICS.length-1) _fh=mlFHMAXDXDY;
+
+		//added in 06-30-2003 for auto use teleport and overiding reduction if no teleport skill
+		if(me.classid == 1 && _reduc == mlREDUCESORC && (mlInTown(me) || me.getSkill("Teleport") < 1)) {
+			_reduc = mlREDUCEWALK;
+			_dist = 5;
+		}
+		if(me.classid != 1 && _reduc == mlREDUCESORC) {
+			_reduc = mlREDUCEWALK;
+			_dist = 5;
+		}
+		this.UseTeleport = _reduc;
+
+		if(_algo) {
+			var oq = new oFIFO();
+			_fh = 0;
+		}
+		else var oq = new oHeap("f", mlHEAPLOW);
+
+		var minx = this.refPathable.x, miny = this.refPathable.y, maxx = this.refPathable.MaxX, maxy = this.refPathable.MaxY;
+		var width = this.refPathable.MaxX-this.refPathable.x, height = this.refPathable.MaxY-this.refPathable.y;
+
+		var AreaData = this.refPathable.CollisionData;
+
+		var ptd = new Array(), fp = new Array();
+		var dx = _dx - minx, dy = _dy - miny, sx = _sx - minx, sy = _sy - miny
+		var newg, cx = 0, cy = 0, node, _done = false;
+
+		//node grid array used to hold references
+		var ng = new Array();
+		ng.length = height+1;
+		for(var i = 0; i<ng.length; i++){
+			ng[i] = new Array();
+			ng[i].length = width+1;
+		}
+
+		//starting and ending node's
+		var enode = new oNode(dx, dy);
+		var snode = new oNode(sx, sy, false, true, -1, 0, Pather[FORWARDHEURISTICS[_fh]](dx, dy, sx, sy)*_factor);
+		snode.f = snode.h;
+		ng[snode.y][snode.x] = snode;
+		oq.Insert(snode);
+
+		//pdis = new oTerminal(100, 30, 40, 40, 6, 0);
+		var vxvy = 0;
+		var cnode;
+		var stime = new Date();
+		while (node = oq.Remove())
+		{
+			//updateterminal(AreaData, node.x, node.y);
+
+			if(node.x == enode.x && node.y == enode.y) {   //Found the destination
+				_done = true;
+				this.LastScore = node.f;
+				if(_reduc == 99)
+					return node.f;
+
+				//BUILD PATH USING REFRENCED PARENTS
+				//var donebuild = false;
+				ptd.push(node);
+				if (ptd[ptd.length-1].parent!=-1) do {
+					ptd.push(ptd[ptd.length-1].parent);
+					if (ptd[ptd.length-1].parent==-1)
+						break;
+				} while (1);
+
+				//Adding pathing
+				for (var p = 0; p<ptd.length; p++){
+					for (var px = -1; px < 2; px++) {
+						for (var py = -1; py < 2; py++) {
+							if((px*py) && (!px && !py)) continue; //continue if diagonal or same coordinate
+							if(!this.refPathable.IsWalkable(ptd[p].x+px+this.refPathable.x, ptd[p].y+py+this.refPathable.y)) {
+								ptd[p].x+=(px*(-1));
+								ptd[p].y+=(py*(-1));
+							}
+						}
+					}
+				}
+
+				if(this.PathToMap) {
+					var pathbit = 0x10000 << _algo;
+					//var pathbit = 0x10000 << _fh-1;
+					for (var i = 0; i<ptd.length; i++) {
+						AreaData[ptd[i].y][ptd[i].x] |= pathbit;
+					}
+				}
+
+				//reverse the path now so we can work with it from start and reduce the points
+				var vecanglelast = 0;
+				var vecanglenew = 0;
+				var vecdistance;
+				for (var d=ptd.length-1; d>=0; d--) {
+					if (d == ptd.length-1 && d) {		//add first point always
+						fp.push(ptd[d]);
+						if(!_reduc) vecanglelast = getAngle(fp[fp.length-1].x, fp[fp.length-1].y, ptd[d-1].x, ptd[d-1].y);
+						else vecanglelast = 0;
+						continue;
+					}
+
+					if (d == 0) {				//add last point always
+						fp.push(ptd[d]);
+						break;
+					}
+
+					if(!_reduc)	vecanglenew = getAngle(fp[fp.length-1].x, fp[fp.length-1].y, ptd[d].x, ptd[d].y);
+					else vecanglenew = 0;
+					vecdistance = this.euclidian(fp[fp.length-1].x, fp[fp.length-1].y, ptd[d].x, ptd[d].y);
+
+					if(vecanglenew != vecanglelast || vecdistance > _dist) {
+						fp.push(ptd[d]);
+						if(!_reduc)	vecanglelast = getAngle(fp[fp.length-1].x, fp[fp.length-1].y, ptd[d-1].x, ptd[d-1].y);
+						else vecanglelast = 0;
+						continue;
+					}
+				}
+				this.Path = new Array();
+				//Put the offset back in and move to path
+				for (var d = 0; d<fp.length; d++)
+					this.Path[d] = {x:fp[d].x + minx, y:fp[d].y + miny}
+				runGC();
+				return this.Path;
+
+			}
+			else {  		// look for adjacent blocks that we attach to and add them to open
+				for(var vy = -1; vy < 2; vy++) {
+					for(var vx=-1; vx < 2; vx++)	{
+						if(!(vx || vy) || (vx && vy && !_square)) continue; //continue if we are on the current node
+						cx = node.x+vx; cy = node.y+vy;
+						vxvy = vx*vy;
+						//check for map edge
+						if(cy < 0 || cy > height || cx < 0 || cx > width) continue;
+
+						//check for walkability and small diagonal gaps that cant be passed
+						if (AreaData[cy][cx] & 1) continue;
+						//CHANGED 02-10-2004 as a test (commented out extra checks)
+						if (_square && vxvy && (AreaData[cy][node.x] & 1) && (AreaData[node.y][cx] & 1)) continue;
+						//if ((AreaData[cy][cx+1] & 1) || (AreaData[cy][cx-1] & 1) ||
+						//	(AreaData[cy+1][cx] & 1) || (AreaData[cy-1][cx] & 1)) continue;
+						//if (((AreaData[cy][cx+1] & 1) && (AreaData[cy][cx-1] & 1)) ||
+						//	((AreaData[cy+1][cx] & 1) && (AreaData[cy-1][cx] & 1))) continue;
+
+						newg = node.g + SCORE[Math.abs(vxvy)];
+
+						cnode = ng[cy][cx];
+
+						if(!cnode) {
+							cnode = new oNode(cx,cy,false,false,node,newg,Pather[FORWARDHEURISTICS[_fh]](dx, dy, cx, cy)*_factor);
+							ng[cy][cx] = cnode;
+						}
+						else {
+							if (cnode.g > newg){
+								cnode.closed = false;
+								cnode.g = newg;
+								cnode.parent = node;
+							}
+							else continue;
+						}
+						cnode.f = cnode.g + cnode.h;
+
+						if(!cnode.open) {
+							cnode.open = true;
+							oq.Insert(cnode);
+							//AreaData[cnode.y][cnode.x] |= 0x200000;
+						}
+					}
+				}
+				node.open = false;	node.closed = true;
+				//AreaData[node.y][node.x] |= 0x100000;
+			}
+		}
+		throw new PathingException("Pather.mlFindPath -> Could not find a path to destination", 1, "Pather.d2l");
+		return false;
+	}
+
+	function oMap_findscore(x1, y1, x2, y2)
+	{
+		return this.FindPath(x1, y1, x2, y2, 0, 99, 0, 5, 1);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Forward Heuristics functions - DO NOT TOUCH
+	// -------------------------------------------------------------------
+	//////////////////////////////////////////////////////////////////////
+	this.manhattan = function(x1, y1, x2, y2) {
+		return Math.abs(x2-x1) + Math.abs(y2-y1);
+	}
+	this.euclidian = function(x1, y1, x2, y2) {
+		return Math.floor(Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)));
+	}
+	this.euclidiannosqrt = function(x1, y1, x2, y2) {
+		return Math.floor((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+	}
+	this.nofh = function() {
+		return 0;
+	}
+	this.diagshortcut = function(x1, y1, x2, y2) {
+		var dy = Math.abs(y2-y1);
+		var dx = Math.abs(x2-x1);
+		if (dy <= dx) return dy*0.414 + dx; else return dx*0.414 + dy;
+	}
+	this.maxdxdy = function(x1, y1, x2, y2) {
+		var dy = Math.abs(y2-y1);
+		var dx = Math.abs(x2-x1);
+		return (dx>dy)?dx:dy;
+	}
+
+
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// Forward Heuristics functions - DO NOT TOUCH
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+Pather.Manhattan = function(x1, y1, x2, y2) {
+	return Math.abs(x2-x1) + Math.abs(y2-y1);
+}
+Pather.Euclidian = function(x1, y1, x2, y2) {
+	return Math.floor(Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)));
+}
+Pather.EuclidianNoSqrt = function(x1, y1, x2, y2) {
+	return Math.floor((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+}
+Pather.NoFH = function() {
+	return 0;
+}
+Pather.DiagShortcut = function(x1, y1, x2, y2) {
+	var dy = Math.abs(y2-y1);
+	var dx = Math.abs(x2-x1);
+	if (dy <= dx) return dy*0.414 + dx; else return dx*0.414 + dy;
+}
+Pather.MaxDxDy = function(x1, y1, x2, y2) {
+	var dy = Math.abs(y2-y1);
+	var dx = Math.abs(x2-x1);
+	return (dx>dy)?dx:dy;
+}
+

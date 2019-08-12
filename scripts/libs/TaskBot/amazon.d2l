@@ -1,0 +1,288 @@
+//Amazon
+charplugin[0] = true;
+
+
+include("Gshock/AutoSkills.d2l");
+var zon = new oSkill();
+
+var timebetweencasts = 2000; //in milliseconds
+var lastcasttime = new Date();
+
+
+function plugIKplayer(instname)
+{
+	this.temp = oPlugin;
+	this.temp("AmazonPlugin", mlPLUGINBYTIME, 1000, "Amazon Char Plugin", "0.0.1", "mattlant", instname);
+	delete this.temp;
+	this.AmazonPlugin = function()
+	{
+		
+		if (new Date() - lastcasttime > timebetweencasts)
+		{
+			if(me.mp>70 && needWally() && me.getSkill("Valkyrie"))
+				new oTaskCommon(980, "Cast", {Skill:"Valkyrie"}).Insert();
+			lastcasttime = new Date();
+		}
+	}
+}
+
+
+function oTaskAttack(_p, _function, _data, _object, _tag)
+{
+	//inherit oTask
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+	
+	var _range = 0;
+	var _specific = false;
+	var _bossunique = false;
+	var _started = false;
+
+	//**********************************
+	// Now using one attack function :D
+	//**********************************
+
+	this.Kill = oTaskAttack_kill;
+	this.Attack = oTaskAttack_attack;
+	this.CharAttack = oTaskAttack_charattack;
+
+	//this.walkattack = oTaskAttack_walkattack;
+
+	function oTaskAttack_kill()
+	{
+		if(!playerkill(this.Data))
+			TaskQueue.Insert(this);
+		return;
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ASSESMENT PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_attack()
+	{
+		if(!_started) {
+			_started = true;
+			if(this.Data.Target) {
+				_specific = true;
+			}
+			else if(this.Data.Boss) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Boss:_data.Boss}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.Unique) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Unique:_data.Unique}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.ByName) {
+				_specific = true;
+				//add in a get for name
+			}
+			else if(this.Data.Range) {
+				_range = true;
+			}
+			else {
+				//raise error and return
+				return;
+			}
+				
+				
+		}
+		
+		
+		if(_range) {
+			//Check for raising first
+			this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS, Abilities:mlBITRAISES}).getClosest();
+			if(!this.Data.Target) //now check for other types
+				this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS}).getClosest();
+			if(!this.Data.Target) return;
+		}
+		
+		if(_specific && (!this.Data.Target || this.Data.Target.Monster.hp <= 0)) return;
+		
+		sctarget.UpdateText("Last target: " + this.Data.Target.Monster.name + " (" + this.Data.Target.Monster.hp/1.28 + "% hp)");
+	
+		//if(!this.charattack(mon)) {}
+		this.CharAttack(this.Data.Target);
+
+		this.Insert();
+
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ACTUAL ATTACKING PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_charattack(mon) {
+//		Log.Write(mlLOGGENERAL, mon.Monster.name, boLOGINFO);
+		me.overhead("Attacking!");
+		var pp = 825;
+		var hp_pcnt = AI.HPPcnt;
+
+		var weapon = null;
+		var item = getUnit(4);
+		do {
+			if (item && item.mode == 1 && item.getParent() && item.getParent().name == me.name && (item.itemloc == 4 || item.itemloc == 5)) {
+				if(getBaseStat(0, item.classid, D2JSP_BASE_ITEMS_TYPE) == 5 || getBaseStat(0, item.classid, D2JSP_BASE_ITEMS_TYPE) == 6) continue;
+				weapon = item;
+				break;
+			}
+		} while(item && item.getNext());
+		
+		if(weapon) {
+			var weapontype = getBaseStat(0, weapon.classid, D2JSP_BASE_ITEMS_TYPE);
+			if(weapontype == 27 || weapontype == 35 || weapontype == 85) {
+				var attack = zon.FindSkill({Type:gBow, Mana:me.mp}, mon.Monster);
+			} else if ((weapontype == 44 || weapontype == 87) && weapon.getStat(70) > 20) {
+				var attack = zon.FindSkill({Type:gThrow, Mana:me.mp}, mon.Monster);
+			} else {
+				var attack = zon.FindSkill({Type:gMelee, Mana:1}, mon.Monster);
+			}
+		} else {
+			Log.Write(mlLOGGENERAL, "Not using a weapon!!!", boLOGWARNING);
+			var attack = zon.FindSkill({Type:gMelee, Mana:1}, mon.Monster);
+		}
+
+		var cold = zon.FindSkill({Element: gCold}, mon.Monster);
+		var char_skill= null;
+		var move_reason = "Position good: Holding";
+
+		// find the spell you want to use here
+
+		//cold?
+
+		//if(me.getState(121)	|| untimed.Weight > timed.Weight)
+		//	char_skill = untimed;
+		//else
+		//	char_skill = timed;
+
+
+		// describe why you want to move here
+
+		if(hp_pcnt < 25)
+			move_reason = "Ruh roh....";
+
+		if(me.mode == 4 && hp_pcnt < 50)
+			move_reason = "Bieng hit and low health!";
+
+		if(hp_pcnt < 80 && MonsterQueue.getMonsters({Range:5}).getLength() > 3)
+			move_reason = "Hurt and Surrounded!";
+
+		if(MonsterQueue.getMonsters({Range:5}).getLength() > 5)
+			move_reason = "Getting Surrounded!";
+
+		if(attack.Range < mon.Distance)
+			move_reason = "Out of Range!";
+
+		// cue up the use of the skill here & cue up not attacking after
+
+		if(move_reason != "Position good: Holding")
+		{
+			//print("Range: " + char_skill.Range);
+			PluginManager.ExecuteFunction("AIInfo", "UpdatePosition", move_reason + "Range: " + attack.Range);
+			new oTaskSkill(this.p+1, "UseSkill", {Skill:attack.Skill, Target:mon, Position:attack.Range}).Insert();
+		}
+		else
+			new oTaskSkill(this.p+1, "UseSkill", {Skill:attack.Skill, Target:mon}).Insert();
+
+		PluginManager.ExecuteFunction("AIInfo", "UpdateSkill", attack.Skill);
+		
+
+
+	}
+	
+	
+}
+
+
+
+
+function zonattackboss(boss)
+{
+	var temptask = new task;
+	if(boss && !isattacking)
+	{
+	}
+}
+
+function zonwalkattack()
+{
+	var temptask = new task;
+	var mon;
+	if(moveattackkillall)
+		mon = GetClosestMonster(me.x,me.y,20);
+	else
+		mon = GetClosestMonster(nextx,nexty,3);
+
+	if(mon && !isattacking && mlLOS(me.x, me.y, mon.x, mon.y))
+	{
+			sctarget.UpdateText("Last Target: "+mon.name);
+			temptask.insert(800, mlDOCOMMAND + "`me.setSkill(\"Attack\", 0);");
+			temptask.insert(798, mlCAST + "`Attack`0`mon", null, mon);
+			temptask.insert(795, mlSETVARIABLE + "`isattacking`false");
+			isattacking=true;
+	}
+}
+
+function zonkillall(x, y, range)
+{
+	if(!x || !y){ x = me.x; y = me.y; }
+	var temptask = new task;
+	var mon = GetClosestMonster(x, y, range);
+
+	if(mon && !isattacking && mlLOS(me.x, me.y, mon.x, mon.y))
+	{
+		sctarget.UpdateText("Last Target: "+mon.name);
+		if(mon.getStat(36) > 99 && me.setSkill("Frozen Arrow", 0))
+		{
+			temptask.insert(800, mlCAST + "`Frozen Arrow`0`mon", null, mon);
+			temptask.insert(795, mlSETVARIABLE + "`isattacking`false");
+			isattacking=true;
+		}
+		else if(me.setSkill("Guided Arrow", 0))
+		{
+			temptask.insert(800, mlCAST + "`Guided Arrow`0`"+mon.x+"`"+(mon.y+5));
+			temptask.insert(795, mlSETVARIABLE + "`isattacking`false");
+			isattacking=true;
+		}
+		else
+		{
+			temptask.insert(800, mlDOCOMMAND + "`me.setSkill(\"Attack\", 0);");
+			temptask.insert(798, mlCAST + "`Attack`0`mon", null, mon);
+			temptask.insert(795, mlSETVARIABLE + "`isattacking`false");
+			isattacking=true;
+		}
+
+		if(warcry && rnd(1,8) == 2  && me.setSkill("War Cry", 0))
+			temptask.insert(799, mlCAST + "`War Cry`0");
+		if(battlecry && rnd(1,8) == 2 && me.setSkill("Battle Cry", 0))
+			temptask.insert(798, mlCAST + "`Battle Cry`0");
+	}
+	mon = GetClosestMonster(x, y, range);
+	if(mon && mlLOS(me.x, me.y, mon.x, mon.y)) return false;
+	else return true;
+
+}
+
+
+/////// ZON CASTS
+function zonhealthcasts()
+{
+}
+
+function needWally() {
+	var mon = getUnit(1);
+	do {
+		if (mon && mon.name == "Valkyrie" && mon.getParent() && mon.getParent().name == me.name) {
+			return false;
+		}
+	} while (mon && mon.getNext());
+	return true;
+}

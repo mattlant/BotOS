@@ -1,0 +1,15 @@
+Text	Type	X	YXSize	YSize	visible	disabled	Extended Text
+null	2	0	599	800	600	false	undefined	undefined
+null	2	400	120	181	170	false	undefined	undefined
+null	2	400	120	188	177	false	undefined	undefined
+null	2	319	347	169	26	false	undefined	undefined
+null	2	319	401	169	26	false	undefined	undefined
+Account Name	4	321	340	300	32	false	undefined	Account Name
+Password	4	321	394	300	32	false	undefined	Password
+To use an existing Battle.net account, enter the	4	200	350	400	100	false	undefined	To use an existing Battle.net account, enter the,information below and click 'Log In'. Otherwise,,click 'Create New Account'.
+mattlant	1	322	342	162	19	false	undefined	undefined
+null	1	322	396	162	19	false	undefined	undefined
+CREATE NEW ACCOUNT	6	264	572	272	35	false	false	undefined
+ACCOUNT SETTINGS	6	264	528	272	35	false	false	undefined
+LOG IN	6	264	484	272	35	false	true	undefined
+EXIT	6	33	572	128	35	false	false	undefined

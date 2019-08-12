@@ -1,0 +1,31 @@
+function LoadSkill()
+{
+	me.overhead("Loading Druid Skills");
+
+	var cList = new Array(
+	
+// Skill Name         Type      Element    Scope      Special   Weight   Mana	Range
+
+["Attack",			  gMelee,   gPhys,     gSingle,   gNone,    .8,      0,		gShort ],
+["Firestorm",         gSpell,   gFire,     gWide,     gNone,    1,       0,		gMedium],
+["Molten Boulder",    gSpell,   gFire,     gWide,     gTimed,   1.1,     0,		gMedium],
+["Poison Creeper",    gVine,    gPsn,      gNarrow,   gNone,    .1,      0,		gNone  ],
+["Arctic Blast",      gSpell,   gCold,     gWide,     gNone,    1,       0,		gMedium],
+["Fissure",           gSpell,   gFire,     gWide,     gNone,    1,       0,		gMedium],
+["Feral Rage",        gWolf,    gPhys,     gSingle,   gNone,    1.1,     0,		gShort ],
+["Maul",              gBear,    gPhys,     gSingle,   gNone,    1.1,     0,		gShort ],
+["Carrion Vine",      gVine,    gNone,     gNarrow,   gNone,    1,       0,		gNone  ],
+["Twister",           gSpell,   gFire,     gWide,     gNone,    1.1,     0,		gMedium],
+["Rabies",            gMelee,   gPsn,      gNarrow,   gNone,    1,       0,		gShort ],
+["Volcano",           gSpell,   gFire,     gWide,     gNone,    1,       0,		gMedium],
+["Fire Claws",        gShft,    gFire,     gSingle,   gNone,    1,       0,		gShort ],
+["Tornado",           gSpell,   gPhys,     gWide,     gNone,    1,       0,		gShort ],
+["Hunger",            gMelee,   gPhys,     gSingle,   gLeech,   .25,     0,		gShort ],
+["Solar Creeper",     gVine,    gNone,     gNarrow,   gNone,    .1,      0,		gNone  ],
+["Armageddon",        gMelee,   gFire,     gWide,     gTimed,   1,       0,		gMedium],
+["Hurricane",         gMelee,   gPhys,     gWide,     gNone,    1,       0,		gMedium],
+["Fury",              gWolf,    gPhys,     gSingle,   gNone,    1.2,     0,		gShort ]
+
+);
+	return cList;
+}

@@ -1,0 +1,29 @@
+
+//Properties and Methods for IPathable Interface
+
+//Properties are a little harder to implement :(
+
+
+
+
+	//////////////////////////////////////////////////////////////////////
+	// IPathable.IsInRange(_x, _y)
+	// -------------------------------------------------------------------
+	// Used to Check if a coord is within the COllisionData's Limits
+	// _x and _y define the coords
+	//////////////////////////////////////////////////////////////////////
+function IPathable_IsInRange(_x, _y) 
+{
+	/*
+	if(_x > this.MaxX || _x < this.x || _y > this.MaxY || _y < this.y)
+		return false;
+	else
+		return true;
+	*/
+
+	return !(_x > this.MaxX || _x < this.x || _y > this.MaxY || _y < this.y)
+}
+
+
+
+

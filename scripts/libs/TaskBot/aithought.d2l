@@ -1,0 +1,184 @@
+//AI Thought Processes - A generalized AI plugin by mattlant for BotOS
+
+var mlSTATELEVEL = 1;
+var mlSTATEQUEST = 2;
+var mlSTATEMF = 3;
+var mlSTATEMONEY = 4;
+var mlSTATEEXPLORE = 5;
+
+function plugMLAIThought(instname)
+{
+	this.temp = oPlugin;
+	this.temp("AICoreLoop", mlPLUGINBYTIME, 100, "AI Thought Process", "0.0.1", "mattlant", instname);
+	delete this.temp;
+
+
+	this.AICoreLoop = function() {
+
+
+		if(InTown(me))	AI.MoveAttack = false;
+		else AI.MoveAttack = true;
+
+		MonsterQueue.Update();
+		//if((me.mode == 4 || me.mode == 9 || me.mode == 19) && AI.IsAttacking)
+		//	playerkill({Range:4});
+			
+		//this.AIPositioning();
+
+		//Move Attacking
+		if (!InTown(me) && AI.MoveAttack) {
+
+			var _mon = MonsterQueue.getClosest();
+			if(_mon && _mon.Distance < AI.MoveAttackRange && !AI.IsAttacking) {
+				Log.Write("In Attacking AI");
+
+				new oTaskAttack(800, "Attack", {Range:AI.MoveAttackRange, LOS:true}).Insert();
+				new oTaskAI(799, "SetIsAttacking", {Val:false}).Insert();
+				AI.IsAttacking = true;
+			}
+
+		}
+
+		
+	}
+	
+	this.AIPositioning = function() {
+			Log.Write("In positioning AI");
+			if(AI.IsPositioning) return;
+			var cmon = MonsterQueue.getClosest();
+			if(cmon && cmon.Dist < AI.PositionalThreatRange) {
+				
+				var dir;
+				 
+				
+				for(var x = -5; x < 6; x+=5) {
+					for(var y = -5; y < 6; y+=5) {
+						if(Map.LOS(me.x, me.y, me.x+x, me.y+y, 50, true)) {
+							var dt = Dist(me.x+y, me.x+x, mon.Monster.x, mon.Monster.y);
+							if(dt > dirdist)
+								dir = {x:me.x+x, y:me.y+y, d:dt};
+						}
+					}
+				}
+				
+				new oGoalMove(500, "PathToXY", {dx:dir.x, dy:dir.y, p:600}).Insert();
+				new oGoal(499, "AddItems", {p:500}, new oTaskAI(0, "SetIsPositioning", {Val:false})).Insert();
+				AI.IsPositioning = true;
+			}
+		
+	}
+		
+		
+}
+
+
+function oAI() {
+	
+	/*
+	oAI Revision History
+	------------------------------------------------------------------------
+	v0.1.0
+	- Added in StaminaRegenAmount, WalkingState, DynamicWalkDelay
+	
+	oAI Todo's:
+	a lot of the values to be set dynamically
+	------------------------------------------------------------------------
+	*/
+	
+	
+	
+	//PUBLIC Member Properties
+	this.State = mlSTATEEXPLORE;
+	this.StateL1 = "Not Implemented";
+	this.StateL2 = "Not Implemented";
+	this.StateL3 = "Not Implemented";
+	this.MoveAttack = true;
+	this.MoveAttackRange = 30;
+	this.IsAttacking = false;
+	this.IsMoving = false;
+	this.PositionalThreatRange = 15;
+	this.IsPositioning = false;
+	this.IsUsingSkill = false;
+	this.IsSnagging = false;
+	this.IsDrinking = false;
+	this.Pause = false;
+	this.StaminaRegenAmount = 10;
+	this.DynamicWalkDelay = dynamicwalkdelay;
+	this.AIHPPcnt = 100;
+	
+	//potion manager stuff
+	this.CriticalLifePercent = 20;
+	this.CriticalManaPercent = 20;
+	this.CriticalBlowPercent = 45;
+	this.RetreatLifePercent = 30;
+	this.RetreatManaPercent = 30;
+	this.LifeDropPercent = 0;
+	this.CriticalTrackingTimeLength = 180000;
+	this.PotionTrackingTimeLength = 180000;
+	this.PotionUsageTrackingTimeLength = 180000;
+	this.HealthPotionLimit = 8;
+	this.ManaPotionLimit = 8;
+	this.RejuvPotionLimit = 8;
+	this.IsSwapping = false;
+	
+	this.needammo_lowprio = false;
+	this.needammo_urgent = false;
+	
+	this.needkeys = false;
+	this.needtsc = false;
+	this.needisk = false;
+	
+	//Public Member Methods
+	this.ProcessAI = oAI_processai;
+	
+	function oAI_processai() {
+		if(InTown(me))	this.MoveAttack = false;
+		else this.MoveAttack = true;
+	}
+
+	
+}
+
+function oTaskAI(_p, _function, _data, _object, _tag)
+{
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.SetState = oTaskAI_setState;
+	this.SetMoveAttack = oTaskAI_setMoveAttack;
+	this.SetMoveAttackRange = oTaskAI_setMoveAttackRange;
+	this.SetPositionalThreatRange = oTaskAI_setPositionalThreatRange;
+	this.SetIsAttacking = oTaskAI_setIsAttacking;
+	this.SetIsPositioning = oTaskAI_setIsPositioning;
+	this.SetIsUsingSkill = oTaskAI_setIsUsingSkill;
+
+	function oTaskAI_setState()
+	{
+		AI.State = this.Data.Val;
+	}
+	function oTaskAI_setMoveAttack()
+	{
+		AI.MoveAttack = this.Data.Val;
+	}
+	function oTaskAI_setMoveAttackRange()
+	{
+		AI.MoveAttackRange = this.Data.Val;
+	}
+	function oTaskAI_setPositionalThreatRange()
+	{
+		AI.PositionalThreatRange = this.Data.Val;
+	}
+	function oTaskAI_setIsAttacking()
+	{
+		AI.IsAttacking = this.Data.Val;
+	}
+	function oTaskAI_setIsPositioning()
+	{
+		AI.IsPositioning = this.Data.Val;
+	}
+	function oTaskAI_setIsUsingSkill()
+	{
+		AI.IsUsingSkill = this.Data.Val;
+	}
+}

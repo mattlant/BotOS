@@ -1,0 +1,44 @@
+****************************
+***  BotOS GUI Hierarchy ***
+****************************
+
+Coord				
+	X
+	Y
+	Move()
+
+Line: Coord			
+	X2
+	Y2
+	Move()
+	Hide()
+	Show()
+
+Border: Coord				
+	Type
+	Lines[]
+	Move()
+	Hide()
+	Show()
+
+Window: Coord			
+	Width
+	Height
+	Title
+	ID
+	Borders[]
+	Destroy()
+	Move()
+	Hide()
+	Show()
+
+WindowManager
+	Windows[]
+	WindowUpdater()
+	Create()
+	Destroy(ID)
+	GetLength()
+	Hide(ID)
+	HideAll()
+	Show(ID)
+	ShowAll()

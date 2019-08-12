@@ -1,0 +1,538 @@
+//New Health module - plugin based
+
+
+
+//Constants
+const mlPOTIONREJUV = 0;
+const mlPOTIONHEALING = 1;
+const mlPOTIONMANA = 2;
+const mlPOTIONANTIDOTE = 3;
+const mlPOTIONSTAMINA = 4;
+const mlPOTIONTHAWING = 5;
+
+const mlPOTIONPLACE = [[100, "Inventory"],[2, "Belt"]];
+
+const mlPRIORITYPOTION = 980;
+var mlPOTIONS = [["rvs", "rvl"], ["hp1", "hp2", "hp3", "hp4", "hp5"],["mp1", "mp2", "mp3", "mp4", "mp5"], ["yps"], ["vps"], ["wms"]];
+var HEALTHVAL = [[0, 45, 90, 150, 270, 480], [0, 30, 60, 100, 180, 320], [0, 30, 60, 100, 180, 320], 
+	[0, 45, 90, 150, 270, 480], [0, 60, 120, 200, 360, 640], [0, 30, 60, 100, 180, 320], [0, 45, 90, 150, 270, 480]];
+var MANAVAL = [[0, 30, 60, 120, 225, 375], [0, 40, 80, 160, 300, 500], [0, 40, 80, 160, 300, 500], 
+	[0, 30, 60, 120, 225, 375], [0, 20, 40, 80, 150, 250], [0, 40, 80, 160, 300, 500], [0, 30, 60, 120, 225, 375]];
+var REJUVVAL = [0, 35, 100];
+//6assn sheal = 
+//6assn smana = 
+//5druid sheal = 
+//5druid smana = 
+var PotionManager = new oPotionManager(true);
+
+
+function plugMLHealth(instname)
+{
+	this.temp = oPlugin;
+	this.temp("CheckHealth", mlPLUGINBYTIME, 100,"Health", "0.0.3", "mattlant", instname);
+	delete this.temp;
+
+	this._drinktime = DrinkTimer;
+	this._timer = new Date();
+	this.merc = null;
+	
+	var TrackingTimer = new Date();
+	
+	this.CheckHealth = function () {
+		
+		PoisonChecker();
+		
+		PotionManager.UsePotions();
+		
+		if(new Date() - TrackingTimer > 10000) {
+			PotionManager.UpdateTracking();
+			//PotionManager.Update();
+			TrackingTimer = new Date();
+			var bp = new Object();
+			var ip = new Object();
+//			print("about to call IsManaOnBelt");
+			Log.Write(mlLOGPOTIONS, "about to call IsManaOnBelt", boLOGINFO);
+			if(!AI.IsSwapping) {
+				var tpoto = PotionManager.IsManaOnBelt(bp, ip)
+				if(tpoto) {
+//					print("IsManaOnBelt is true");
+					Log.Write(mlLOGPOTIONS, "IsManaOnBelt is true", boLOGINFO);
+					new oTaskHealth(480, "Swap", {PotBelt:tpoto.bp, PotInv:tpoto.ip}).Insert();
+					AI.IsSwapping = true;
+				}
+			}
+		}
+		
+	}
+	
+	
+}
+
+function plugMLHealthDrop(instname)
+{
+	this.temp = oPlugin;
+	this.temp("CheckHealthDrop", mlPLUGINBYTIME, 33,"HealthDrop", "0.0.1", "mattlant", instname);
+	delete this.temp;
+	
+	var lastpercent = Math.round(me.hp/(me.hpmax + me.hpmax * (me.getStat(76) / 100))*100);
+	//var lasttime = new Date();
+	//var totaldamage = 0;
+	var damagearray = new Array();
+	var shDrop = new ScreenHook("Damage Percent/s: 0", 480, 300);
+	this.meter = new oMeter(480, 364, 200, 50);
+	
+
+
+	this.CheckHealthDrop = function() {
+		var thispercent = Math.round(me.hp/(me.hpmax + me.hpmax * (me.getStat(76) / 100))*100);
+		AI.HPPcnt = thispercent;
+		var cycledamage = lastpercent - thispercent;
+		if(cycledamage > AI.CriticalBlowPercent) {
+			//we have a problem
+//			print("CRITICAL BLOW - OH NO!!!");
+			Log.Write(mlLOGPOTIONS, "CRITICAL BLOW - OH NO!!!", boLOGWARNING);
+		}
+		//if(cycledamage < 0) cycledamage = 0;
+		AI.LifeDropPercent += cycledamage;
+		damagearray.push(cycledamage);
+		if(damagearray.length > 30) {
+			AI.LifeDropPercent -= damagearray.shift();
+		}
+		
+		this.meter.Update(AI.LifeDropPercent);
+		shDrop.UpdateText("Damage Percent/s: " + AI.LifeDropPercent);
+		lastpercent = thispercent;
+	}
+}
+
+
+
+
+
+function oTaskHealth(_p, _function, _data, _object, _tag)
+{
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	//this.Leech;
+	//this.Regenerate;
+	
+	var step1 = false;
+	var step2 = false;
+	var step3 = false;
+	var pix;
+	var piy;
+
+	this.Drink = function()
+	{
+		//PotionManager.Remove(this.Data.Pot);
+		if(!this.Data.Pot.gid) {
+			Log.Write(mlLOGPOTIONS, ("Potion is trying to be used that is undefined"));
+			return;
+		}
+		
+		Log.Write(mlLOGPOTIONS, ("Using a " + this.Data.Pot.name + " with a gid of: " + this.Data.Pot.gid));
+		PotionManager.PotionUsageTracking[this.Data.Pot.code.substr(0,2)].push(new Date());
+		clickItem(1, this.Data.Pot);
+		delay(5);
+		new oTaskCommon(this.p+1, "Delay", {Amount:300}).Insert(); //TODO add in a short delay
+		AI.IsDrinking = false;
+
+	}
+	this.DrinkMerc = function()
+	{
+		//PotionManager.Remove(this.Data.Pot);
+		if(!this.Data.Pot.gid) {
+			Log.Write(mlLOGPOTIONS, ("Potion is trying to be used that is undefined"));
+			return;
+		}
+		
+		Log.Write(mlLOGPOTIONS, ("Mercenary is using a " + this.Data.Pot.name + " with a gid of: " + this.Data.Pot.gid));
+		PotionManager.PotionUsageTracking[this.Data.Pot.code.substr(0,2)].push(new Date());
+		clickItem(3, this.Data.Pot);
+		delay(5);
+		new oTaskCommon(this.p+1, "Delay", {Amount:300}).Insert(); //TODO add in a short delay
+		AI.IsDrinking = false;
+
+	}
+	
+	this.Swap = function() {
+		if(!this.Data.PotBelt || !this.Data.PotInv) return;
+		if(!step1) {
+			step1 = true;
+			pix = this.Data.PotInv.x;
+			piy = this.Data.PotInv.y;
+			clickItem(0, this.Data.PotInv);
+			new oTaskCommon(this.p+1, "Delay", {Amount:400}).Insert(); //TODO add in a short delay
+			this.Insert();
+			return;
+		}
+		else if(!step2) {
+			step2 = true;
+			clickItem(0, this.Data.PotBelt);
+			new oTaskCommon(this.p+1, "Delay", {Amount:400}).Insert(); //TODO add in a short delay
+			this.Insert();
+			return;
+		}
+		else if (!step3) {
+			step3 = true;
+			clickItem(0, pix, piy, 0);
+			new oTaskCommon(this.p+1, "Delay", {Amount:400}).Insert(); //TODO add in a short delay
+			this.Insert();
+			return;
+		}
+		if(me.itemoncursor) {
+			clickMap(0, 0, me.x, me.y);
+			delay(50);
+			clickMap(2, 0, me.x, me.y);
+		}
+		AI.IsSwapping = false;
+	}
+}
+
+//Potion Object
+
+function oPotionManager(_update) {
+	
+	//this.Potions = new Array();
+	this.Potions = new Object();
+	this.Potions.hp1 = new Array();//Potion of Health
+	this.Potions.hp2 = new Array();
+	this.Potions.hp3 = new Array();
+	this.Potions.hp4 = new Array();
+	this.Potions.hp5 = new Array();
+	this.Potions.mp1 = new Array();//Potion of Mana
+	this.Potions.mp2 = new Array();
+	this.Potions.mp3 = new Array();
+	this.Potions.mp4 = new Array();
+	this.Potions.mp5 = new Array();
+	this.Potions.rvs = new Array();//Small Rejuv
+	this.Potions.rvl = new Array();//Large Rejuv
+	this.Potions.yps = new Array();//Potion of Antidote
+	this.Potions.vps = new Array();//Potion of Stamina
+	this.Potions.wms = new Array();//Potion of Thawing
+	
+	this.Update = oPotionManager_update;
+	this.Add = oPotionManager_add;
+	this.Remove = oPotionManager_remove;
+	this.UsePotions = oPotionManager_UsePotions;
+	this.UpdateTracking = oPotionManager_UpdateTracking;
+	this.CheckPickup = oPotionManager_checkpickup;
+	this.IsManaOnBelt = oPotionManager_ismanaonbelt;
+
+	this.PotionTracking = new oPotionTracking();
+	this.PotionUsageTracking = new oPotionUsageTracking();
+	this.CriticalHealthTracking = new Array();
+	this.CriticalManaTracking = new Array();
+	
+	if(_update) this.Update();
+	
+	function oPotionManager_update() {
+		//go thru all potions on belt and inv
+		this.Potions.length = 0;
+		for(var i = 0; i < mlPOTIONS.length; i++) {
+			for(var j = 0; j < mlPOTIONS[i].length; j++) {
+				//for(var k = 0; k < mlPOTIONPLACE.length; k++) {
+					var tpot = getUnit(4, mlPOTIONS[i][j]);
+					if(tpot) do {
+						if(tpot.getParent() && tpot.getParent().name != me.name) continue;
+						if(tpot.code != mlPOTIONS[i][j]) continue;
+						this.Potions[tpot.code].push(copyUnit(tpot));
+					}while(tpot.getNext());
+				//}
+			}
+		}		
+	}
+
+	function oPotionManager_add(_pot) {
+		this.PotionTracking.Add(_pot);
+		this.Potions[_pot.code].push(copyUnit(_pot));
+		
+	}
+	
+	function oPotionManager_remove(_pot) {
+		for(var i = 0; i<this.Potions[_pot.code].length; i++) {
+			if(this.Potions[_pot.code][i].gid != _pot.gid) {
+				if(!i) {
+					this.Potions[_pot.code].shift();
+					break;
+				}
+				else if(i == this.Potions[_pot.code].length-1) {
+					this.Potions[_pot.code].pop();
+					break;
+				}
+				else {
+					this.Potions[_pot.code] = this.Potions[_pot.code].slice(0, i-1).concat(this.Potions[_pot.code].slice(i+1));
+					break;
+				}
+			}
+		}
+	}
+		
+	function oPotionManager_UsePotions() {
+		var maxhp = me.hpmax + me.hpmax * (me.getStat(76)/100);
+		var maxmp = me.mpmax// + me.mpmax * (me.getStat(77)/100);
+		var th = Math.round(me.hp/maxhp*100);
+		var tm = Math.round(me.mp/maxmp*100);
+		//say("!My mp% = " + tm);
+		//say("!My hp% = " + th);
+		var usecode;
+		if(AI.IsDrinking) return; 
+		//Life Check
+		if(th < AI.CriticalLifePercent) {
+			usecode = null;
+			if(this.Potions.rvs.length > 0) {
+				usecode="rv";
+				if(this.Potions.rvs.length) {
+					new oTaskHealth(mlPRIORITYPOTION, "Drink", {Pot:this.Potions.rvs.pop()}).Insert();
+					AI.IsDrinking = true;
+				}
+			}
+			else if(this.Potions.rvl.length > 0) {
+				usecode="rv";
+				if(this.Potions.rvl.length) {
+					new oTaskHealth(mlPRIORITYPOTION, "Drink", {Pot:this.Potions.rvl.pop()}).Insert();
+					AI.IsDrinking = true;
+				}
+			}
+			else if(!me.getState(100)) {
+				//drink highest available
+				usecode = "hp";
+				for(var i=5; i>0; i--) {
+					if(this.Potions[("hp" + i)].length) {
+						new oTaskHealth(mlPRIORITYPOTION, "Drink", {Pot:this.Potions[("hp" + i)].pop()}).Insert();
+						AI.IsDrinking = true;
+						break;
+					}
+				}
+				//mark that we hit low level for auto pickup percent
+			}
+			this.CriticalManaTracking.push(new Date());
+		}
+		else {
+			usecode = null;
+			if(!me.getState(100)) { //Dont drink if we are already drinking FIX
+				//drink next relevant according to psuedo
+				for(var i = 1; i < 6; i++) {
+					if(this.Potions[("hp" + i)].length && (maxhp - me.hp) > HEALTHVAL[me.classid][i]) {
+						new oTaskHealth(mlPRIORITYPOTION, "Drink", {Pot:this.Potions[("hp" + i)].pop()}).Insert();
+						AI.IsDrinking = true;
+						break;
+					}
+				}
+				
+				//mark into potion usage
+			}
+		}
+		
+		//Mana check
+		if(tm < AI.CriticalManaPercent) {
+			usecode = null;
+			if(this.Potions.rvs.length > 0) {
+				usecode="rv";
+				if(this.Potions.rvs.length) {
+					new oTaskHealth(mlPRIORITYPOTION, "Drink", {Pot:this.Potions.rvs.pop()}).Insert();
+					AI.IsDrinking = true;
+				}
+			}
+			else if(this.Potions.rvl.length > 0) {
+				usecode="rv";
+				if(this.Potions.rvl.length) {
+					new oTaskHealth(mlPRIORITYPOTION, "Drink", {Pot:this.Potions.rvl.pop()}).Insert();
+					AI.IsDrinking = true;
+				}
+			}
+			else if(!me.getState(106)) {
+				//drink highest available
+				usecode = "mp";
+				for(var i=5; i>0; i--) {
+					if(this.Potions["mp" + i].length) {
+						new oTaskHealth(mlPRIORITYPOTION, "Drink", {Pot:this.Potions[("mp" + i)].pop()}).Insert();
+						AI.IsDrinking = true;
+						break;
+					}
+				}
+				//mark that we hit low level for auto pickup percent
+			}
+			this.CriticalManaTracking.push(new Date());
+		}
+		else {
+			var usedcode = null;//whatever code is used
+			if(!me.getState(106)) { //Dont Drink if we are already drinking FIX
+				//drink next relevant according to psuedo
+				for(var i = 1; i < 6; i++) {
+					if(this.Potions[("mp" + i)].length && (maxmp - me.mp) > MANAVAL[me.classid][i]) {
+						say("!added a drink mana task");
+						new oTaskHealth(mlPRIORITYPOTION, "Drink", {Pot:this.Potions[("mp" + i)].pop()}).Insert();
+						AI.IsDrinking = true;
+						break;
+					}
+				}
+				//mark into potion usage
+			}
+		}
+	}
+
+	function oPotionManager_UpdateTracking() {
+		this.PotionTracking.Update();
+		this.PotionUsageTracking.Update();
+		
+		//now update low life/mana level tracking
+		while(this.CriticalHealthTracking.length > 0) {
+			if(new Date() - this.CriticalHealthTracking[0] > AI.CriticalTrackingTimeLength)
+				this.CriticalHealthTracking.shift();
+			else break;
+		}
+		while(this.CriticalManaTracking.length > 0) {
+			if(new Date() - this.CriticalManaTracking[0] > AI.CriticalTrackingTimeLength)
+				this.CriticalManaTracking.shift();
+			else break;
+		}
+	}
+	
+	function oPotionManager_checkpickup(_pot) {
+		if(_pot.code.substr(0,2) == "hp") {
+			var count = 0;
+			for(var i = 1; i < 6; i++) count += this.Potions[("hp"+i)].length;
+			if(count < AI.HealthPotionLimit) return 5;
+			else return 0;
+		}
+		else if(_pot.code.substr(0,2) == "mp") {
+			var count = 0;
+			for(var i = 1; i < 6; i++) count += this.Potions[("mp"+i)].length;
+			if(count < AI.ManaPotionLimit) return 5;
+			else return 0;
+		}
+		else if(_pot.code.substr(0,2) == "rv") {
+			if(this.Potions.rvs.length + this.Potions.rvl.length < AI.RejuvPotionLimit) return 5;
+			else return 0;
+		}
+		return 0;
+	}
+	
+	function oPotionManager_ismanaonbelt(_b, _i) {
+		//check for belt mana
+		for(var i = 1; i < 6; i++) {
+			for(var v=0; v < this.Potions[("mp"+i)].length; v++) {
+				if(this.Potions[("mp"+i)][v].mode == 2) {
+					//we have belt so check inv for health or rejuv
+					for(var hi = 1; hi < 6; hi++) {
+						for(var hv=0; hv < this.Potions[("hp"+hi)].length; hv++) {
+							if(this.Potions[("hp"+hi)][hv].mode == 0) {
+								return {bp:copyUnit(this.Potions[("mp"+i)][v]),
+								ip:copyUnit(this.Potions[("hp"+i)][hv])};
+							}
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+						
+					
+}
+
+
+function oPotion (_potion) {
+	
+	this.Potion = copyUnit(_potion);
+	this.Type = _potion.code;
+	this.Location;
+	//this.Use = oPotion_use;
+}
+
+function oPotionTracking() {
+	this.hp = new Array();
+	this.mp = new Array();
+	this.rv = new Array();
+	this.yp = new Array();//Potion of Antidote
+	this.vp = new Array();//Potion of Stamina
+	this.wm = new Array();//Potion of Thawing
+	
+	this.Add = function(_pot) {
+		this[_pot.code.substr(0,2)].push(new Date());
+	}
+	
+	this.Update = function () {
+		for(var prop in this) {
+			if(prop instanceof Array) {
+				while(this[prop].length > 0) {
+					if(new Date() - this[prop][0] > AI.PotionTrackingTimeLength)
+						this[prop].shift();
+					else break;
+				}
+			}
+		}
+	}
+				
+}
+
+function oPotionUsageTracking() {
+	this.hp = new Array();
+	this.mp = new Array();
+	this.rv = new Array();
+	this.yp = new Array();//Potion of Antidote
+	this.vp = new Array();//Potion of Stamina
+	this.wm = new Array();//Potion of Thawing
+	
+	this.Update = function () {
+		for(var prop in this) {
+			if(prop instanceof Array) {
+				while(this[prop].length > 0) {
+					if(new Date() - this[prop][0] > AI.PotionUsageTrackingTimeLength)
+						this[prop].shift();
+					else break;
+				}
+			}
+		}
+	}
+				
+}
+
+function PoisonChecker() {
+	if(me.getState(1)) {
+		Log.Write(mlLOGPOTIONS, "I am frozen", boLOGINFO);
+	}
+	if(me.getState(2)) {
+		Log.Write(mlLOGPOTIONS, "I am poisoned", boLOGINFO);
+	}
+	if(me.getState(9)) {
+		Log.Write(mlLOGPOTIONS, "I am under effect of amplify damage", boLOGINFO);
+	}
+	if(me.getState(36)) {
+		Log.Write(mlLOGPOTIONS, "I am under effect of thorns", boLOGINFO);
+	}
+	if(me.getState(114)) {;
+		Log.Write(mlLOGPOTIONS, "I am under effect of bloodmana", boLOGINFO);
+	}
+}
+
+
+
+/*
+keep an equilibrium	
+if potion pickup out paces potion usage, too easy
+if other way around, too hard
+
+potion pickup should be dependant on how often you are getting low on certain stats
+
+ pseudo:
+
+modified function health check -
+
+ am i dangerously low on life? if so, directly search for highest potion and use it
+ if not - use the below to drink and maintain potion flow
+
+ array of 5 (values that each healing potion heals)
+
+  loop from 0 to 4
+
+  check if max hitpoints - my hitpoints => array value
+        and i have plenty of these potions / pick plenty up - use a potion
+[02:31:45] *chan* Undine: No one told me what bot this is for, but i dont wanna interupt =/
+*/
+	
+	
+

@@ -1,0 +1,505 @@
+//Coremanager Support
+
+function oQuest(_p, _function, _data, _items, _tag)
+{
+	this.p = _p;
+	this.Function = _function;
+	if(!_data) _data = new Object();
+	this.Data = _data;
+	this.Tag = _tag;
+	this.BaseClass = "oQuest";
+	this._time;
+	this._id = rnd(0,0xFFFF);
+
+	this.Items = _items;
+
+	this.AddItems = oQuest_additems;
+	this.Insert = oQuest_insert;
+
+	function oQuest_additems()
+	{
+		if(this.Items) QGTAddItems(this.Items, this.Data.p);
+		this.Items = null;
+	}
+
+	function oQuest_insert()
+	{
+		this._time = new Date();
+		QuestQueue.Insert(this);
+	}
+}
+
+function oGoal(_p, _function, _data, _items, _tag)
+{
+	this.p = _p;
+	this.Function = _function;
+	if(!_data) _data = new Object();
+	this.Data = _data;
+	this.Tag = _tag;
+	this.BaseClass = "oGoal";
+	this._time;
+	this._id = rnd(0,0xFFFF);
+
+	this.Items = _items;
+
+	this.AddItems = oGoal_additems;
+	this.Insert = oGoal_insert;
+
+	function oGoal_additems()
+	{
+		if(this.Items) QGTAddItems(this.Items, this.Data.p);
+		this.Items = null;
+	}
+
+	function oGoal_insert()
+	{
+
+		this._time = new Date();
+		GoalQueue.Insert(this);
+	}
+
+}
+
+//////////////////////////////////////////////////////////////////////
+// oTask(_p, _function, _data, _object, _tag)
+// Parent Class of all Task Objects
+//////////////////////////////////////////////////////////////////////
+function oTask(_p, _function, _data, _items, _tag)
+{
+	this.p = _p;
+	this.Function = _function;
+	if(!_data) _data = new Object();
+	this.Data = _data;
+	this.Tag = _tag;
+	this.BaseClass = "oTask";
+	this._time;
+	this._id = rnd(0,0xFFFF);
+
+	this._attempts = 0;
+
+	this.Items = _items;
+
+	this.Insert = oTask_insert;
+	this.AddItems = oTask_additems;
+
+	function oTask_insert()
+	{
+		this._time = new Date();
+		TaskQueue.Insert(this);
+	}
+
+	function oTask_additems()
+	{
+		if(this.Items) QGTAddItems(this.Items, this.Data.p);
+		this.Items = null;
+	}
+}
+
+
+function QGTAddItems(_items, _p)
+{
+	if(!_items) return;
+	_p--;
+	if(_items instanceof Array) {
+		for(var i = 0; i<_items.length; i++){
+			if(!_items[i]) continue;
+			if(_p)
+				_items[i].p = _p--;
+			_items[i].Insert();
+		}
+	}
+	else {
+		if(_p)
+			_items.p = _p--;
+		_items.Insert();
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// oTaskInteract(_p, _function, _data, _object, _tag)
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+function oTaskInteract(_p, _function, _data, _object, _tag)
+{
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.InteractWarp = oTaskInteract_warp;
+	this.InteractWaypoint = oTaskInteract_waypoint;
+	//this.InteractItem = oTaskInteract_item;
+	this.InteractNPC = oTaskInteract_npc;
+	this.InteractObject = oTaskInteract_object;
+	this.InteractPortal = oTaskInteract_portal;
+
+	this._portal = null;
+	this._wp = null;
+	this._warp = null;
+	this._lastarea = 0;
+	
+	var _attempts = 0;
+
+	function oTaskInteract_waypoint(act, waypoint)
+	{
+		if(!this._lastarea) {
+			this._lastarea = me.area;
+			var wp = getUnit(2, "waypoint");
+			if(!wp) Log.Write(mlLOGTASKS, "Failed to get wp using getobject", boLOGERROR);
+			this._wp = wp;
+		}
+		if(this._lastarea == me.area) {
+			//TODO: add in an error trigger if you cant change places after a certain period of time
+			this._wp.interact(waypoints[this.Data.Act-1][this.Data.Waypoint-1]);
+			new oTaskCommon(this.p+1, "Delay", {Amount:500}).Insert(); //TODO add in a short delay
+			this.Insert();
+		}
+		else
+			me.cancel(0);
+
+	}
+
+	function oTaskInteract_portal()
+	{
+		if(!this.Data._portal) {
+			var p = getUnit(2, "portal");
+			if(!p) { Log.Write(mlLOGTASKS, "Didn't get the portal", boLOGCRITICALERROR); stop(); }//TODO Raise error
+			if(this.Data.Area){
+				do{
+					if(p && p.area == this.Data.Area)
+						break;
+				} while(p && p.getNext());
+				if(!p) { Log.Write(mlLOGTASKS, "didnt get portal for area" + this.Data.Area, boLOGCRITICALERROR); stop(); }//TODO Raise error
+			}
+			this.Data._portal = p;
+			this.Data._lastarea = me.area;
+		}
+		if(this.Data._lastarea == me.area) {
+//			this.Data._portal.move();
+//			this.Data._portal.interact();
+			clickMap(0, 0, this.Data._portal);
+			delay(10);
+			clickMap(2, 0, this.Data._portal);
+			this._attempts++;
+			new oTaskCommon(this.p+1, "Delay", {Amount:200}).Insert();
+			this.Insert();
+			return;
+		}
+	}
+
+	function oTaskInteract_object()
+	{
+		if(!this.Data.OObject) {
+			this.Data.OObject = getUnit(2, (this.Data.ObjectName?this.Data.ObjectName:this.Data.ID));
+			if(!this.Data.OObject) {
+//				print("Failed to get object");
+				Log.Write(mlLOGTASKS, "Failed to get object", boLOGERROR);
+				return;
+			}
+		}
+		if(DistEuclidian(me.x, me.y, this.Data.OObject.x, this.Data.OObject.y) > 7) {
+//			print("Too far away moving to Object");
+			Log.Write(mlLOGTASKS, "Too far away moving to Object", boLOGCRITICALINFO);
+			new oGoalMove(0, null, {dx:this.Data.OObject.x, dy:this.Data.OObject.y, p:this.p+1}).PathToXY();
+			this.Insert();
+			return;
+		}
+		if(typeof(this.Data.Mode) == "number") {
+			if(this.Data.OObject.mode == this.Data.Mode) {
+				clickMap(0, 0, this.Data.OObject);
+				delay(10);
+				clickMap(2, 0, this.Data.OObject);
+				new oTaskCommon(this.p+1, "Delay", {Amount:300}).Insert();
+				this.Insert();
+				return;
+			}
+		}
+		else {
+			clickMap(0, 0, this.Data.OObject);
+			delay(10);
+			clickMap(2, 0, this.Data.OObject);
+			new oTaskCommon(this.p+1, "Delay", {Amount:200}).Insert();
+			if(getUIFlag(0x14)) {
+				me.overhead("okay, can cancel now");
+				this.Data.OObject.cancel(0);
+			}
+		}
+	}
+
+	function oTaskInteract_warp()
+	{
+		if(!this._lastarea) {
+			this._lastarea = me.area;
+			var warp = getUnit(5);
+			if(!warp) Log.Write(mlLOGTASKS, "Failed to get tile using getTile", boLOGWARNING);
+			if(warp.area != me.area) warp.getNext();
+			this._warp = warp;
+			var wc = Map.FindClosestWalkable(warp.x, warp.y);
+			if(DistEuclidian(me.x, me.y, warp.x, warp.y) > 15)
+				new oGoalMove(0, null, {sx:me.x, sy:me.y, dx:wc.x, dy:wc.y, lowp:this.p+2}).PathToXY();
+		}
+		if(this._lastarea == me.area) {
+			//TODO: add in an error trigger if you cant change places after a certain period of time
+			this._warp.interact();
+			this._attempts++;
+			new oTaskCommon(this.p+1, "Delay", {Amount:200}).Insert();
+			this.Insert();
+			return;
+		}
+		//new oTaskCommon(this.p+1, "Delay", {Amount:300}).Insert();
+	}
+	
+	function oTaskInteract_npc() {
+		if(this.Data.NPC) {
+//			print("Need to visit "+this.Data.NPC);
+			Log.Write(mlLOGTASKS, "Need to visit "+this.Data.NPC, boLOGCRITICALINFO);
+			var oNPC = getUnit(1, this.Data.NPC);
+			if(!oNPC) return false;
+			new oGoalMove(0, null, {dx:oNPC.x, dy:oNPC.y, p:this.p+1}).PathToXY();
+			if(this.Data.Quest == true) {
+				clickMap(0, 0, oNPC);
+				delay(10);
+				clickMap(2, 0, oNPC);
+				if(!getUIFlag(0x08)) {
+					me.cancel(1);
+					new oTaskCommon(this.p+1, "Delay", {Amount:200}).Insert();
+					this.Insert();
+				} else {
+					new oTaskCommon(this.p+1, "Delay", {Amount:100}).Insert();
+					oNPC.cancel(1);
+				}
+			}
+		}
+	}
+}
+
+function oTaskCommon(_p, _function, _data, _object, _tag)
+{
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.Delay = oTaskCommon_delay;
+	this.Cast = oTaskCommon_cast;
+	this.SetVariable = oTaskCommon_setvariable;
+	this.DoCommand = oTaskCommon_docommand;
+	this.WeaponSwitch = oTaskCommon_wswitch;
+	this.Status = oTaskCommon_status;
+	this.RepeatDelay = oTaskCommon_repeatdelay;
+
+	this._stime = 0;
+
+	///DYNAMIC DELAY///
+	function oTaskCommon_delay()
+	{
+		if(!this._stime)
+			this._stime = new Date();
+
+		if (new Date() - this._stime >= this.Data.Amount){
+			shstatus.UpdateText("None");
+			return;
+		}
+		shstatus.UpdateText("Delay: " + this.Data.Amount + " - " + this.Data.Reason);
+		TaskQueue.Insert(this);
+		return;
+	}
+
+	///SET VARIABLE/// to be removed once i get a better way of doing it
+	function oTaskCommon_setvariable()
+	{
+		eval(this.Data.Var + " = " + this.Data.Val + ";");
+	}
+
+	///DO COMMAND/// This just basically executes arbitrary code provide in the task
+	function oTaskCommon_docommand()
+	{
+		eval(this.Data.Command);
+	}
+
+	///DYNAMIC DELAY///
+	function oTaskCommon_repeatdelay()
+	{
+		
+		new oTaskCommon(this.p+1, "Delay", {Amount:30}).Insert();
+		this.Insert();
+		return;
+	}
+
+	///WEAPONSWITCH/// TODO: finish it
+	function oTaskCommon_wswitch()
+	{
+		if(this.Data.Slot !=0 || this.Data.Slot != 1)
+			this.Data.Slot = -1;
+
+		this.Data.currslot = me.weaponswitch;
+	}
+
+	//This task updates the status display, to be removed
+	function oTaskCommon_status()
+	{
+		shstatus.Update(this.Data.Text, this.Data.x, this.Data.y, this.Data.Colour, this.Data.Font)
+	}
+
+	///DYNAMIC CAST///
+	function oTaskCommon_cast()
+	{
+		if(!this.Data.Hand) this.Data.Hand = 0;
+		var argc = 0;
+		for(nprop in this.Data)
+			argc++;
+
+		if(me.getSkill(this.Data.Hand) != this.Data.Skill) {
+			if(!this._attempts) me.setSkill(this.Data.Skill, this.Data.Hand);
+			new oTaskCommon(this.p+1, "Delay", {Amount:10}).Insert();
+			this._attempts++;
+			if(this._attempts > 50) {
+//				print("Couldnt set skill");
+				Log.Write(mlLOGTASKS, "Couldnt set skill" + this.Data.Skill, boLOGWARNING);				
+				return;
+			}
+			this.Insert();
+			return;
+		}
+		
+		AI.IsUsingSkill = true;
+		if(this.Data.Hand) {
+			switch(argc)
+			{
+				case 0: break;
+				case 1:
+				case 2: clickMap(0, 0, me.x, me.y);
+					delay(1);
+					clickMap(2, 0, me.x, me.y);
+					//me.useSkill(this.Data.Hand); 
+					break;
+				case 3:
+					if(this.Data.Target instanceof oMonster) this.Data.Target = this.Data.Target.Monster;
+					clickMap(0, 0, this.Data.Target);
+					delay(1);
+					clickMap(2, 0, this.Data.Target);
+					//this.Data.Target.useSkill(this.Data.Hand);
+					break;
+				case 4: 
+					clickMap(0, 0, this.Data.x,this.Data.y);
+					delay(1);
+					clickMap(2, 0, this.Data.x,this.Data.y);
+					//me.useSkillAt(this.Data.x,this.Data.y,this.Data.Hand); 
+					break;
+			}
+		}
+		else {
+			switch(argc)
+			{
+				case 0: break;
+				case 1:
+				case 2: clickMap(3, 0, me.x, me.y);
+					delay(1);
+					clickMap(5, 0, me.x, me.y);
+					//me.useSkill(this.Data.Hand); 
+					break;
+				case 3:
+					if(this.Data.Target instanceof oMonster) this.Data.Target = this.Data.Target.Monster;
+					clickMap(3, 0, this.Data.Target);
+					delay(1);
+					clickMap(5, 0, this.Data.Target);
+					//this.Data.Target.useSkill(this.Data.Hand);
+					break;
+				case 4: 
+					clickMap(3, 0, this.Data.x,this.Data.y);
+					delay(1);
+					clickMap(5, 0, this.Data.x,this.Data.y);
+					//me.useSkillAt(this.Data.x,this.Data.y,this.Data.Hand); 
+					break;
+			}
+		}
+		for (var qw = 1; qw <= 50; qw++)
+		{
+			if (me.mode==7 || me.mode==8 || (me.mode>9 && me.mode<19))
+				break;
+			delay(10);
+			if(qw == 100){
+//				print("Did not start the cast");
+				Log.Write(mlLOGTASKS, "Did not start the cast", boLOGERROR);
+				break; //TODO: RAISE ERROR ON QUEUE
+			}
+		}
+		if(this.Data.StaticDelay); //TODO add in optional staticdelay while spell goes
+		AI.IsUsingSkill = false;
+		return;
+//		print("Casting Failed");
+		Log.Write(mlLOGTASKS, "Casting Failed", boLOGERROR);
+		if(this._attempts > 1) {
+			//TODO Add in a proper error raise
+			return;
+		}
+		this._attempts++;
+		this.Insert();
+	}
+
+}
+
+//The following are Conditional TGQ's. They can check the condition and add tasks based on true or false
+//TODO: expand system to do more types of condition checking
+function oTaskCondition(_p, _function, _data, _object, _tag)
+{
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.TFCondition = oTaskCondition_tf;
+
+	function oTaskCondition_tf()
+	{
+//		print("In conditional");
+		Log.Write(mlLOGTASKS, "In conditional", boLOGINFO);
+		var _temp = false;
+		if(!this.Data.TFCondition) {print("No condition"); return;}
+
+		eval("if(" + this.Data.TFCondition + ") _temp = true");
+
+		if(_temp && this.Data.TrueItems) QGTAddItems(this.Data.TrueItems, this.Data.p);
+		else if(this.Data.FalseItems) QGTAddItems(this.Data.FalseItems, this.Data.p);
+	}
+}
+
+function oGoalCondition(_p, _function, _data, _object, _tag)
+{
+	this.temp = oGoal;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.TFCondition = oGoalCondition_tf;
+
+	function oGoalCondition_tf()
+	{
+//		print("In conditional");
+		Log.Write(mlLOGTASKS, "In conditional", boLOGINFO);
+		var _temp = false;
+		if(!this.Data.TFCondition) {print("No condition"); return;}
+
+		eval("if(" + this.Data.TFCondition + ") _temp = true");
+
+		if(_temp && this.Data.TrueItems) QGTAddItems(this.Data.TrueItems, this.Data.p);
+		else if(this.Data.FalseItems) QGTAddItems(this.Data.FalseItems, this.Data.p);
+	}
+}
+function oQuestCondition(_p, _function, _data, _object, _tag)
+{
+	this.temp = oQuest;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.TFCondition = oQuestCondition_tf;
+
+	function oQuestCondition_tf()
+	{
+//		print("In conditional");
+		Log.Write(mlLOGTASKS, "In conditional", boLOGINFO);
+		var _temp = false;
+		if(!this.Data.TFCondition) {print("No condition"); return;}
+
+		eval("if(" + this.Data.TFCondition + ") _temp = true");
+
+		if(_temp && this.Data.TrueItems) QGTAddItems(this.Data.TrueItems, this.Data.p);
+		else if(this.Data.FalseItems) QGTAddItems(this.Data.FalseItems, this.Data.p);
+	}
+}

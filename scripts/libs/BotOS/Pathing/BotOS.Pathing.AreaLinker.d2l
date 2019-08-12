@@ -1,0 +1,805 @@
+//##################################################
+//####   Matts Pathing Framework Library 3.0   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+
+----------------------------------------------------
+*/
+
+include("BotOS/Pathing/BotOS.Pathing.Constants.d2l");
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.Pathing) != 'function') {
+	BotOS.Pathing = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+
+BotOS.Pathing.AreaLinker = function() {
+	throw new InstanceException ("Cannot Instantiate AreaLinker at this time", 1, "AreaLinkage.d2l");
+}
+
+
+BotOS.Pathing.AreaLinker.GetContingeousNeighbours = function (_area) {
+	//get a link array
+	var linkarr = BotOS.Pathing.AreaLinker.Areas[_area].Links;
+	var finallinkarr = new Array();
+	finallinkarr.push(_area);
+
+	//loop and check the links for contingeous areas (areas that have null Tiles, Room, and Empty Object)
+	for(var i = 0; i < linkarr.length; i++) {
+		if(!linkarr[i].Tiles && !linkarr[i].Rooms && linkarr[i].Object.Nothing) {
+			finallinkarr.push(linkarr[i].Area);
+		}
+	}
+	//return the Array
+	return finallinkarr;
+}
+			
+			
+BotOS.Pathing.AreaLinker.AreaNode = function(_link, _o, _c, _parent, _area, _g) {
+	this.Link = _link;
+	this.Open = _o;
+	this.Closed = _c;
+	this.Parent = _parent;
+	this.Area = _area;
+	this.UseWP = false;
+	this.g = _g;
+}
+
+
+BotOS.Pathing.AreaDefinition = function(_name, _wp, _links) {
+	this.Name = _name;
+	this.Waypoint = _wp;
+	this.Links = _links;
+}
+
+BotOS.Pathing.AreaLink = function(_area, _tiles, _rooms, _object) {
+	this.Area = _area;
+	this.Tiles = _tiles;
+	this.Rooms = _rooms;
+	this.Object = _object;
+	if(!this.Object) { 
+		this.Object = new Object();
+		this.Object.Nothing = true;
+	}
+}
+
+
+
+BotOS.Pathing.AreaLinker.Areas = new Array(133);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_NONE] = 				new BotOS.Pathing.AreaDefinition("Dummy", 		null, 	[null]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_ROGUE_ENCAMPMENT] = 		new BotOS.Pathing.AreaDefinition("Rogue Encampment", 	0, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_MOO_MOO_FARM, 			null, 	null, 			{Portal:PORTAL}), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BLOOD_MOOR, null, null, null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_BLOOD_MOOR] = 			new BotOS.Pathing.AreaDefinition("Blood Moor", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ROGUE_ENCAMPMENT, 		null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DEN_OF_EVIL, 			[0, 1, 2, 3], 	[24, 25, 51, 52], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_COLD_PLAINS, 			null, 	null, 			null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_COLD_PLAINS] = 			new BotOS.Pathing.AreaDefinition("Cold Plains", 	1,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BLOOD_MOOR, 			null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BURIAL_GROUNDS, 			null, 	null, 			null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CAVE_LEVEL_1, 			[0, 1, 2, 3], 	[24, 25, 51, 52], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_STONY_FIELD, 			null, 	null, 			null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_STONY_FIELD] = 			new BotOS.Pathing.AreaDefinition("Stony Field", 	2, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_COLD_PLAINS, 			null, null, null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TRISTRAM, 			null, [160], PORTAL), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_UNDERGROUND_PASSAGE_LEVEL_1, 	[0, 1, 2, 3], [24, 25, 51, 52], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_DARK_WOOD] = 			new BotOS.Pathing.AreaDefinition("Dark Wood", 		3, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_UNDERGROUND_PASSAGE_LEVEL_1, 	[0, 1, 2, 3], [24, 25, 51, 52], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BLACK_MARSH,			 null, null, null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_BLACK_MARSH] = 			new BotOS.Pathing.AreaDefinition("Black Marsh", 4, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DARK_WOOD, 			null, null, null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAMOE_HIGHLAND, 		null, null, null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HOLE_LEVEL_1, 			[0, 1, 2, 3], [24, 25, 51, 52], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FORGOTTEN_TOWER, 		[10], [163], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TAMOE_HIGHLAND] =			new BotOS.Pathing.AreaDefinition("Tamoe Highland", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BLACK_MARSH, 			null, null, null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_MONASTERY_GATE , 		null, null, null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PIT_LEVEL_1 , 			[0, 1, 2, 3], [24, 25, 51, 52], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_DEN_OF_EVIL] =				new BotOS.Pathing.AreaDefinition("Den of Evil", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BLOOD_MOOR, 			[4], [83, 84, 85, 86], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CAVE_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Cave Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_COLD_PLAINS, 			[4], [83, 84, 85, 86], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CAVE_LEVEL_2, 			[5], [91, 92, 93, 94], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_UNDERGROUND_PASSAGE_LEVEL_1] = 	new BotOS.Pathing.AreaDefinition("Underground Passage Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_STONY_FIELD, 			[4], [83, 84, 85, 86], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_UNDERGROUND_PASSAGE_LEVEL_2, 	[5], [91, 92, 93, 94], null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DARK_WOOD, 			[4], [87, 88, 89, 90], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HOLE_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Hole Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BLACK_MARSH, 			[4], [83, 84, 85, 86], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HOLE_LEVEL_2, 			[5], [91, 92, 93, 94], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_PIT_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Pit Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAMOE_HIGHLAND, 		[4], [83, 84, 85, 86], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PIT_LEVEL_2, 			[5], [91, 92, 93, 94], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CAVE_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Cave Level 2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CAVE_LEVEL_1, 			[4], [103, 104, 105, 106, 107], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_UNDERGROUND_PASSAGE_LEVEL_2] = 	new BotOS.Pathing.AreaDefinition("Underground Passage Level 2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_UNDERGROUND_PASSAGE_LEVEL_1, 	[4], [103, 104, 105, 106, 107], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HOLE_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Hole Level 2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HOLE_LEVEL_1, 			[4], [103, 104, 105, 106, 107], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_PIT_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Pit Level 2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PIT_LEVEL_1, 			[4], [103, 104, 105, 106, 107], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_BURIAL_GROUNDS] = 			new BotOS.Pathing.AreaDefinition("Burial Grounds", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_COLD_PLAINS, 			null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CRYPT, 			[6], 	[108], 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_MAUSOLEUM, 			[7], 	[108], 			null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CRYPT] = 				new BotOS.Pathing.AreaDefinition("Crypt", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BURIAL_GROUNDS, 		[8], 	[139, 140, 141, 142], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_MAUSOLEUM] = 			new BotOS.Pathing.AreaDefinition("Mausoleum", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BURIAL_GROUNDS, 		[8], 	[139, 140, 141, 142], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_FORGOTTEN_TOWER] = 		new BotOS.Pathing.AreaDefinition("Forgotten Tower", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BLACK_MARSH, 			[11], 	[164], 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TOWER_CELLAR_LEVEL_1, 		[12], 	[164], 			null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TOWER_CELLAR_LEVEL_1] = 		new BotOS.Pathing.AreaDefinition("Tower Cellar 1", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FORGOTTEN_TOWER, 		[8], 	[139, 140, 141, 142], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TOWER_CELLAR_LEVEL_2, 		[9], 	[143, 144, 145, 146], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TOWER_CELLAR_LEVEL_2] = 		new BotOS.Pathing.AreaDefinition("Tower Cellar 2", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TOWER_CELLAR_LEVEL_1, 		[8], 	[139, 140, 141, 142], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TOWER_CELLAR_LEVEL_3, 		[9], 	[143, 144, 145, 146], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TOWER_CELLAR_LEVEL_3] = 		new BotOS.Pathing.AreaDefinition("Tower Cellar 3", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TOWER_CELLAR_LEVEL_2, 		[8], 	[139, 140, 141, 142], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TOWER_CELLAR_LEVEL_4, 		[9], 	[143, 144, 145, 146], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TOWER_CELLAR_LEVEL_4] = 		new BotOS.Pathing.AreaDefinition("Tower Cellar 4", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TOWER_CELLAR_LEVEL_3, 		[8], 	[139, 140, 141, 142], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TOWER_CELLAR_LEVEL_5, 		[9], 	[143, 144, 145, 146], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TOWER_CELLAR_LEVEL_5] = 		new BotOS.Pathing.AreaDefinition("Tower Cellar 5", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TOWER_CELLAR_LEVEL_4, 		[8], 	[139, 140, 141, 142], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_MONASTERY_GATE] = 			new BotOS.Pathing.AreaDefinition("Monestary Gate", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAMOE_HIGHLAND, 		null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_OUTER_CLOISTER, 		null, 	null, 			null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_OUTER_CLOISTER] = 			new BotOS.Pathing.AreaDefinition("Outer Cloister", 	5,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_MONASTERY_GATE, 		null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BARRACKS, 			null, 	null, 			null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_BARRACKS] = 			new BotOS.Pathing.AreaDefinition("Barracks", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_OUTER_CLOISTER, 		null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_JAIL_LEVEL_1, 			[14], 	[198, 199, 200, 201], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_JAIL_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Jail Level 1", 	6,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BARRACKS, 			[13], 	[236, 237, 238, 239], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_JAIL_LEVEL_2, 			[14], 	[244, 245, 246, 247], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_JAIL_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Jail Level 2", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_JAIL_LEVEL_1, 			[13], 	[236, 237, 238, 239], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_JAIL_LEVEL_3, 			[14], 	[244, 245, 246, 247], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_JAIL_LEVEL_3] = 			new BotOS.Pathing.AreaDefinition("Jail Level 3", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_JAIL_LEVEL_2, 			[13], 	[236, 237, 238, 239], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_INNER_CLOISTER, 		[13], 	[244, 245, 246, 247], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_INNER_CLOISTER] = 			new BotOS.Pathing.AreaDefinition("Inner Cloister", 	7,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_JAIL_LEVEL_3, 			[14], 	256, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CATHEDRAL, 			null, 	null, 			null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CATHEDRAL] = 			new BotOS.Pathing.AreaDefinition("Cathedral", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_INNER_CLOISTER, 		null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CATACOMBS_LEVEL_1, 		[15], 	[257], 			null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CATACOMBS_LEVEL_1] = 		new BotOS.Pathing.AreaDefinition("Catacombs Level 1", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CATHEDRAL, 			[16], 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CATACOMBS_LEVEL_2, 		[18], 	[291, 292, 293, 294], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CATACOMBS_LEVEL_2] = 		new BotOS.Pathing.AreaDefinition("Catacombs Level 2", 	8,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CATACOMBS_LEVEL_1, 		[17], 	[288, 289, 290], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CATACOMBS_LEVEL_3, 		[18], 	[291, 292, 293, 294], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CATACOMBS_LEVEL_3] = 		new BotOS.Pathing.AreaDefinition("Catacombs Level 3", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CATACOMBS_LEVEL_2, 		[17], 	[288, 289, 290], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CATACOMBS_LEVEL_4, 		[18], 	[291, 292, 293, 294], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CATACOMBS_LEVEL_4] = 		new BotOS.Pathing.AreaDefinition("Catacombs Level 4", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CATACOMBS_LEVEL_3, 		[17], 	[288, 289, 290], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TRISTRAM] = 			new BotOS.Pathing.AreaDefinition("Tristram", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_STONY_FIELD, 			null, 	null, 			{Portal:PORTAL})]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_MOO_MOO_FARM] = 			new BotOS.Pathing.AreaDefinition("Moo Moo Farm", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ROGUE_ENCAMPMENT,		null, 	null, 			{Portal:PORTAL})]); 
+
+// Act 2
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_LUT_GHOLEIN] = 			new BotOS.Pathing.AreaDefinition("Lut Gholein", 	9, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_A2_SEWERS_LEVEL_1, 			[20], 		[301], 		null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HAREM_LEVEL_1, 			[24], 		[301], 		null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ROCKY_WASTE, 				null, 		null, 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_ROCKY_WASTE] = 			new BotOS.Pathing.AreaDefinition("Rocky Waste", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_LUT_GHOLEIN, 			null, 			null, 		null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_STONY_TOMB_LEVEL_1, 		[33, 34, 35, 36], 	[388, 389], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DRY_HILLS, 			null, 			null, 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_DRY_HILLS] = 			new BotOS.Pathing.AreaDefinition("Dry Hills", 		11,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ROCKY_WASTE, 			null, 			null, 		null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_1, 	[33, 34, 35, 36], 	[388, 389], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FAR_OASIS, 			null, 			null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_FAR_OASIS] = 			new BotOS.Pathing.AreaDefinition("Far Oasis", 		13,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DRY_HILLS, 			null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_MAGGOT_LAIR_LEVEL_1, 	[47], 	[390, 391], 	null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_LOST_CITY, 			null, 	null, 			null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_LOST_CITY] = 			new BotOS.Pathing.AreaDefinition("Lost City", 	14,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FAR_OASIS, 			null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ANCIENT_TUNNELS, 		[50], 	[412], 			{InteractFirst:TRAP_DOOR}), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_VALLEY_OF_SNAKES, 		null, 	null, 			null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_VALLEY_OF_SNAKES] = 			new BotOS.Pathing.AreaDefinition("Valley of Snakes", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_LOST_CITY, 			null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CLAW_VIPER_TEMPLE_LEVEL_1, 	[37], 	[388, 389], 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CANYON_OF_THE_MAGI] = 			new BotOS.Pathing.AreaDefinition("Canyon of the Magi", 	17,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAL_RASHAS_TOMB1, 			[38], 	[387], 			null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAL_RASHAS_TOMB2, 			[39], 	[385], 			null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAL_RASHAS_TOMB3, 			[40], 	[385], 			null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAL_RASHAS_TOMB4, 			[41], 	[385], 			null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAL_RASHAS_TOMB5, 			[42], 	[383], 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAL_RASHAS_TOMB6, 			[43], 	[383], 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TAL_RASHAS_TOMB7, 			[44], 	[383], 			null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_A2_SEWERS_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Sewers Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_LUT_GHOLEIN, 				[21], [332, 333, 334, 335, 336], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_A2_SEWERS_LEVEL_2, 			[23], [337, 338, 339, 340], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_A2_SEWERS_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Sewers Level 2", 10, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_A2_SEWERS_LEVEL_1, 			[22], [332, 333, 334, 335, 336], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_A2_SEWERS_LEVEL_3, 			[23], [337, 338, 339, 340], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_A2_SEWERS_LEVEL_3] = 			new BotOS.Pathing.AreaDefinition("Sewers Level 3", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_A2_SEWERS_LEVEL_3, 			[22], [337, 338, 339, 340], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HAREM_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Harem Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_LUT_GHOLEIN, 				[25], [353], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HAREM_LEVEL_2, 			[28], [353], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HAREM_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Harem Level 2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HAREM_LEVEL_1, 			[26], [354, 355, 356, 357], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HAREM_LEVEL_2, 			[28], [354, 355, 356, 357], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_PALACE_CELLAR_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Palace Cellar Level 1", 15, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HAREM_LEVEL_2, 				[26], [358, 359, 360, 361], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PALACE_CELLAR_LEVEL_2, 			[32], [358, 359, 360, 361], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_PALACE_CELLAR_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Palace Cellar Level 2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PALACE_CELLAR_LEVEL_1, 			[31], [358, 359, 360, 361], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PALACE_CELLAR_LEVEL_3, 			[32], [358, 359, 360, 361], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_PALACE_CELLAR_LEVEL_3] = 			new BotOS.Pathing.AreaDefinition("Palace Cellar Level 3", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PALACE_CELLAR_LEVEL_2, 			[31], 	[358, 359, 360, 361], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ARCANE_SANCTUARY, 				null, 	[358, 359, 360, 361], {InteractFirst:ARCANEPORTAL, InteractSecond:ARCANEPORTAL})]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_STONY_TOMB_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Stony Tomb Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ROCKY_WASTE, 			[45], [444, 445, 446, 447], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_STONY_TOMB_LEVEL_2, 			[46], [448, 449, 450, 451], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Halls of the Dead Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DRY_HILLS, 					[45], [444, 445, 446, 447], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_2, 			[46], [448, 449, 450, 451], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Halls of the Dead Level 2", 12, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_1, 			[45], [444, 445, 446, 447], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_3, 			[46], [448, 449, 450, 451], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CLAW_VIPER_TEMPLE_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Claw Viper Temple Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_VALLEY_OF_SNAKES, 				[45], [444, 445, 446, 447], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CLAW_VIPER_TEMPLE_LEVEL_2, 			[46], [448, 449, 450, 451], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_STONY_TOMB_LEVEL_2] = 				new BotOS.Pathing.AreaDefinition("Stony Tomb Level 2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_STONY_TOMB_LEVEL_1, 				[45], [444, 445, 446, 447], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_3] = 			new BotOS.Pathing.AreaDefinition("Halls of the Dead Level 3", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_2, 			[45], [444, 445, 446, 447], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CLAW_VIPER_TEMPLE_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Claw Viper Temple Level 2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CLAW_VIPER_TEMPLE_LEVEL_1, 			[46], [448, 449, 450, 451], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_MAGGOT_LAIR_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Maggot Lair Level 1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FAR_OASIS, 					[48], [497, 998, 499, 500], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_MAGGOT_LAIR_LEVEL_2, 				[49], [501, 502, 503, 504], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_MAGGOT_LAIR_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Maggot Lair Level 2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_MAGGOT_LAIR_LEVEL_1, 				[48], [497, 998, 499, 500], null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_MAGGOT_LAIR_LEVEL_3, 				[49], [501, 502, 503, 504], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_MAGGOT_LAIR_LEVEL_3] = 			new BotOS.Pathing.AreaDefinition("Maggot Lair Level 3", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_MAGGOT_LAIR_LEVEL_2, 				[48], [497, 998, 499, 500], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_ANCIENT_TUNNELS] = 			new BotOS.Pathing.AreaDefinition("Ancient Tunnels", 	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_LOST_CITY, 					[22], [332, 333, 334, 335, 336], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TAL_RASHAS_TOMB1] = 			new BotOS.Pathing.AreaDefinition("Tal Rashas Tomb1", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CANYON_OF_THE_MAGI, 				[45], [444, 445, 446, 447], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TAL_RASHAS_TOMB2] = 			new BotOS.Pathing.AreaDefinition("Tal Rashas Tomb2", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CANYON_OF_THE_MAGI, 				[45], [444, 445, 446, 447], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TAL_RASHAS_TOMB3] = 			new BotOS.Pathing.AreaDefinition("Tal Rashas Tomb3", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CANYON_OF_THE_MAGI, 				[45], [444, 445, 446, 447], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TAL_RASHAS_TOMB4] = 			new BotOS.Pathing.AreaDefinition("Tal Rashas Tomb4", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CANYON_OF_THE_MAGI, 				[45], [444, 445, 446, 447], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TAL_RASHAS_TOMB5] = 			new BotOS.Pathing.AreaDefinition("Tal Rashas Tomb5", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CANYON_OF_THE_MAGI, 				[45], [444, 445, 446, 447], null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TAL_RASHAS_TOMB6] = 			new BotOS.Pathing.AreaDefinition("Tal Rashas Tomb6", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CANYON_OF_THE_MAGI, 				[45], [444, 445, 446, 447], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TAL_RASHAS_TOMB7] = 			new BotOS.Pathing.AreaDefinition("Tal Rashas Tomb7", null, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CANYON_OF_THE_MAGI, 				[45], [444, 445, 446, 447], null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_ARCANE_SANCTUARY] = 			new BotOS.Pathing.AreaDefinition("Arcane Sanctuary", 16, [
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CANYON_OF_THE_MAGI, 				null, 	[525, 526, 527, 528], 	{InteractFirst:HORAZONSJOURNAL, Portal:CANYON_PORTAL}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PALACE_CELLAR_LEVEL_3, 			null, 	null, 	{Portal:ARCANEPORTAL})]);
+	
+// act3
+// are SPIDER_FOREST and FLAYER_JUNGLE directly connected or only via GREAT_MARSH?
+/*
+difficulties:
+(00:03:57) (Hellek) i.e. for spider cave and spider cavern I neither see differences in tiles, nor in rooms
+(00:06:44) (Hellek) also for flayer dungeon and swampy pit I only got rooms which are probably wrong. but they at least have different tiles
+*/
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_KURAST_DOCKTOWN] = 			new BotOS.Pathing.AreaDefinition("Kurast Docks", 18, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SPIDER_FOREST, 			null, 		null, 		null)]);
+
+// I am not sure about the rooms for SPIDER_CAVERN and SPIDER_CAVE here	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_SPIDER_FOREST] = 				new BotOS.Pathing.AreaDefinition("Spider Forest", 	19, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_GREAT_MARSH, 				null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SPIDER_CAVERN, 			[51], 		[575, 576, 577, 578, 579, 580], 	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SPIDER_CAVE, 				[51], 		[581, 582, 583, 584, 585], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_DOCKTOWN, 			null, 		null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_GREAT_MARSH] = 				new BotOS.Pathing.AreaDefinition("Great Marsh", 	20,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SPIDER_FOREST, 			null, 	null, 			null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FLAYER_JUNGLE, 			null, 	null, 			null)]);
+	
+// I am not sure about the rooms for FLAYER_DUNGEON and SWAMPY_PIT here	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_FLAYER_JUNGLE] = 				new BotOS.Pathing.AreaDefinition("Flayer Jungle", 	21,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_GREAT_MARSH, 				null, 		null, 		null), 
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SWAMPY_PIT_LEVEL_1, 			[53], 		[595, 596, 597, 598, 599, 600, 601, 602, 603, 604], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FLAYER_DUNGEON_LEVEL_1, 		[54], 		[595, 596, 597, 598, 599, 600, 601, 602, 603, 604], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_LOWER_KURAST, 				null, 		null, 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_LOWER_KURAST] = 				new BotOS.Pathing.AreaDefinition("Lower Kurast", 	22,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FLAYER_JUNGLE, 				null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_BAZAAR, 				null, 		null, 		null)]);
+
+// need to interact twice with the tiles of the two temples (first = open, second = use)
+// again two identical tiles and rooms (for RUINED_TEMPLE and DISUSED_FANE)
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_KURAST_BAZAAR] = 				new BotOS.Pathing.AreaDefinition("Kurast Bazaar", 	23,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_LOWER_KURAST, 				null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_A3_SEWERS_LEVEL_1, 			[57], 		[629], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_RUINED_TEMPLE, 			[61], 		[630], 		{Near:STAIRS2, InteractFirst:STAIRS2}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DISUSED_FANE, 				[61], 		[630], 		{Near:STAIRS, InteractFirst:STAIRS}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_UPPER_KURAST, 				null, 		null, 		null)]);
+
+// need to interact twice with the tiles of the two temples (first = open, second = use)
+// as above two times identical tile and identical room (FORGOTTEN_RELIQUARY, FORGOTTEN_TEMPLE)
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_UPPER_KURAST] = 				new BotOS.Pathing.AreaDefinition("Upper Kurast", 	24,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_BAZAAR, 				null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_A3_SEWERS_LEVEL_1, 				[57], 		[646], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FORGOTTEN_RELIQUARY, 				[61], 		[647], 		{Near:STAIRS2, InteractFirst:STAIRS2}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FORGOTTEN_TEMPLE, 				[61], 		[647], 		{Near:STAIRS, InteractFirst:STAIRS}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_CAUSEWAY, 				null, 		null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_KURAST_CAUSEWAY] = 				new BotOS.Pathing.AreaDefinition("Kurast Causeway", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_UPPER_KURAST, 				null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_RUINED_FANE, 				[61], 		[652], 		{Near:STAIRS2, InteractFirst:STAIRS2}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DISUSED_RELIQUARY, 			[61], 		[652], 		{Near:STAIRS, InteractFirst:STAIRS}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TRAVINCAL, 				null, 		null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TRAVINCAL] = 				new BotOS.Pathing.AreaDefinition("Travincal", 		25,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_CAUSEWAY, 				null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DURANCE_OF_HATE_LEVEL_1, 			[64], 		[653, 654, 655, 656, 657, 658], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_SPIDER_CAVE] = 				new BotOS.Pathing.AreaDefinition("Arachnid Lair", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SPIDER_FOREST, 			[52], 		[659, 660, 661, 662], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_SPIDER_CAVERN] = 				new BotOS.Pathing.AreaDefinition("Spider Cavern", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SPIDER_FOREST, 			[52], 		[659, 660, 661, 662], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_SWAMPY_PIT_LEVEL_1] = 				new BotOS.Pathing.AreaDefinition("Swampy Pit Level 1", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FLAYER_JUNGLE, 			[55], 		[695, 696, 697, 698], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SWAMPY_PIT_LEVEL_2, 			[56], 		[699, 700, 701, 702], 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_SWAMPY_PIT_LEVEL_2] = 				new BotOS.Pathing.AreaDefinition("Swampy Pit Level 2", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SWAMPY_PIT_LEVEL_1, 			[55], 		[695, 696, 697, 698], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SWAMPY_PIT_LEVEL_3, 			[56], 		[699, 700, 701, 702], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_FLAYER_DUNGEON_LEVEL_1] = 				new BotOS.Pathing.AreaDefinition("Flayer Dungeon Level 1", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FLAYER_JUNGLE, 				[55], 		[695, 696, 697, 698], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FLAYER_DUNGEON_LEVEL_2, 			[56], 		[699, 700, 701, 702], 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_FLAYER_DUNGEON_LEVEL_2] = 				new BotOS.Pathing.AreaDefinition("Flayer Dungeon Level 2", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FLAYER_DUNGEON_LEVEL_1, 			[55], 		[695, 696, 697, 698], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FLAYER_DUNGEON_LEVEL_3, 			[56], 		[699, 700, 701, 702], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_SWAMPY_PIT_LEVEL_3] = 				new BotOS.Pathing.AreaDefinition("Swampy Pit Level 3", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_SWAMPY_PIT_LEVEL_2, 				[55], 		[695, 696, 697, 698], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_FLAYER_DUNGEON_LEVEL_3] = 				new BotOS.Pathing.AreaDefinition("Flayer Dungeon Level 3", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_FLAYER_DUNGEON_LEVEL_2, 			[55], 		[695, 696, 697, 698], 		null)]);
+
+// again two identical tiles and rooms (for UPPER_KURAST and KURAST_BAZAAR)
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_A3_SEWERS_LEVEL_1] = 				new BotOS.Pathing.AreaDefinition("Sewers Level 1", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_BAZAAR, 				[59], 		[735, 736, 737, 738], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_UPPER_KURAST, 					[59], 		[735, 736, 737, 738], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_A3_SEWERS_LEVEL_2, 				[60], 		[739, 740, 741, 742], 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_A3_SEWERS_LEVEL_2] = 				new BotOS.Pathing.AreaDefinition("Sewers Level 2", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_A3_SEWERS_LEVEL_1, 				[58], 		null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_RUINED_TEMPLE] = 				new BotOS.Pathing.AreaDefinition("Ruined Temple", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_BAZAAR, 				[62, 63], 		[748, 749, 750, 751, 752, 753], 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_DISUSED_FANE] = 				new BotOS.Pathing.AreaDefinition("Disused Fane", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_BAZAAR, 				[62, 63], 		[748, 749, 750, 751, 752, 753], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_FORGOTTEN_RELIQUARY] = 			new BotOS.Pathing.AreaDefinition("Forgotten Reliquary", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_UPPER_KURAST, 					[62, 63], 		[748, 749, 750, 751, 752, 753], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_FORGOTTEN_TEMPLE] = 			new BotOS.Pathing.AreaDefinition("Forgotten Temple", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_UPPER_KURAST, 					[62, 63], 		[748, 749, 750, 751, 752, 753], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_RUINED_FANE] = 				new BotOS.Pathing.AreaDefinition("Ruined Fane", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_CAUSEWAY, 				[62, 63], 		[748, 749, 750, 751, 752, 753], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_DISUSED_RELIQUARY] = 			new BotOS.Pathing.AreaDefinition("Disused Reliquary", 		null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_KURAST_CAUSEWAY, 				[62, 63], 		[748, 749, 750, 751, 752, 753], 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_DURANCE_OF_HATE_LEVEL_1] = 				new BotOS.Pathing.AreaDefinition("Durance of Hate Level 1", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TRAVINCAL, 					[65, 66], 		[784, 785, 786, 787], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DURANCE_OF_HATE_LEVEL_2, 			[67, 68], 		[788, 789, 790, 791], 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_DURANCE_OF_HATE_LEVEL_2] = 				new BotOS.Pathing.AreaDefinition("Durance of Hate Level 2", 	26,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DURANCE_OF_HATE_LEVEL_1, 			[65, 66], 		[784, 785, 786, 787], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DURANCE_OF_HATE_LEVEL_3, 			[67, 68], 		[788, 789, 790, 791], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_DURANCE_OF_HATE_LEVEL_3] = 				new BotOS.Pathing.AreaDefinition("Durance of Hate Level 3", 	null,	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THE_PANDEMONIUM_FORTRESS, 			null, 			[796], 		PORTAL),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_DURANCE_OF_HATE_LEVEL_2, 			[65, 66], 		[784, 785, 786, 787], 		null)]);
+
+// act4
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_THE_PANDEMONIUM_FORTRESS] = 			new BotOS.Pathing.AreaDefinition("The Pandemonium Fortress", 	27, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_OUTER_STEPPES, 			null, 		null, 		null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_OUTER_STEPPES] = 					new BotOS.Pathing.AreaDefinition("Outer Steppes", 		null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THE_PANDEMONIUM_FORTRESS, 			null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PLAINS_OF_DESPAIR, 				null, 		null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_PLAINS_OF_DESPAIR] = 					new BotOS.Pathing.AreaDefinition("Plains of Despair",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_OUTER_STEPPES,		 			null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CITY_OF_THE_DAMNED, 				null, 		null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CITY_OF_THE_DAMNED] = 					new BotOS.Pathing.AreaDefinition("City of the Damned",	28, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_PLAINS_OF_DESPAIR,		 		null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_RIVER_OF_FLAME, 				[69], 		[799, 803, 827, 807, 835, 811, 801], 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_RIVER_OF_FLAME] = 						new BotOS.Pathing.AreaDefinition("River of Flame",	29, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CITY_OF_THE_DAMNED,		 		[70], 		[811], 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CHAOS_SANCTUM, 				null, 		null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CHAOS_SANCTUM] = 						new BotOS.Pathing.AreaDefinition("Chaos Sanctum",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_RIVER_OF_FLAME, 				null, 		null, 		null)]);	
+
+// act5
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HARROGATH] = 					new BotOS.Pathing.AreaDefinition("Harrogath", 		30, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BLOODY_FOOTHILLS, 			null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_NIHLATHAKS_TEMPLE, 			null, 		null, 		{Portal:PORTAL})]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_BLOODY_FOOTHILLS] = 				new BotOS.Pathing.AreaDefinition("Bloody Foothills",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HARROGATH, 				null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_RIGID_HIGHLANDS, 			null, 		null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_RIGID_HIGHLANDS] = 				new BotOS.Pathing.AreaDefinition("Frigid Highlands",	31, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_BLOODY_FOOTHILLS, 			null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HELL1, 				null, 		[955, 956], 	{Portal:PORTAL}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ARREAT_PLATEAU, 			null, 		null, 		null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_ARREAT_PLATEAU] = 					new BotOS.Pathing.AreaDefinition("Arreat Plateau",	32, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_RIGID_HIGHLANDS, 			null, 		null, 		null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HELL2, 				null, 		[955, 956], 	{Portal:PORTAL}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_1, 		[71], 		[913, 914], 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Crystalline Passage",	33, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ARREAT_PLATEAU, 			[73], 		[1018, 1019, 1020, 1021],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_2, 		[74], 		[1022, 1023, 1024, 1025], 	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CELLAR_OF_PITY, 			[75], 		[1026, 1027, 1028, 1029], 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CELLAR_OF_PITY] = 					new BotOS.Pathing.AreaDefinition("Frozen River",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_1, 		[73], 		[1038, 1039], 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Glacial Trail",	34, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ECHO_CHAMBER, 				[75], 		[1026, 1027, 1028, 1029],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_1, 		[73], 		[1018, 1019, 1020, 1021], 	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TUNDRA_WASTELANDS, 			[74], 		[1022, 1023, 1024, 1025], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_ECHO_CHAMBER] = 					new BotOS.Pathing.AreaDefinition("Drifter Cavern",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_2, 		[73], 		[1040, 1041], 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_TUNDRA_WASTELANDS] = 				new BotOS.Pathing.AreaDefinition("Frozen Tundra",	36, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_GLACIAL_CAVES_LEVEL_1, 		[71], 		[985, 986],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HELL3, 				null, 		[955, 956], 	{Portal:PORTAL}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_2, 		[72], 		[983, 984], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_GLACIAL_CAVES_LEVEL_1] = 				new BotOS.Pathing.AreaDefinition("Ancients Way",	37, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ARREAT_PLATEAU, 			[73], 		[1018, 1019, 1020, 1021],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ROCKY_SUMMIT, 				[74], 		[1022, 1023, 1024, 1025], 	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_GLACIAL_CAVES_LEVEL_2, 		[75], 		[1026, 1027, 1028, 1029], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_GLACIAL_CAVES_LEVEL_2] = 				new BotOS.Pathing.AreaDefinition("Icy Cellar",		null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_GLACIAL_CAVES_LEVEL_1, 		[73], 		[1040, 1041], 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_ROCKY_SUMMIT] = 					new BotOS.Pathing.AreaDefinition("Arreat Summmit",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_GLACIAL_CAVES_LEVEL_1, 		[79], 		[1089],		{InteractFirst:AS_GATE1}),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_1, 		[80], 		[1089],		{InteractFirst:AS_GATE2})]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HELL1] = 						new BotOS.Pathing.AreaDefinition("Abaddon",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_RIGID_HIGHLANDS, 			null, 		null, 	{Portal:PORTAL})]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HELL2] = 						new BotOS.Pathing.AreaDefinition("Pit of Acheron",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ARREAT_PLATEAU, 			null, 		null, 	{Portal:PORTAL})]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HELL2] = 						new BotOS.Pathing.AreaDefinition("Infernal Pit",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_TUNDRA_WASTELANDS, 			null, 		null, 	{Portal:PORTAL})]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_1] = 			new BotOS.Pathing.AreaDefinition("Worldstone Keep Level 1",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_ROCKY_SUMMIT, 				[81], 		[1074, 1075, 1076, 1077],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_2, 		[82], 		[1078, 1079, 1080, 1081], 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_2] = 			new BotOS.Pathing.AreaDefinition("Worldstone Keep Level 2",	38, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_1, 		[81], 		[1074, 1075, 1076, 1077],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_3, 		[82], 		[1078, 1079, 1080, 1081], 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_3] = 			new BotOS.Pathing.AreaDefinition("Worldstone Keep Level 3",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_2, 		[81], 		[1074, 1075, 1076, 1077],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THRONE_OF_DESTRUCTION, 		[82], 		[1078, 1079, 1080, 1081], 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_THRONE_OF_DESTRUCTION] = 				new BotOS.Pathing.AreaDefinition("Throne of Destuction",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_3, 		[81], 		[1086],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THE_WORLDSTONE_CHAMBER, 		null, 		[1086],	{Portal:PORTAL_WS})]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_THE_WORLDSTONE_CHAMBER] = 				new BotOS.Pathing.AreaDefinition("Throne of Destuction",	null, 	[/*
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HARROGATH, 				null, 		null,	TP),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_THRONE_OF_DESTRUCTION, 		null, 		null,	null)*/]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_NIHLATHAKS_TEMPLE] = 				new BotOS.Pathing.AreaDefinition("Nihlataks Temple",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HARROGATH, 				null, 		null,	PORTAL),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_ANGUISH, 			[76], 		null, 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HALLS_OF_ANGUISH] = 				new BotOS.Pathing.AreaDefinition("Halls of Anguish",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_NIHLATHAKS_TEMPLE, 			[78], 		[1044],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_DEATHS_CALLING, 		[77], 		[1046, 1047, 1048], 	null)]);
+
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HALLS_OF_DEATHS_CALLING] = 			new BotOS.Pathing.AreaDefinition("Halls of Pain",	35, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_ANGUISH, 			[78], 		[1044, 1042, 1043, 1045],	null),
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_VAUGHT, 			[77], 		[1046, 1047, 1048], 	null)]);
+	
+BotOS.Pathing.AreaLinker.Areas[D2JSP_AREA_HALLS_OF_VAUGHT] = 				new BotOS.Pathing.AreaDefinition("Halls of Vaught",	null, 	[
+	new BotOS.Pathing.AreaLink(D2JSP_AREA_HALLS_OF_DEATHS_CALLING, 		[78], 		[864], 	null)]);
+
+
+BotOS.Pathing.AreaLinker.GetLinkPath = function (_s, _d, _wps) {
+	
+	//if waypoints we need a diff method
+	//maybe call algo to find closest wp from each area
+	//or call a tp and do from town (maybe easiest)
+	
+	//init
+	//create queues
+	//run through each node and add open childs
+	//print("In getLinkPath");
+	//Lets setup some aliasas
+	var AreaNode = BotOS.Pathing.AreaLinker.AreaNode;
+	var Areas = BotOS.Pathing.AreaLinker.Areas;
+
+	
+	if(!_wps) {
+		var oq = new Array();
+		var cq = new Array();
+		print("Start Area: " + _s);
+		print("Destination Area: " + _d);
+		var snode = new AreaNode(Areas[_s], true, false, null, _s);
+		var dnode = new AreaNode(Areas[_d], false, false, null, _d);
+		var LinkPath = new Array();
+
+		var cnode;
+
+		oq.push(snode);
+
+		while(cnode = oq.shift()) {
+//			StdOutput.Write("cnode.Area = " + cnode.Area);
+//			StdOutput.Write("cnode.Link.Links.length = " + cnode.Link.Links.length);
+			if(cnode.Area == dnode.Area) {
+				//found dest, recreate path;
+				LinkPath.push(cnode);
+				if(LinkPath[LinkPath.length-1].Parent) do {
+					LinkPath.push(LinkPath[LinkPath.length-1].Parent);
+				} while(LinkPath[LinkPath.length-1].Parent);
+				LinkPath.reverse();
+				return LinkPath;
+
+			}
+
+			startchildloop: 
+			for(var i = 0; i < cnode.Link.Links.length; i++) {
+//				StdOutput.Write("In child loop. Current Area: " + cnode.Area + " Child Area: " + cnode.Link.Links[i].Area);
+
+				//check open
+				for(var q = 0; q < oq.length; q++) 
+					if(oq[q].Area == cnode.Link.Links[i].Area) continue startchildloop;
+				//check closed
+				for(var q = 0; q < cq.length; q++) 
+					if(cq[q].Area == cnode.Link.Links[i].Area) continue startchildloop;
+
+				oq.push(new AreaNode(Areas[cnode.Link.Links[i].Area], true, false, cnode, cnode.Link.Links[i].Area));
+				cnode.Closed = true;
+				cnode.Open = false;
+				cq.push(cnode);
+			}
+//			StdOutput.Write("oq.length: " + oq.length);
+//			StdOutput.Write("end cnode while");
+		}
+		print("never found a path to dest");
+		return false;
+	}
+	else {
+		
+		var spath = BotOS.Pathing.AreaLinker.GetWPLinkPath(_s);
+		var dpath = BotOS.Pathing.AreaLinker.GetWPLinkPath(_d);
+		print("Lengths: " + spath.length + " " + dpath.length);
+		if(!spath || !dpath) throw new BotOS.PathingException("BotOS.Pathing.AreaLinker.GetLinkPath -> Could not find a link path", 1, "BotOS.Pathing.AreaLinker.d2l");
+		
+		
+		//post process to get rid of overlap
+		//TODO: add in a more comprehensive overlap removal
+		for(var s = 0; s < spath.length; s++) {
+			if(spath[s].Area == _d) 
+				return spath.slice(0,s+1);
+		}
+		
+		for(var s = 0; s < dpath.length; s++) {
+			if(dpath[s].Area == _s) 
+				return dpath.slice(0,s+1).reverse();
+		}
+		
+		dpath.reverse();
+		
+		spath[spath.length-1].UseWP = true;
+			
+		return spath.concat(dpath);
+	}
+		
+}
+
+BotOS.Pathing.AreaLinker.GetWPLinkPath = function (_s, _wps) {
+	print("Start Area from linker: " + BotOS.Pathing.AreaLinker.Areas[_s].Name);
+	//basically same as above but using best first
+
+	/**************    ALIASES    ******************/
+	var AreaNode = BotOS.Pathing.AreaLinker.AreaNode;
+	var Areas = BotOS.Pathing.AreaLinker.Areas;
+	/***********************************************/
+
+	var oq = new BotOS.Arrays.Heap("Area", mlHEAPLOW)
+	var cq = new Array();
+	print("Start Area: " + _s);
+	//print("Destination Area: " + _d);
+	var snode = new AreaNode(Areas[_s], true, false, null, _s, _s);
+	var LinkPath = new Array();
+
+	var cnode;
+
+	oq.Insert(snode);
+
+	while(cnode = oq.Remove()) {
+//			StdOutput.Write("cnode.Area = " + cnode.Area);
+//			StdOutput.Write("cnode.Link.Links.length = " + cnode.Link.Links.length);
+		//print
+		if(BotOS.Variable.IsNumber(cnode.Link.Waypoint) && getWaypoint(cnode.Link.Waypoint)) {
+		//if(cnode.Link.WayPoint) {
+			//found dest, recreate path;
+			//cnode.UseWP = true;
+			LinkPath.push(cnode);
+			if(LinkPath[LinkPath.length-1].Parent) do {
+				LinkPath.push(LinkPath[LinkPath.length-1].Parent);
+			} while(LinkPath[LinkPath.length-1].Parent);
+			LinkPath.reverse();
+			return LinkPath;
+
+		}
+
+		startchildloop: 
+		for(var i = 0; i < cnode.Link.Links.length; i++) {
+//				print("In child loop. Current Area: " + cnode.Area + " Child Area: " + cnode.Link.Links[i].Area);
+
+			//check open
+			for(var q = 1; q < oq._heap.length; q++) 
+				if(oq._heap[q].Area == cnode.Link.Links[i].Area) continue startchildloop;
+			//check closed
+			for(var q = 0; q < cq.length; q++) 
+				if(cq[q].Area == cnode.Link.Links[i].Area) continue startchildloop;
+
+			oq.Insert(new AreaNode(Areas[cnode.Link.Links[i].Area], true, false, cnode, cnode.Link.Links[i].Area, cnode.Link.Links[i].Area));
+			cnode.Closed = true;
+			cnode.Open = false;
+			cq.push(cnode);
+		}
+//			StdOutput.Write("oq.length: " + oq.getLength());
+//			StdOutput.Write("end cnode while");
+	}
+//		StdOutput.Write("never found a path to dest");
+	return false;
+		
+}	
+
+		

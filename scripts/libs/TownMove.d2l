@@ -1,0 +1,2350 @@
+/*******************************************************************************
+*                                                                              *
+*                                  Town Move                                   *
+*                                    v0.57                                     *
+*                                                                              *
+* ---------------------------------------------------------------------------- *
+* Copyright (C) 2002 Jan Onno Tuinenga (Scavenger) - tha_scavenger@hotmail.com *
+* ---------------------------------------------------------------------------- *
+*                                                                              *
+* This program is free software; you can redistribute it and/or modify         *
+* it under the terms of the GNU General Public License as published by         *
+* the Free Software Foundation; either version 2 of the License, or            *
+* (at your option) any later version.                                          *
+*                                                                              *
+* This program is distributed in the hope that it will be useful,              *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of               *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
+* GNU General Public License for more details.                                 *
+*                                                                              *
+*******************************************************************************/
+
+/*******************************************************************************
+* THANX:                                                                       *
+* ---------------------------------------------------------------------------- *
+* Thanks go to Syadasti for his Dijsktra pathfinding. Townmove uses a modified *
+* version of Syadasti's pathfinding.                                           *
+* Thanx go to nookie for his stashing library, which itemlist of not to stash  *
+* items is used by Sc_TownStash()                                              *
+* Thanx go to SwedishPower for pointing me at bugs, and the TP Skill cast code *
+* and for the quest code                                                       *
+*******************************************************************************/
+
+/*******************************************************************************
+* NOTE:                                                                        *
+* ---------------------------------------------------------------------------- *
+* The function names are renamed since version 0.4, so please use the new names*
+* It still supports the old functions for compatibility                        *
+*******************************************************************************/
+
+/*******************************************************************************
+* HISTORY:                                                                     *
+* ---------------------------------------------------------------------------- *
+* 0.57 - Fixed buying pots                                                     *
+*      - Fixed stashing of gold                                                *
+*      - Fixed the char starts dancing when trying to take a tp back after     *
+*        repairing                                                             *
+*      - Fixed bot stopping moving after going to malah                        *
+*      - Fixed pots buying of pots crashed game                                *
+* 0.56 - Removed old pathing (drunken pathing that sometimes actually worked)  *
+*      - Removed setting "use_dijkstra"                                        *
+*      - Converted to d2jsp version 0.29                                       *
+*      - Added drognan coordinate (oops)                                       *
+* 0.55 - Added Sc_DoneQuest(act, quest) Thanx SwedishPower for the code        *
+*      - Changed some timers                                                   *
+*      - Added debug info for TP failures                                      *
+* 0.54 - Added basic_cancel setting, for people having trouble closing stash   *
+*      - Removed item.fname everywhere. Prevents crash for rare jewels         *
+* 0.53 - Added merc check when going to revive merc                            *
+*      - Added Sc_GetMerc. Returns your merc or null if not found              *
+*      - Fixed a script line error                                             *
+*      - Added classic support for stashing                                    *
+* 0.52 - Added callback function for debugging.                                *
+*      - Fixed crash when going to stash after visiting a npc                  *
+*      - Fixed RD caused by casting/taking tp                                  *
+*      - Added debug messages in a few functions. More will be added soon      *
+*      - Now casts TP using the skill (Thanx SwedishPower)                     *
+* 0.51 - Fixed connection interrupted problems                                 *
+*      - Fixed RealmDown somehow :)                                            *
+* 0.5: - Some extra movepoints added                                           *
+*      - Callback function parameter for Sc_TownHeal, Sc_TownRepair,           *
+*        Sc_TownStash and Sc_TownRevive. The callback function is called AFTER *
+*        trading but before closing the trade window. And for stashing it's    *
+*        called BEFORE stashing but after the stash is opened                  *
+*        Function: FunctionName(NPC)                                           *
+*      - Added Sc_TownStashItem(item)                                          *
+*      - Fixed (very) stupid script errors (thanx to SwedishPower)             *
+*      - Randomized the movement timing to prevent RD                          *
+* 0.4: - Functions renamed, they now all start with Sc_                        *
+*      - Uses wp to go to a npc/spot when its needed                           *
+*      - Takes portal to town if its needed                                    *
+*      - Added Dijkstra pathfinding                                            *
+*      - Improved movement function, less chance to get stuck and now returns  *
+*        false when it fails to follow the town path, ater a few tries         *
+*      - All movepoints re-created                                             *
+*      - Fixed name of npc, changed ashera to asheara                          *
+*      - Added alot functions                                                  *
+*      - Added new townspots                                                   *
+*      - Added all acts town exit detection                                    *
+* 0.3: - Fixed name of npc qual-kehk                                           *
+*      - Fixed cant find waypoint bug in act1                                  *
+* 0.2: - Added extra movepoints for act 1 for townportal spot                  *
+*      - Improved pathfinding (removed walking back-forward)                   *
+* 0.1: - First release                                                         *
+*******************************************************************************/
+
+/*******************************************************************************
+* Upcoming features:                                                           *
+* ---------------------------------------------------------------------------- *
+* - Add buying arrows/bolts in Sc_TownRepair                                   *
+*******************************************************************************/
+
+/*******************************************************************************
+* REQUIRED LIBRARIES:                                                          *
+* ---------------------------------------------------------------------------- *
+* - vec_coord.d2l                                                              *
+*******************************************************************************/
+
+/*******************************************************************************
+* FUNCTIONS:                                                                   *
+* ---------------------------------------------------------------------------- *                                                        *
+* Sc_TownMoveSetting(setting, value)                                           *
+*   Use this to set settings for townmove. Valid settings are down this file   *
+* Sc_TownMove(spot), Sc_TownMove(act, spot)                                    *
+*   Moves character to target spot. If act is spacified moves character to     *
+*   target spot in specified act                                               *
+* Sc_TownMoveXY(act, x, y)                                                     *
+*   Moves your character to the 'x' and 'y' coordinate in 'act'                *
+* Sc_TownWP(act, place)                                                        *
+*   Moves to, and takes the wp to specified act/place                          *
+* Sc_TownHeal(heal, move_back, func)                                           *
+*   Moves to closest healer in town. Casting a tp if out of town. If 'heal' is *
+*   set to true, it heals at npc and buys pots/scrolls if needed.              *
+*   If 'move_back' is set to true, it will move back to where it came from,    *
+*   taking tp back if needed                                                   *
+* Sc_TownRepair(repair, move_back, func)                                       *
+*   Moves to closest repairing npc in town. Casting a tp if out of town.       *
+*   If 'repair' is set to true, it repairs.                                    *
+*   If 'move_back' is set to true, it will move back to where it came from,    *
+*   taking tp back if needed                                                   *
+* Sc_TownRevive(revive, move_back, func)                                       *
+*   Moves to closest reviving npc in town. Casting a tp if out of town.        *
+*   If 'revive' is set to true, it revives merc.                               *
+*   If 'move_back' is set to true, it will move back to where it came from,    *
+*   taking tp back if needed                                                   *
+* Sc_TownStash(stash, move_back, func)                                         *
+*   Moves to closest stash. Casting a tp if out of town.                       *
+*   If 'stash' is set to true, it stashes items.                               *
+*   If 'move_back' is set to true, it will move back to where it came from,    *
+*   taking tp back if needed                                                   *
+* Sc_InTown(target)                                                            *
+*   Returns true when 'target' is in town, otherwise false                     *
+* Sc_GotoTown()                                                                *
+*   Casts a tp and goes to town                                                *
+*******************************************************************************/
+
+/*******************************************************************************
+* Spots to use in Sc_TownMove                                                  *
+*------------------------------------------------------------------------------*
+*    A1            A2            A3            A4            A5                *
+* ---------------------------------------------------------------------------- *
+* "waypoint"    "waypoint"    "waypoint"    "waypoint"    "waypoint"           *
+* "portalspot"  "portalspot"  "portalspot"  "portalspot"  "portalspot"         *
+* "exit"        "exit"        "exit"        "exit"        "exit"               *
+* "stash"       "stash"       "stash"       "stash"       "stash"              *
+* "gheed"       "fara"        "cain"        "cain"        "larzuk"             *
+* "charsi"      "cain"        "alkor"       "halbu"       "malah"              *
+* "akara"       "lysander"    "asheara"     "tyrael"      "cain"               *
+* "kashya"      "greiz"       "ormus"       "jamella"     "qual-kehk"          *
+* "cain"        "elzix"       "hratli"                    "anya"               *
+*               "palace"                                  "portal"             *
+*               "sewers"                                  "nihlathak"          *
+*               "meshif"                                                       *
+*******************************************************************************/
+
+/*******************************************************************************
+* Sc_TownMoveSetting parameters                                                *
+*------------------------------------------------------------------------------*
+* "buy_pots"                                                                   *
+*   Set to true, to buy pots when using Sc_TownHeal                            *
+* "buy_scrolls"                                                                *
+*   Set to true to buy scrolls when using Sc_TownHeal                          *
+* "buy_pots_percent"                                                           *
+*   When current amount of pots in the belt drops below this percent, it will  *
+*   buy new pots                                                               *
+* "buy_scrolls_percent"                                                        *
+*   When current amount of scrolls in the tome of townportals drops below this *
+*   percent, it will buy new scrolls                                           *
+* "use_drijkstra"                                                              *
+*   Set this to false to disable Dijkstra pathfinding. NOT RECOMMENDED         *
+* "show_errors"                                                                *
+*   Set this to true to show TownMove errors on screen                         *
+* "log_errors"                                                                 *
+*   Set this to true to log TownMove errors                                    *
+* "log_file"                                                                   *
+*   The logfile to log errors to. Default: "output\\townmove.log"              *
+* "debugfunc"                                                                  *
+*   Set a callback function to send debug messages to. The function must accept*
+*   one param, the debug message: debugfunc(msg);                              *
+* "d2_classic"                                                                 *
+*   Set to true to enable stashing in d2 classic                               *
+*******************************************************************************/
+
+include("vec_coord.d2l");
+
+// Townmove setting, DONT MODIFY, Use Sc_TownMoveSetting(name, value) to change settings for your script
+var _townmovesettings = new Object();
+_townmovesettings["buy_pots"]	 			= false;
+_townmovesettings["buy_scrolls"]			= false;
+_townmovesettings["buy_scrolls_percent"]	= 50;
+_townmovesettings["buy_pots_percent"]		= 50;
+_townmovesettings["buy_bolts"]				= false;	// add this
+_townmovesettings["buy_arrows"]				= false;	// add this
+_townmovesettings["lag_correction"]			= 0;		// add this
+_townmovesettings["show_errors"]			= true;
+_townmovesettings["log_errors"]				= true;
+_townmovesettings["log_file"]				= "output\\townmove.log";
+_townmovesettings["debugfunc"]				= null;
+_townmovesettings["d2_classic"]				= false;
+_townmovesettings["basic_cancel"]			= false;
+_townmovesettings["use_mattlant_path"]		= false;
+
+var waypoints = [[0x01,0x03,0x04,0x05,0x06,0x1b,0x1d,0x20,0x23],[0x28,0x30,0x2a,0x39,0x2b,0x2c,0x34,0x4a,0x2e],[0x4b,0x4c,0x4d,0x4e,0x4f,0x50,0x51,0x53,0x65],[0x67,0x6a,0x6b],[0x6d,0x6f,0x70,0x71,0x73,0x7b,0x75,0x76,0x81]];
+var qarray = [1,2,4,5,3,6,9,10,11,12,13,14,20,19,18,17,21,22,25,27,26,0,0,0,29,30,31,32,33,34];
+
+/*******************************************************************************
+* TownMove coordinates
+*******************************************************************************/
+
+// array with movepoints for every act
+var _movepoints = new Array(5);
+// act 1 needs to be calculated (Generate_movepoints())
+_movepoints[0] = new Array();
+
+// act 2
+_movepoints[1] = new Array();
+_movepoints[1][0] = new coord();
+_movepoints[1][1] = new coord();
+_movepoints[1][2] = new coord(5021,5067);
+_movepoints[1][3] = new coord(5033,5063);
+_movepoints[1][4] = new coord(5033,5052);
+_movepoints[1][5] = new coord(5046,5054);
+_movepoints[1][6] = new coord(5043,5064);
+_movepoints[1][7] = new coord(5057,5061);
+_movepoints[1][8] = new coord(5070,5060);
+_movepoints[1][9] = new coord(5084,5060);
+_movepoints[1][10] = new coord(5096,5060);
+_movepoints[1][11] = new coord(5098,5048);
+_movepoints[1][12] = new coord(5098,5035);
+_movepoints[1][13] = new coord(5097,5073);
+_movepoints[1][14] = new coord(5096,5087);
+_movepoints[1][15] = new coord(5082,5085);
+_movepoints[1][16] = new coord(5070,5081);
+_movepoints[1][17] = new coord(5070,5071);
+_movepoints[1][18] = new coord(5068,5093);
+_movepoints[1][19] = new coord(5055,5093);
+_movepoints[1][20] = new coord(5041,5091);
+_movepoints[1][21] = new coord(5036,5080);
+_movepoints[1][22] = new coord(5036,5069);
+_movepoints[1][23] = new coord(5034,5098);
+_movepoints[1][24] = new coord(5095,5100);
+_movepoints[1][25] = new coord(5104,5094);
+_movepoints[1][26] = new coord(5115,5096);
+_movepoints[1][27] = new coord(5120,5105);
+_movepoints[1][28] = new coord(5125,5117);
+_movepoints[1][29] = new coord(5115,5086);
+_movepoints[1][30] = new coord(5122,5082);
+_movepoints[1][31] = new coord(5126,5070);
+_movepoints[1][32] = new coord(5117,5060);
+_movepoints[1][33] = new coord(5104,5059);
+_movepoints[1][34] = new coord(5130,5061);
+_movepoints[1][35] = new coord(5144,5060);
+_movepoints[1][36] = new coord(5158,5060);
+_movepoints[1][37] = new coord(5171,5060);
+_movepoints[1][38] = new coord(5185,5059);
+_movepoints[1][39] = new coord(5198,5059);
+_movepoints[1][40] = new coord(5207,5050);
+_movepoints[1][41] = new coord(5207,5064);
+_movepoints[1][42] = new coord(5207,5077);
+_movepoints[1][43] = new coord(5208,5091);
+_movepoints[1][44] = new coord(5208,5103);
+_movepoints[1][45] = new coord(5207,5117);
+_movepoints[1][46] = new coord(5208,5131);
+_movepoints[1][47] = new coord(5208,5145);
+_movepoints[1][48] = new coord(5213,5153);
+_movepoints[1][49] = new coord(5217,5166);
+_movepoints[1][50] = new coord(5221,5179);
+_movepoints[1][51] = new coord(5196,5152);
+_movepoints[1][52] = new coord(5185,5144);
+_movepoints[1][53] = new coord(5176,5133);
+_movepoints[1][54] = new coord(5182,5125);
+_movepoints[1][55] = new coord(5164,5126);
+_movepoints[1][56] = new coord(5150,5126);
+_movepoints[1][57] = new coord(5134,5126);
+_movepoints[1][58] = new coord(5124,5129);
+_movepoints[1][59] = new coord(5125,5142);
+_movepoints[1][60] = new coord(5126,5156);
+_movepoints[1][61] = new coord(5126,5170);
+_movepoints[1][62] = new coord(5129,5183);
+_movepoints[1][63] = new coord(5141,5189);
+_movepoints[1][64] = new coord(5151,5199);
+_movepoints[1][65] = new coord(5114,5155);
+_movepoints[1][66] = new coord(5101,5155);
+_movepoints[1][67] = new coord(5088,5155);
+_movepoints[1][68] = new coord(5075,5150);
+_movepoints[1][69] = new coord(5062,5144);
+_movepoints[1][70] = new coord(5100,5143);
+_movepoints[1][71] = new coord(5099,5130);
+_movepoints[1][72] = new coord(5097,5118);
+_movepoints[1][73] = new coord(5106,5124);
+_movepoints[1][74] = new coord(5117,5126);
+_movepoints[1][75] = new coord(5097,5104);
+_movepoints[1][76] = new coord(5086,5126);
+_movepoints[1][77] = new coord(5074,5125);
+_movepoints[1][78] = new coord(5060,5124);
+_movepoints[1][79] = new coord(5047,5118);
+_movepoints[1][80] = new coord(5037,5109);
+_movepoints[1][81] = new coord(5186,5112);
+_movepoints[1][82] = new coord(5185,5099);
+_movepoints[1][83] = new coord(5185,5085);
+_movepoints[1][84] = new coord(5185,5073);
+_movepoints[1][85] = new coord(5097,5023);
+
+// act 3
+_movepoints[2] = new Array();
+_movepoints[2][0] = new coord();
+_movepoints[2][1] = new coord();
+_movepoints[2][2] = new coord(5120,5168);
+_movepoints[2][3] = new coord(5132,5162);
+_movepoints[2][4] = new coord(5133,5148);
+_movepoints[2][5] = new coord(5133,5136);
+_movepoints[2][6] = new coord(5133,5124);
+_movepoints[2][7] = new coord(5133,5113);
+_movepoints[2][8] = new coord(5133,5103);
+_movepoints[2][9] = new coord(5132,5092);
+_movepoints[2][10] = new coord(5144,5092);
+_movepoints[2][11] = new coord(5155,5087);
+_movepoints[2][12] = new coord(5147,5078);
+_movepoints[2][13] = new coord(5149,5064);
+_movepoints[2][14] = new coord(5156,5056);
+_movepoints[2][15] = new coord(5145,5051);
+_movepoints[2][16] = new coord(5132,5048);
+_movepoints[2][17] = new coord(5118,5047);
+_movepoints[2][18] = new coord(5106,5048);
+_movepoints[2][19] = new coord(5093,5046);
+_movepoints[2][20] = new coord(5092,5034);
+_movepoints[2][21] = new coord(5083,5029);
+_movepoints[2][22] = new coord(5085,5016);
+_movepoints[2][23] = new coord(5072,5032);
+_movepoints[2][24] = new coord(5072,5046);
+_movepoints[2][25] = new coord(5083,5054);
+_movepoints[2][26] = new coord(5083,5068);
+_movepoints[2][27] = new coord(5083,5082);
+_movepoints[2][28] = new coord(5082,5093);
+_movepoints[2][29] = new coord(5068,5092);
+_movepoints[2][30] = new coord(5055,5092);
+_movepoints[2][31] = new coord(5042,5093);
+_movepoints[2][32] = new coord(5095,5092);
+_movepoints[2][33] = new coord(5108,5092);
+_movepoints[2][34] = new coord(5121,5092);
+_movepoints[2][35] = new coord(5169,5087);
+_movepoints[2][36] = new coord(5181,5087);
+_movepoints[2][37] = new coord(5194,5087);
+_movepoints[2][38] = new coord(5206,5087);
+_movepoints[2][39] = new coord(5218,5080);
+_movepoints[2][40] = new coord(5223,5068);
+_movepoints[2][41] = new coord(5223,5058);
+_movepoints[2][42] = new coord(5156,5062);
+_movepoints[2][43] = new coord(5156,5074);
+
+// act 4
+_movepoints[3] = new Array();
+_movepoints[3][0] = new coord();
+_movepoints[3][1] = new coord();
+_movepoints[3][2] = new coord(5044,5027);
+_movepoints[3][3] = new coord(5034,5032);
+_movepoints[3][4] = new coord(5046,5037);
+_movepoints[3][5] = new coord(5059,5039);
+_movepoints[3][6] = new coord(5072,5041);
+_movepoints[3][7] = new coord(5082,5044);
+_movepoints[3][8] = new coord(5087,5054);
+_movepoints[3][9] = new coord(5087,5032);
+_movepoints[3][10] = new coord(5094,5044);
+_movepoints[3][11] = new coord(5108,5047);
+_movepoints[3][12] = new coord(5118,5052);
+_movepoints[3][13] = new coord(5128,5060);
+_movepoints[3][14] = new coord(5133,5070);
+_movepoints[3][15] = new coord(5141,5079);
+_movepoints[3][16] = new coord(5151,5084);
+_movepoints[3][17] = new coord(5158,5087);
+_movepoints[3][18] = new coord(5024,5025);
+_movepoints[3][19] = new coord(5024,5037);
+
+// act5
+_movepoints[4] = new Array();
+_movepoints[4][0] = new coord();
+_movepoints[4][1] = new coord();
+_movepoints[4][2] = new coord(5105,5043);
+_movepoints[4][3] = new coord(5104,5030);
+_movepoints[4][4] = new coord(5093,5022);
+_movepoints[4][5] = new coord(5087,5032);
+_movepoints[4][6] = new coord(5073,5032);
+_movepoints[4][7] = new coord(5072,5045);
+_movepoints[4][8] = new coord(5107,5055);
+_movepoints[4][9] = new coord(5117,5064);
+_movepoints[4][10] = new coord(5119,5077);
+_movepoints[4][11] = new coord(5122,5089);
+_movepoints[4][12] = new coord(5130,5101);
+_movepoints[4][13] = new coord(5131,5087);
+_movepoints[4][14] = new coord(5134,5073);
+_movepoints[4][15] = new coord(5133,5063);
+_movepoints[4][16] = new coord(5145,5057);
+_movepoints[4][17] = new coord(5135,5052);
+_movepoints[4][18] = new coord(5131,5042);
+_movepoints[4][19] = new coord(5116,5040);
+_movepoints[4][20] = new coord(5112,5087);
+_movepoints[4][21] = new coord(5099,5086);
+_movepoints[4][22] = new coord(5085,5087);
+_movepoints[4][23] = new coord(5083,5074);
+_movepoints[4][24] = new coord(5082,5064);
+_movepoints[4][25] = new coord(5078,5053);
+_movepoints[4][26] = new coord(5074,5079);
+_movepoints[4][27] = new coord(5064,5080);
+_movepoints[4][28] = new coord(5066,5094);
+_movepoints[4][29] = new coord(5078,5097);
+_movepoints[4][30] = new coord(5086,5099);
+_movepoints[4][31] = new coord(5088,5111);
+_movepoints[4][32] = new coord(5097,5120);
+_movepoints[4][33] = new coord(5110,5120);
+_movepoints[4][34] = new coord(5123,5118);
+_movepoints[4][35] = new coord(5133,5108);	// old 5133,5108
+_movepoints[4][36] = new coord(5133,5106);
+_movepoints[4][37] = new coord(5081,5122);
+_movepoints[4][38] = new coord(5069,5114);
+_movepoints[4][39] = new coord(5056,5098);
+_movepoints[4][40] = new coord(5063,5107);
+_movepoints[4][41] = new coord(5042,5097);
+_movepoints[4][42] = new coord(5030,5096);
+_movepoints[4][43] = new coord(5126,5061);
+
+
+var _townpoints = new Array();
+
+_townpoints[0] = new Object();
+_townpoints[0]["gheed"]			= new coord();
+_townpoints[0]["charsi"] 		= new coord();
+_townpoints[0]["akara"] 		= new coord();
+_townpoints[0]["kashya"] 		= new coord();
+_townpoints[0]["cain"] 			= new coord();
+_townpoints[0]["stash"]			= new coord();
+_townpoints[0]["portalspot"]	= new coord();
+_townpoints[0]["waypoint"]		= new coord();
+_townpoints[0]["exit"]			= new coord();
+
+_townpoints[1] = new Object();
+_townpoints[1]["portalspot"]	= new coord(5168,5055);
+_townpoints[1]["stash"] 		= new coord(5124,5082);
+_townpoints[1]["fara"] 			= new coord(5124,5082);
+_townpoints[1]["cain"] 			= new coord(5124,5082);
+_townpoints[1]["lysander"] 		= new coord(5118,5104);
+_townpoints[1]["waypoint"] 		= new coord(5070,5083);
+_townpoints[1]["greiz"]			= new coord(5033,5053);
+_townpoints[1]["exit"] 			= new coord();
+_townpoints[1]["elzix"] 		= new coord(5032,5102);
+_townpoints[1]["palace"] 		= new coord(5055,5142);
+_townpoints[1]["sewers"] 		= new coord(5221,5181);
+_townpoints[1]["meshif"] 		= new coord(5205,5058);
+_townpoints[1]["drognan"] 		= new coord(5097,5035);
+
+_townpoints[2] = new Object();
+_townpoints[2]["cain"] 			= new coord(5169,5056);
+_townpoints[2]["waypoint"] 		= new coord(5158,5050);
+_townpoints[2]["exit"] 			= new coord(5145,5044);
+_townpoints[2]["alkor"] 		= new coord(5083,5016);
+_townpoints[2]["asheara"] 		= new coord(5043,5093);
+_townpoints[2]["ormus"] 		= new coord(5129,5093);
+_townpoints[2]["hratli"] 		= new coord(5223,5048);
+_townpoints[2]["stash"] 		= new coord(5144,5059);
+_townpoints[2]["portalspot"] 	= new coord(5156,5063);
+
+_townpoints[3] = new Object();
+_townpoints[3]["waypoint"] 		= new coord(5043,5018);
+_townpoints[3]["cain"] 			= new coord(5027,5027);
+_townpoints[3]["halbu"] 		= new coord(5089,5031);
+_townpoints[3]["tyrael"] 		= new coord(5027,5027);
+_townpoints[3]["jamella"] 		= new coord(5088,5054);
+_townpoints[3]["stash"] 		= new coord(5022,5040);
+_townpoints[3]["exit"] 			= new coord(5158,5086);
+_townpoints[3]["portalspot"]	= new coord(5049,5038);
+
+_townpoints[4] = new Object();
+_townpoints[4]["portalspot"] 	= new coord(5097,5024);	//old: 5049,5038
+_townpoints[4]["exit"] 			= new coord(5028,5095);
+_townpoints[4]["stash"] 		= new coord(5129,5061);
+_townpoints[4]["larzuk"] 		= new coord(5141,5045);
+_townpoints[4]["malah"] 		= new coord(5078,5029);	// old: 5080, 5031
+_townpoints[4]["cain"] 			= new coord(5080,5084);
+_townpoints[4]["qual-kehk"] 	= new coord(5066,5083);
+_townpoints[4]["anya"] 			= new coord(5112,5120);
+_townpoints[4]["portal"] 		= new coord(5118,5120);
+_townpoints[4]["waypoint"] 		= new coord(5113,5068); 
+_townpoints[4]["nihlathak"] 	= new coord(5071,5111);
+
+
+/*******************************************************************************
+* TownMove Functions
+*******************************************************************************/
+
+function Sc_TownMoveSetting(name, value)
+{
+	_Sc_DebugMsg("TownmoveSetting '" + name + "' changed from '" + _townmovesettings[name] + "' to '" + value + "'");
+	_townmovesettings[name] = value;
+	if (name == "use_mattlant_path" && value) {
+		raw("load mlmap");
+		include("mlmap.d2l");
+	}
+}
+
+
+function Sc_TownMove(act, spot)
+{
+	_Sc_DebugMsg("TownMove called (" + act + "," + spot + ")");
+	if (arguments.length == 1 || !spot) {
+		spot = act;
+		_Sc_DebugMsg("No act specified, lets find it");
+		act = _Sc_FindSpotAct(spot);
+		_Sc_DebugMsg("Act returned: "+act);
+		if (!act) {
+			Sc_Error("Failed to find the act for spot: " + spot);
+			return false;
+		}
+	}
+	
+	if (act < 1 || act > 5) {
+		Sc_Error("Sc_TownMove: Invalid act: " + act);
+		return false;
+	}
+	
+	if (act != me.act) {
+		print(act + " " + me.act);
+		if (!Sc_TownWP(act, 1))
+			return false;
+	}
+	
+	spot = spot.toLowerCase();	
+	if (act == 1) {
+		if (!_Sc_CreateAct1())
+			return false;
+	}
+	
+	act -= 1;
+	
+	_Sc_DebugMsg("Checking spot");
+	
+	var pos = _townpoints[act][spot];
+	if (pos.x == 0 && pos.y == 0) {
+		_Sc_DebugMsg("No spot specified, looking up spot");
+		pos = _Sc_TownFindSpot(act, spot);
+		if (pos && pos.x == 0 && pos.y == 0) {
+			Sc_Error("Failed to find spot " + spot.toLowerCase());
+			return false;
+		}
+	}
+
+	_Sc_DebugMsg("Going to find the path");
+
+	if (pos && pos.x != 0 && pos.y != 0) {
+		var p = Sc_FindTownPath(act, pos.x, pos.y, 15);
+		if (!p || !p.length) {
+			Sc_Error("Failed to find path to "+spot);
+			return false;
+		}
+		_Sc_DebugMsg("Path found, going to follow the path");
+		return Sc_FollowTownPath(p);
+	}
+	else {
+		Sc_Error("spot not found: " + spot.toLowerCase());
+		return false;
+	}
+	
+	return false;
+}
+
+
+function Sc_TownMoveXY(act, x, y)
+{
+	if (act < 1 || act > 5) {
+		Sc_Error("Sc_TownMoveXY(Invalid act: " + act);
+		return false;
+	}
+	
+	if (arguments.length == 2) {
+		y = x;
+		x = act;
+		act = me.act;
+	}
+	
+	if (act == 1)
+		_Sc_CreateAct1();
+	
+	act -= 1;
+	
+	var p = Sc_FindTownPath(act, x, y, 15);
+		
+	if (!p) {
+		return false;
+	}
+
+	return Sc_FollowTownPath(p);
+}
+
+function Sc_TownWP(act, place)
+{
+	_Sc_DebugMsg("SC_TownWP called ("+act+","+place+")");
+	
+	if (act < 1 || act > 5) {
+		Sc_Error("Sc_TownWP: Invalid act: " + act);
+		return false;
+	}
+	
+	if (me.act == 1 && Sc_InTown(me)) {
+		_Sc_DebugMsg("Going to create act 1");
+		if (!_Sc_CreateAct1())
+			return false;
+	}
+	
+	act -= 1;
+	
+	_Sc_DebugMsg("Going to move to the waypoint");
+	
+	if (!Sc_TownMove("waypoint"))
+		return false;
+	
+	_Sc_DebugMsg("Move to waypoint done");
+	
+	var pos = new coord(me);
+	var wp = getUnit(2, "Waypoint");
+	if (!wp) {
+		Sc_Error("Failed to detect waypoint");
+		return false;
+	}
+	
+	_Sc_DebugMsg("Waypoint found, going to take it");
+	
+	var code = Sc_WPCode(act+1, place);
+	var timer = 3500;
+	do {
+		me.move(wp.x,wp.y);
+		delay(500);
+		wp.interact(code);
+		delay(500);
+		timer -= 1000;
+	}while(me.area != code && timer > 0);
+	
+	if (timer <= 0) {
+		Sc_Error("Failed to take wp");// from " + me.act + " to " + (act+1));
+		return false;
+	}
+	
+	delay(1000);
+	me.cancel();
+	
+	if (act == 0 && Sc_InTown(me) && !_Sc_CreateAct1()) {
+		me.move(me.x, me.y+15);
+		delay(2000);
+		_Sc_CreateAct1();
+	}
+	
+	return true;
+}
+
+
+function Sc_FindTownPath(act, x, y, maxsep)
+{
+	_Sc_DebugMsg("Going to find town path to " + x + "," + y);
+	
+	if (_townmovesettings["use_mattlant_path"]) {
+		_Sc_DebugMsg("Using mattlant pathing");
+		mlInitializeMap();
+		var path = path = mlFindPath(mlWARPNONE, me.x, me.y, x, y, 4, mlASTAR, mlREDUCEWALK);
+		if (path && path.length)
+			return path;
+		Sc_Error("Failed to create path using Mattlant pathfinding");
+	}
+	
+	_Sc_DebugMsg("Using dijstra pathing");
+	var path =  _TownMoveCreateDijkstra(act, x, y, maxsep);
+	_Sc_DebugMsg("Dijkstra done");
+
+	if (path && path.length)
+		return path;
+
+	// increase maxsep (should never be needed)
+	Sc_Error("Need to increase maxsep for dijkstra");
+	path =  _TownMoveCreateDijkstra(act, x, y, maxsep + 5);
+	if (path && path.length) {
+		Sc_Error("maxsep+5 created a path");
+		return path;
+	}
+	
+	_Sc_DebugMsg("Using old pathing");
+	
+	return null;
+}
+
+
+function Sc_FollowTownPath(p)
+{
+	_Sc_DebugMsg("Sc_FollowTownPath clalled, pathlength: " + p.length);
+	
+	if (_townmovesettings["use_mattlant_path"]) {
+		_Sc_DebugMsg("Using mattlants pathing and path walking");
+		return mlWalkThePath(p);
+	}
+	
+	
+	var fail = 0;
+	for (var i = 0; i < p.length; i++) {
+		_Sc_DebugMsg("Moving to Pathnode " + i + ": " + p[i]);
+		if (!_Sc_TownMoveTo(p[i]))
+			fail++
+		if (fail > 1) {
+			_Sc_DebugMsg("Failed to follow townpath");
+			return false;
+		}
+	}
+	_Sc_DebugMsg("Sc_FollowTownPath done");
+	
+	return true;
+}
+
+function Sc_TownHeal(heal, move_back, func)
+{
+	_Sc_DebugMsg("TownHeal started");
+	
+	// go to healer and heal if needed
+	var portal = false;
+	if (!Sc_InTown(me)) {
+		if (!Sc_GotoTown()) {
+			Sc_Error(" * ERROR: GotoTown failed");
+			return;
+		}
+		portal = true;
+	}
+	
+	var back_spot = new coord(me);
+	
+	_Sc_DebugMsg("Back spot set to: "+back_spot);
+	
+	var name= null;
+	var trade = 0x0D44;
+	switch(me.act) {
+		case 1:
+			name = "Akara"
+			break;
+		case 2:
+			name = "Fara";
+			trade = 0x0D06;
+			break;
+		case 3:
+			name = "Ormus";
+			break;
+		case 4:
+			name = "Jamella";
+			break;
+		case 5:
+			name = "Malah";
+			break;
+	}
+	
+	_Sc_DebugMsg("NPC to heal: " + name + ", with trade code: " + trade);
+	
+	if (!Sc_TownMove(name)) {
+		Sc_Error("Sc_TownHeal Failed");
+		return false;
+	}
+	
+	if (!heal)
+		return true;
+	
+	var pots = Sc_NeedPots();
+	var scrolls = Sc_NeedScrolls();
+	
+	//print(pots+","+scrolls);
+	
+	var npc = getUnit(1, name);
+	if (!npc) {
+		Sc_Error("NPC " + name + " not detected");
+		return false;
+	}
+	
+	_Sc_DebugMsg("NPC object aquired");
+	
+	var extra_move = false;
+	if (name == "Malah" && npc.y < 5024) {
+		me.move(5075,5024);
+		delay(1000);
+		extra_move = new coord(me);
+	}
+	
+	var oldpos = new coord(me);
+	var pos = new coord(me);
+	
+	_Sc_DebugMsg("Moving to NPC");
+	
+	while(pos.dist(npc) > 3) {
+		if (me.mode != 2 && me.mode != 3 && me.mode != 6)
+			me.move(npc.x, npc.y);
+		delay(50);
+		pos.set(me);
+	}
+	
+	_Sc_DebugMsg("NPC move done, going to interact");
+	
+	while(!getUIFlag(8)) {
+		while(pos.dist(npc) > 3) {
+			if (me.mode != 2 && me.mode != 3 && me.mode != 6)
+				me.move(npc.x, npc.y);
+			delay(50);
+			pos.set(me);
+		}
+		npc.interact();
+		delay(500);
+	}
+	
+	_Sc_DebugMsg("NPC interaction established");
+	
+	if (pots || scrolls || func) {
+		_Sc_DebugMsg("Trade required, going into trade");
+		while(!getUIFlag(0x0C)) {
+			npc.useMenu(trade);
+			delay(500);
+		}
+		_Sc_DebugMsg("Trade screen opened");
+		
+		if (pots == true) {
+			_Sc_DebugMsg("Going to buy pots");
+			var retry = 5;
+			var g = Sc_GoldAmount();
+			do {
+				for (var i = 5; i > 0; i--) {
+					var retry = 5;
+					var p = Sc_LocateItem(npc, "hp"+i, -1);
+					if (p) {
+						p.shop(npc, 3);
+						delay(500);
+						break;
+					}
+					delay(100);
+				}
+				retry--;
+			}while(g == Sc_GoldAmount() && Sc_GoldAmount() > 200 && retry > 0);
+			_Sc_DebugMsg("Pots buying done");
+		}
+		if (scrolls) {
+			if(scrolls == 2) {
+				_Sc_DebugMsg("Going to buy a Tome of Townportal");
+				var retry = 5;
+				do {
+					var t = Sc_LocateItem(npc, "tbk", -1);
+					if (t) {
+						t.shop(npc, 2);
+						delay(500);
+					}
+					delay(100);
+					retry--;
+				}while(Sc_NeedScrolls() == 2 && Sc_GoldAmount() > 500 && retry > 0); // 500?? dunno :)
+			}
+			_Sc_DebugMsg("Going to buy scrolls");
+			var retry = 5;
+			do {
+				var s = Sc_LocateItem(npc, "tsc", -1);
+				if (s) {
+					s.shop(npc, 3);
+					delay(500);
+				}
+				delay(100);
+				retry--;
+			}while(Sc_NeedScrolls() && Sc_GoldAmount() > 80 && retry > 0);
+		}
+		
+		// callback function
+		if (func) {
+			_Sc_DebugMsg("Calling callback func");
+			func(npc);
+			_Sc_DebugMsg("Callback func done");
+		}
+
+		_Sc_DebugMsg("Going to close the trade window");
+		while(getUIFlag(0x0C)) {
+			me.cancel(1);
+			delay(500);
+		}
+		_Sc_DebugMsg("Trade windows closed");
+	}
+	
+	_Sc_DebugMsg("Healing done, closing interaction");
+	
+	while(getUIFlag(8)) {
+		me.cancel(1);
+		delay(500);
+	}
+	
+	_Sc_DebugMsg("Interaction window closed");
+	
+	if (extra_move) {
+		_Sc_DebugMsg("Doing the required extra move");
+		me.move(extra_move.x ,extra_move.y);
+		delay(50);
+		while(!(me.mode != 2 || me.mode != 3 || me.mode != 6))
+			delay(50);
+	}
+	
+	_Sc_DebugMsg("Moving back to old pos");
+	
+	while(oldpos.dist(me) > 3) {
+		if (me.mode != 2 || me.mode != 3 || me.mode != 6)
+			me.move(oldpos.x, oldpos.y);
+		delay(50);
+	}
+	
+	_Sc_DebugMsg("Moving back done");
+	
+	if (!move_back) {
+		_Sc_DebugMsg("Dont need to move back, townheal done");
+		return true;
+	}
+	
+	_Sc_DebugMsg("Going to move back");
+	// move back to portal and take it
+	if (!Sc_TownMoveXY(me.act, back_spot.x, back_spot.y)) {
+		Sc_Error("Failed to move back");
+		return false;
+	}
+	
+	_Sc_DebugMsg("Going to close the trade window");
+	
+	if (!portal) {
+		_Sc_DebugMsg("No portal. Moveback done");
+		return true;
+	}
+	
+	var portal = Sc_GetMyPortal();
+	if (!portal) {
+		Sc_Error("Failed to detect portal");
+		return false;
+	}
+	
+	_Sc_DebugMsg("Going to take portal back");
+	pos.set(me);
+	while(pos.dist(portal) > 3) {
+		if (me.mode != 2 && me.mode != 3 && me.mode != 6)
+			me.move(portal.x, portal.y);
+		delay(50);
+		pos.set(me);
+	}
+	
+	var timer = 5000;
+	do {
+		portal.interact();
+		delay(500);
+		timer -= 500;
+	}while(Sc_InTown(me) && timer > 0);
+	
+	if (timer <= 0) {
+		Sc_Error("Failed to take portal back");
+		return false;
+	}
+	
+	_Sc_DebugMsg("Moveback successfull, TownHeal done");
+	
+	return true;
+}
+
+function Sc_TownRepair(repair, move_back, func)
+{
+	// go to healer and heal if needed
+	var portal = false;
+	if (!Sc_InTown(me)) {
+		if (!Sc_GotoTown()) {
+			Sc_Error(" * ERROR: GotoTown failed");
+			return false;
+		}
+		portal = true;
+	}
+	
+	var back_spot = new coord(me);
+	
+	var name= null;
+	var trade = 0x0D06;
+	switch(me.act) {
+		case 1:
+			name = "charsi"
+			break;
+		case 2:
+			name = "fara";
+			break;
+		case 3:
+			name = "hratli";
+			break;
+		case 4:
+			name = "halbu";
+			break;
+		case 5:
+			name = "larzuk";
+			break;
+	}
+	
+	if (!Sc_TownMove(name)) {
+		Sc_Error("Sc_TownRepair Failed");
+		return false;
+	}
+	
+	if (!repair)
+		return true;
+	
+	var npc = getUnit(1, name);
+	if (!npc) {
+		Sc_Error("NPC " + name + " not detected");
+		return false;
+	}
+	
+	var oldpos = new coord(me);
+	var pos = new coord(me);
+	
+	while(pos.dist(npc) > 3) {
+		if (me.mode != 2 && me.mode != 3 && me.mode != 6)
+			me.move(npc.x, npc.y);
+		delay(50);
+		pos.set(me);
+	}
+	
+	while(!getUIFlag(8)) {
+		while(pos.dist(npc) > 3) {
+			if (me.mode != 2 && me.mode != 3 && me.mode != 6)
+				me.move(npc.x, npc.y);
+			delay(50);
+			pos.set(me);
+		}
+		npc.interact();
+		delay(500);
+	}
+		
+	while(!getUIFlag(0x0C)) {
+		npc.useMenu(trade);
+		delay(500);
+	}
+	
+	npc.repair();
+	delay(1000);
+	
+	// callback function
+	if (func)
+		func(npc);
+
+	while(getUIFlag(8)) {
+		me.cancel(1);
+		delay(500);
+	}
+	
+	while(oldpos.dist(me) > 3) {
+		if (me.mode != 2 || me.mode != 3 || me.mode != 6)
+			me.move(oldpos.x, oldpos.y);
+		delay(50);
+	}
+	
+	if (!move_back)
+		return true;
+	
+	// move back to portal and take it
+	if (!Sc_TownMoveXY(me.act, back_spot.x, back_spot.y)) {
+		Sc_Error("Failed to move back");
+		return false;
+	}
+	if (!portal)
+		return true;
+		
+	var portal = Sc_GetMyPortal();
+	if (!portal) {
+		Sc_Error("Failed to detect portal");
+		return false;
+	}
+	
+	pos.set(me);
+	while(pos.dist(portal) > 3) {
+		if (me.mode != 2 && me.mode != 3 && me.mode != 6)
+			me.move(portal.x, portal.y);
+		delay(50);
+		pos.set(me);
+	}
+	
+	var timer = 5000;
+	do {
+		portal.interact();
+		delay(500);
+		timer -= 500;
+	}while(Sc_InTown(me) && timer > 0);
+	
+	if (timer <= 0) {
+		Sc_Error("Failed to take portal back");
+		return false;
+	}
+	
+	return true;
+}
+
+function Sc_TownRevive(revive, move_back, func)
+{
+	_Sc_DebugMsg("Going to revive merc");
+	var m = Sc_GetMerc();
+	if (m && m.hp >0 && m.mode != 12)
+		return true;
+	
+	// go to healer and heal if needed
+	var portal = false;
+	if (!Sc_InTown(me)) {
+		if (!Sc_GotoTown()) {
+			Sc_Error(" * ERROR: GotoTown failed");
+			return;
+		}
+		portal = true;
+	}
+	
+	var back_spot = new coord(me);
+	
+	var name = "";
+	var trade = 0;
+	switch(me.act) {
+		case 1:
+			name = "kashya"
+			break;
+		case 2:
+			name = "greiz";
+			break;
+		case 3:
+			name = "asheara";
+			trade = 0x0D44;
+			break;
+		case 4:
+			name = "tyrael";
+			break;
+		case 5:
+			name = "qual-kehk";
+			break;
+	}
+	
+	if (!Sc_TownMove(name)) {
+		Sc_Error("Sc_TownRevive Failed");
+		return false;
+	}
+	
+	var m = Sc_GetMerc();
+	if (m && m.hp >0 && m.mode != 12)
+		return true;
+	if (!revive)
+		return true;
+	
+	var npc = getUnit(1, name);
+	if (!npc) {
+		Sc_Error("NPC " + name + " not detected");
+		return false;
+	}
+	var oldpos = new coord(me);
+	
+	var pos = new coord(me);
+	if (pos.dist(npc) > 3) {
+		if (me.mode != 2 || me.mode != 3 || me.mode != 6)
+			me.move(npc.x, npc.y);
+		delay(50);
+		pos.set(me);
+	}
+	
+	while(!getUIFlag(8)) {
+		while(pos.dist(npc) > 3) {
+			if (me.mode != 2 && me.mode != 3 && me.mode != 6)
+				me.move(npc.x, npc.y);
+			delay(50);
+			pos.set(me);
+		}
+		npc.interact();
+		delay(500);
+	}
+	
+	if (trade) {
+		while(!getUIFLag(0x0C)) {
+			npc.useMenu(trade);
+			delay(500);
+		}
+	
+		// callback function
+		if (func)
+			func(npc);
+		
+		while(getUIFlag(0x0C)) {
+			me.cancel(1);
+			delay(50);
+		}
+		
+		while(!getUIFlag(8)) {
+			npc.interact();
+			delay(500);
+		}
+	}	
+	
+	var retry = 5;
+	do {
+		npc.useMenu(0x1507);
+		delay(500);
+		retry--;
+		m = Sc_GetMerc();
+		if (m && m.hp > 0 && m.mode != 12)
+			break;
+	}while(retry > 0);
+	
+	while(getUIFlag(8)) {
+		me.cancel(1);
+		delay(500);
+	}
+	
+	while(oldpos.dist(me) > 3) {
+		if (me.mode != 2 || me.mode != 3 || me.mode != 6)
+			me.move(oldpos.x, oldpos.y);
+		delay(50);
+	}
+	
+	if (!move_back)
+		return true;
+	
+	// move back to portal and take it
+	if (!Sc_TownMoveXY(me.act, back_spot.x, back_spot.y)) {
+		Sc_Error("Failed to move back");
+		return false;
+	}
+	if (!portal)
+		return true;
+	
+	var portal = Sc_GetMyPortal();
+	if (!portal) {
+		Sc_Error("Failed to detect portal");
+		return false;
+	}
+	
+	pos.set(me);
+	if (pos.dist(portal) > 3) {
+		if (me.mode != 2 && me.mode != 3 && me.mode != 6)
+			me.move(portal.x, portal.y);
+		delay(50);
+		pos.set(me);
+	}
+	
+	var timer = 5000;
+	do {
+		portal.interact();
+		delay(500);
+		timer -= 500;
+	}while(!Sc_InTown(me) && timer > 0);
+	
+	if (timer <= 0) {
+		Sc_Error("Failed to take portal back");
+		return false;
+	}
+	
+	return true;
+}
+
+function Sc_TownStash(stash, move_back, func)
+{
+	_Sc_DebugMsg("Sc_Townstash() called");
+	var portal = false;
+	if (!Sc_InTown(me)) {
+		_Sc_DebugMsg("Not in town, moving to town");
+		if (!Sc_GotoTown()) {
+			_Sc_DebugMsg("Failed to move to town to stash");
+			Sc_Error(" * ERROR: GotoTown failed");
+			return false;
+		}
+		portal = true;
+	}
+	
+	var back_spot = new coord(me);
+	_Sc_DebugMsg("move back spot set to: " + back_spot.toString());
+	
+	if (!Sc_TownMove("stash")) {
+		_Sc_DebugMsg("Failed to move to stash");
+		Sc_Error("Sc_TownStash Failed");
+		return false;
+	}
+	
+	if (!stash) {
+		_Sc_DebugMsg("Dont need to stash, stash function done");
+		return true;
+	}
+	
+	_Sc_DebugMsg("going to find stash");
+	
+	var stash = getUnit(2, "Bank");
+	if (!stash) {
+		_Sc_DebugMsg("Stash not detected");
+		Sc_Error("Stash not detected");
+		return false;
+	}
+	
+	var pos = new coord(me);
+	if (pos.dist(stash) > 3) {
+		if (me.mode != 2 || me.mode != 3 || me.mode != 6)
+			me.move(portal.x, portal.y);
+		delay(50);
+		pos.set(me);
+	}
+	
+	while(!getUIFlag(0x19)) {
+		stash.interact();
+		delay(500);
+	}
+	
+	// callback function
+	if (func) {
+		_Sc_DebugMsg("running callback function");
+		func(stash);
+		_Sc_DebugMsg("callback function done");
+	}
+	
+	_Sc_DebugMsg("going to stash items");
+	_Sc_StashItems();
+	_Sc_DebugMsg("stashing done");
+	
+	while(getUIFlag(0x19)) {
+		_Sc_DebugMsg("closing stash");
+		me.cancel(0);
+		delay(500);
+	}
+	
+	if (!move_back) {
+		_Sc_DebugMsg("dont need to move back, stashing done");
+		return true;
+	}
+	
+	_Sc_DebugMsg("going to move back");
+	// move back to portal and take it
+	if (!Sc_TownMoveXY(me.act, back_spot.x, back_spot.y)) {
+		_Sc_DebugMsg("moving back failed");
+		Sc_Error("Failed to move back");
+		return false;
+	}
+	if (!portal) {
+		_Sc_DebugMsg("No portal, stashing done");
+		return true;
+	}
+	
+	portal = Sc_GetMyPortal();
+	if (!portal) {
+		_Sc_DebugMsg("portal not detected, can't take portal back.");
+		Sc_Error("Failed to detect portal");
+		return false;
+	}
+	
+	var timer = 5000;
+	do {
+		_Sc_DebugMsg("taking portal");
+		portal.move();
+		delay(500);
+		portal.interact();
+		delay(500);
+		timer -= 1000;
+	}while(Sc_InTown(me) && timer > 0);
+	
+	if (timer <= 0) {
+		_Sc_DebugMsg("failed to take portal");
+		Sc_Error("Failed to take portal back");
+		return false;
+	}
+	
+	_Sc_DebugMsg("portal successfull");
+	
+	return true;
+}
+
+// DEPRECATED
+function Sc_InTrade(npc)
+{
+	return getUIFlag(0x0C);
+}
+
+function Sc_InTown(e)
+{
+	return (e.area == 1 || e.area == 40 || e.area == 75 || e.area == 103 || e.area == 109);
+}
+
+function Sc_GotoTown()
+{
+	if (Sc_InTown(me)) {
+		_Sc_DebugMsg("GotoTown: Im already in town");
+		return true;
+	}
+	
+	_Sc_DebugMsg("Going to cast a tp");
+	var portal = Sc_CastTP();
+	if (!portal) {
+		Sc_Error("No portal detected, retrying"); 
+		portal = Sc_CastTP();
+		if (!portal) {
+			Sc_Error("Failed to cast TP");
+			Sc_Error("TP Cast retry failed. Moving to town failed");
+			return false;
+		}
+	}
+	_Sc_DebugMsg("TP Cast, taking it");
+
+	var pos = new coord(me);
+	while(pos.dist(portal) > 3) {
+		if (me.mode != 2 || me.mode != 3 || me.mode != 6)
+			me.move(portal.x, portal.y);
+		delay(50);
+	}
+	
+	var timer = 5000;
+	do {
+		portal.interact();
+		delay(500);
+		timer -= 500;
+	}while(!Sc_InTown(me) && timer > 0);
+
+	if (timer <= 0 && !Sc_InTown(me)) {
+		Sc_Error("Failed to take the TP, retrying...");
+		me.move(portal.x, portal.y);
+		delay(500);
+		
+		timer = 5000;
+		do {
+			portal.interact();
+			delay(500);
+			timer -= 500;
+		}while(!Sc_InTown(me) && timer > 0);
+		
+		if (timer <= 0 && !Sc_InTown(me)) {
+			Sc_Error(" * ERROR: GotoTown failed");
+			return false;
+		}
+	}
+	delay(500);
+	
+	return true;
+}
+
+function Sc_CastTP()
+{
+	_Sc_DebugMsg("Going to cast tp");
+	var tome = null;
+	var timer = 5000;
+	var portal = null;
+	
+	while(me.mode == 10)
+		delay(50);
+	
+	me.setSkill("Book of Townportÿl", 0);
+	delay(500);
+	
+	timer = 5000;
+	do {
+		me.useSkill(0);
+		delay(500);
+		_Sc_DebugMsg("Casting TP");
+	}while(!(portal = Sc_GetMyPortal()) && timer > 0);
+	
+	if (!portal) {
+		Sc_Error("Failed to cast TP");
+		return null;
+	}
+	
+	delay(250); // anti RD
+	
+	_Sc_DebugMsg("TP casted");
+	return portal;
+}
+
+function Sc_GetMyPortal()
+{
+	var portal = getUnit(2, "Portal");
+	do {
+		if (portal && portal.getParent() == me.name)
+			return portal;
+	}while(portal && portal.getNext());
+	
+	return null;
+}
+
+function Sc_NeedPots()
+{
+	if (!_townmovesettings["buy_pots"]) {
+		return false;
+	}
+	
+	var potcount = 0;
+	var item = getUnit(4, null, 2);
+	do {
+		if (item && item.mode == 2 && item.getParent() && item.getParent().name == me.name) {
+			potcount++;
+		}
+	}while(item && item.getNext(null, 2));
+	
+	var belt_size = Sc_GetBeltSize();
+	if (Math.floor((potcount * 100) / belt_size) <= _townmovesettings["buy_pots_percent"])
+		return true;
+	
+	return false;
+}
+
+function Sc_GetBeltSize()
+{
+	var item = getUnit(4);
+	do {
+		if(item && item.itemloc == 8 && item.getParent() && item.getParent().name == me.name) {
+			if (item.name == "Stash" || item.name == "Light Belt")
+				return 8;
+			if (item.name == "Belt" || item.name == "Heavy Belt")
+				return 12;
+			else
+				return 16;
+		}
+	}while(item && item.getNext());
+	
+	// no belt
+	return 4;
+}
+
+function Sc_GoldAmount()
+{
+	return totalgold = me.getStat(14) + me.getStat(15);
+}
+
+function Sc_NeedScrolls()
+{
+	if (!_townmovesettings["buy_scrolls"])
+		return false;
+		
+	var tome = null;
+	var timer = 2000;
+	
+	tome = _Sc_GetMyTomeOfTownportals();	
+	if (!tome)
+		return 2;
+	
+	var quantity = tome.getStat(70);
+	
+	if (Math.floor((quantity * 100) / 20) <= _townmovesettings["buy_scrolls_percent"])
+		return 1;
+	
+	return 0;
+}
+
+function Sc_Error(msg)
+{
+	if (_townmovesettings["show_errors"])
+		print("ÿc1TownMove Error: " + msg);
+	
+	if (_townmovesettings["log_errors"]) {
+		file = fileOpen(_townmovesettings["log_file"], 2);
+		if (!file)
+			return;
+		file.writeLine(msg);
+		file.close();
+	}
+	_Sc_DebugMsg(msg);
+}
+
+function Sc_WPCode(act, place)
+{
+	return waypoints[act-1][place-1];
+}
+
+function Sc_LocateItem(who, itemcode, loc) {
+	var start=getUnit(4);
+	if(start) do {
+		if(itemcode==start.code && (loc==-1 || loc==start.mode)) {
+			if(who) { if(start.state<3) { // lets grab the owner
+				punit=start.getParent();
+				if(punit) if(punit.name==who.name) return start; // it's me, goodie
+			} } else return start;
+		}
+	} while(start.getNext());
+	return null;
+}
+
+function Sc_GetMerc()
+{
+	var npc = getUnit(1);
+	do {
+		if (npc && npc.name.length) {
+			if (npc.getParent() && npc.getParent().name == me.name) {
+				if (npc.classid == 271 || npc.classid == 338 || npc.classid == 359 || npc.classid == 561) {
+					return npc;
+				}
+			}
+		}
+	}while(npc && npc.getNext());
+	
+	return null;
+}
+
+/*******************************************************************************
+* Old TownMove Functions (Deprecated) Please update scripts asap to the new function names
+*******************************************************************************/
+
+function TownMove(act, spot)
+{
+	return Sc_TownMove(act, spot);
+}
+
+function FindTownPath(act, x, y)
+{
+	
+	return Sc_FindTownPath(act-1, x, y);
+}
+
+function FollowTownPath(path)
+{
+	return Sc_FollowTownPath(path);
+}
+
+/*******************************************************************************
+* TownMove internal used functions
+*******************************************************************************/
+
+function _Sc_FindSpotAct(spot)
+{
+	var spot = spot.toLowerCase();
+	
+	if (_townpoints[me.act-1][spot])
+		return me.act;
+	
+	if (_townpoints[0][spot])
+		return 1;
+	if (_townpoints[1][spot])
+		return 2;
+	if (_townpoints[2][spot])
+		return 3;
+	if (_townpoints[3][spot])
+		return 4;
+	if (_townpoints[4][spot])
+		return 5;
+		
+	return 0		
+}
+
+function _Sc_CreateAct1()
+{	
+	if (_movepoints[0].length)
+		return true;
+		
+	var fire = getUnit(2, "fire");
+	if (!fire) {
+		Sc_Error("Cant build act1 map, not near the fire");
+		return false;
+	}
+	
+	_townpoints[0]["gheed"]		= new coord(fire.x - 34, fire.y + 36);
+	_townpoints[0]["charsi"] 	= new coord(fire.x - 39, fire.y - 25);
+	_townpoints[0]["akara"] 	= new coord(fire.x + 56, fire.y - 30);
+	_townpoints[0]["kashya"] 	= new coord(fire.x + 14, fire.y - 4);
+	_townpoints[0]["cain"] 		= new coord(fire.x + 6, fire.y - 5);
+	_townpoints[0]["stash"]		= new coord(fire.x - 7, fire.y - 12);
+	_townpoints[0]["portalspot"]= new coord(fire.x + 22, fire.y + 28);
+	_townpoints[0]["waypoint"]	= new coord();
+	_townpoints[0]["exit"]	= new coord();
+	
+	var wp = getUnit(2, "Waypoint");
+	if (wp)
+		_townpoints[0]["waypoint"].set(wp.x, wp.y);
+
+	_movepoints[0][0] = new coord();
+	_movepoints[0][1] = new coord();
+	_movepoints[0][2] = new coord(-4,-11);
+	_movepoints[0][3] = new coord(-6,-22);
+	_movepoints[0][4] = new coord(-16,-30);
+	_movepoints[0][5] = new coord(-26,-26);
+	_movepoints[0][6] = new coord(-34,-21);
+	_movepoints[0][7] = new coord(-31,-11);
+	_movepoints[0][8] = new coord(-21,-4);
+	_movepoints[0][9] = new coord(-9,-6);
+	_movepoints[0][10] = new coord(0,-17);
+	_movepoints[0][11] = new coord(11,-15);
+	_movepoints[0][12] = new coord(23,-13);
+	_movepoints[0][13] = new coord(33,-16);
+	_movepoints[0][14] = new coord(37,-27);
+	_movepoints[0][15] = new coord(27,-31);
+	_movepoints[0][16] = new coord(51,-28);
+	_movepoints[0][17] = new coord(8,-5);
+	_movepoints[0][18] = new coord(15,4);
+	_movepoints[0][19] = new coord(15,15);
+	_movepoints[0][20] = new coord(18,24);
+	_movepoints[0][21] = new coord(27,32);
+	_movepoints[0][22] = new coord(29,23);
+	_movepoints[0][23] = new coord(28,9);
+	_movepoints[0][24] = new coord(16,34);
+	_movepoints[0][25] = new coord(5,35);
+	_movepoints[0][26] = new coord(-1,22);
+	_movepoints[0][27] = new coord(7,17);
+	_movepoints[0][28] = new coord(-7,10);
+	_movepoints[0][29] = new coord(-14,0);
+	_movepoints[0][30] = new coord(-20,7);
+	_movepoints[0][31] = new coord(-27,15);
+	_movepoints[0][32] = new coord(-34,23);
+	_movepoints[0][33] = new coord(-31,33);
+	
+	for (var i = 2; i < _movepoints[0].length; i++) {
+		_movepoints[0][i].x += fire.x;
+		_movepoints[0][i].y += fire.y;
+	}
+	
+	return true;
+}
+
+function _Sc_TownMoveTo(c) {
+	if (_Sc_MoveTo(c))
+		return true;
+	
+	var oldpos = new coord(me);
+	var pos = new coord(me);
+	var dir = pos.dir(c);
+	dir.rotate(90);
+	pos.move(dir, 5);
+	if (_Sc_MoveTo(pos)) {
+		if (_Sc_MoveTo(c))
+			return true;
+		_Sc_MoveTo(oldpos);
+	}
+	dir.rotate(180);
+	pos.set(oldpos);
+	pos.move(dir, 5);
+	_Sc_MoveTo(pos);
+	_Sc_MoveTo(c);
+}
+
+function _Sc_MoveTo(c)
+{
+	var timer = 2000;
+	var anti_rd = 1000;
+	
+	do {
+		if (anti_rd > (400 + rnd(100,300))) {
+			me.move(c.x, c.y);
+			anti_rd = 0;
+		}
+		delay(50);
+		anti_rd += 50;
+		timer -= 50;
+	}while(c.dist(me) > 1 && timer > 0);
+	
+	if (timer <= 0)
+		return false;
+		
+	return true;
+}
+
+function _Sc_StashItems()
+{
+	_Sc_DebugMsg("_Sc_StashItems started");
+	
+	var width = 6;
+	var height = 8;
+	if (_townmovesettings["d2_classic"]) {
+		width = 6;
+		height = 4;
+	}
+	
+	var nostashlist = new Array();
+	nostashlist[5] = true;
+	nostashlist[6] = true;
+	nostashlist[18] = true;
+	nostashlist[76] = true;
+	nostashlist[77] = true;
+	nostashlist[79] = true;
+	nostashlist[80] = true;
+	nostashlist[81] = true;
+	nostashlist[22] = true;
+	nostashlist[41] = true;
+	nostashlist[78] = true;
+	
+	_Sc_DebugMsg("Creating stash array");
+	var stash = new Array(width);
+	for (var i = 0; i < width; i++) {
+		stash[i] = new Array(height);
+		for (var j = 0; j < height; j++) {
+			stash[i][j] = 0;
+		}
+	}
+	_Sc_DebugMsg("stash array created");
+	
+	var cube = null;
+	if (getUnit(4, "Horadric Cube")) {
+		_Sc_DebugMsg("found cube, creating array");
+		cube = new Array(3);
+		for (var i = 0; i < 3; i++) {
+			cube[i] = new Array(4);
+			for (var j = 0; j < 4; j++) {
+				cube[i][j] = 0;
+			}
+		}
+		_Sc_DebugMsg("cube array created");
+	}
+	
+	_Sc_DebugMsg("updating stash and cube with used spots");
+	var item = getUnit(4);
+	do {
+		if (item && item.mode == 0) {
+			var p = item.getParent();
+			if (!p || (p && p.name != me.name))
+				continue;
+			_Sc_DebugMsg("Found item");
+			if (item.itemloc == 4) {
+				_Sc_DebugMsg("Item found in stash ("+item.x+","+item.y+")("+item.xsize+","+item.ysize+")");
+				for (var x = 0; x < item.xsize; x++) {
+					for (var y = 0; y < item.ysize; y++) {
+						stash[item.x+x][item.y+y] = 1;
+					}
+				}
+				_Sc_DebugMsg("Stash updates with item");
+			}
+			else if (cube && item.itemloc == 3) {
+				_Sc_DebugMsg("Item found in cube ("+item.x+","+item.y+")("+item.xsize+","+item.ysize+")");
+				for (var x = 0; x < item.xsize; x++) {
+					for (var y = 0; y < item.ysize; y++) {
+						cube[item.x+x][item.y+y] = 1;
+					}
+				}
+				_Sc_DebugMsg("Cube updates with item");
+			}
+		}
+	}while(item && item.getNext());
+
+	_Sc_DebugMsg("Stash:");
+	for (var a = 0; a < height; a++) {
+		var text = "[";
+		for (var b = 0; b < width; b++) {
+			if (stash[b][a])
+				text += "x";
+			else
+				text += "o";
+		}
+		text += "]";
+		_Sc_DebugMsg(text);
+	}
+	
+	if (cube) {
+		_Sc_DebugMsg("Cube:");
+		for (var a = 0; a < 4; a++) {
+			var text = "[";
+			for (var b = 0; b < 3; b++) {
+				if (cube[b][a])
+					text += "x";
+				else
+					text += "o";
+			}
+			text += "]";
+			_Sc_DebugMsg(text);
+		}
+	}
+	
+	var item = getUnit(4, null, 100);
+	do {
+		if (item && item.mode == 0 && item.itemloc == 0 && !nostashlist[item.itemtype]) {
+			if ((item.itemtype == 82 || item.itemtype == 83 || item.itemtype == 84) && item.getFlag(0x10))
+				continue;
+			var p = item.getParent();
+			if (!p || (p && p.name != me.name))
+				continue;
+			
+			_Sc_DebugMsg("Going to stash item");
+			
+			spot = _Sc_FindStashSpot(stash, item.xsize, item.ysize);
+			if (spot) {
+				_Sc_DebugMsg("stash spot: " + spot.toString());
+				do {
+					clickItem(0, item);
+					delay(500); 
+				}while(item.mode != 4);
+				
+				_Sc_DebugMsg("item put on cursor");
+				
+				do {
+					clickItem(0, spot.x, spot.y, 4);
+					delay(500); 
+				}while(item.mode == 4);
+				
+				_Sc_DebugMsg("item moved to stash");
+				for (var y = spot.y; y < spot.y+item.ysize; y++) {
+					for (var x = spot.x; x < spot.x+item.xsize; x++) {
+						stash[x][y] = 1;
+					}
+				}
+				_Sc_DebugMsg("stash updated");
+			}
+			else if (cube) {
+				spot = _Sc_FindStashSpot(cube, item.xsize, item.ysize);
+				if (spot) {
+					_Sc_DebugMsg("cube spot: " + spot.toString());
+					do {
+						clickItem(0, item);
+						delay(500); 
+					}while(item.mode != 4);
+					
+					_Sc_DebugMsg("item put on cursor");
+					
+					do {
+						clickItem(0, spot.x, spot.y, 3);
+						delay(500); 
+					}while(item.mode == 4);
+					
+					_Sc_DebugMsg("item moved to cube");
+					for (var y = spot.y; y < spot.y+item.ysize; y++) {
+						for (var x = spot.x; x < spot.x+item.xsize; x++) {
+							cube[x][y] = 1;
+						}
+					}
+					_Sc_DebugMsg("cube updated");
+				}
+			}
+			else
+				_Sc_DebugMsg("No room to stash item");
+		}
+	}while(item && item.getNext(null, 100));
+	
+	var gld = me.getStat(14);
+	if (gld) {
+		_Sc_DebugMsg("stashing gold");
+		gold(gld, 3);
+		delay(500);
+	}
+	_Sc_DebugMsg("_Sc_StashItems done");
+}
+
+function Sc_TownStashItem(stashitem)
+{
+	_Sc_DebugMsg("Going to stash item");
+	
+	var width = 6;
+	var height = 8;
+	if (_townmovesettings["d2_classic"]) {
+		width = 6;
+		height = 4;
+	}
+	
+	_Sc_DebugMsg("Initializing stash and cube");
+	
+	var stash = new Array(width);
+	for (var i = 0; i < width; i++) {
+		stash[i] = new Array(height);
+		for (var j = 0; j < height; j++) {
+			stash[i][j] = 0;
+		}
+	}
+	
+	var cube = null;
+	if (getUnit(4, "Horadric Cube")) {
+		cube = new Array(3);
+		for (var i = 0; i < 3; i++) {
+			cube[i] = new Array(4);
+			for (j = 0; j < 4; j++) {
+				cube[i][j] = 0;
+			}
+		}
+	}
+	
+	_Sc_DebugMsg("Initializing stash and cube width item data");
+	
+	var item = getUnit(4);
+	do {
+		if (item && item.mode == 0) {
+			var p = item.getParent();
+			if (!p || (p && p.name != me.name))
+				continue;
+			if (item.itemloc == 4) {
+				for (var x = 0; x < item.xsize; x++) {
+					for (var y = 0; y < item.ysize; y++) {
+						stash[item.x+x][item.y+y] = 1;
+					}
+				}
+			}
+			else if (cube && item.itemloc == 3) {
+				for (var x = 0; x < item.xsize; x++) {
+					for (var y = 0; y < item.ysize; y++) {
+						cube[item.x+x][item.y+y] = 1;
+					}
+				}
+			}
+		}
+	}while(item && item.getNext());
+	
+	_Sc_DebugMsg("Stash:");
+	for (var a = 0; a < height; a++) {
+		var text = "[";
+		for (var b = 0; b < width; b++) {
+			if (stash[b][a])
+				text += "x";
+			else
+				text += "o";
+		}
+		text += "]";
+		_Sc_DebugMsg(text);
+	}
+	
+	if (cube) {
+		_Sc_DebugMsg("Cube:");
+		for (var a = 0; a < 4; a++) {
+			var text = "[";
+			for (var b = 0; b < 3; b++) {
+				if (cube[b][a])
+					text += "x";
+				else
+					text += "o";
+			}
+			text += "]";
+			_Sc_DebugMsg(text);
+		}
+	}
+	
+	var spot = _Sc_FindStashSpot(stash, stashitem.xsize, stashitem.ysize);
+	if (spot) {
+		_Sc_DebugMsg("Found stash spot: " + spot);
+		do {
+			clickItem(0, stashitem);
+			delay(500);
+		}while(stashitem.mode != 4);
+		
+		_Sc_DebugMsg("item put on cursor");
+		
+		do {
+			clickItem(0, spot.x, spot.y, 4);
+			delay(500); 
+		}while(stashitem.mode == 4);
+		
+		for (var y = spot.y; y < spot.y+stashitem.ysize; y++) {
+			for (var x = spot.x; x < spot.x+stashitem.xsize; x++) {
+				stash[x][y] = 1;
+			}
+		}
+	}
+	else if (cube) {
+		var spot = _Sc_FindStashSpot(cube, stashitem.xsize, stashitem.ysize);
+		if (spot) {
+			_Sc_DebugMsg("Found cube spot: " + spot);
+			do {
+				clickItem(0, stashitem);
+				delay(500); 
+			}while(stashitem.mode != 4);
+			
+			_Sc_DebugMsg("item put on cursor");
+			
+			do {
+				clickItem(0, spot.x, spot.y, 3);
+				delay(500); 
+			}while(stashitem.mode == 4);
+			
+			for (var y = spot.y; y < spot.y+stashitem.ysize; y++) {
+				for (var x = spot.x; x < spot.x+stashitem.xsize; x++) {
+					cube[x][y] = 1;
+				}
+			}
+		}
+	}
+}
+
+function _Sc_FindStashSpot(stash, xsize, ysize)
+{
+	var width = stash.length;
+	var height = stash[0].length;
+	
+	for (var y = 0; y < (height-ysize+1); y++) {
+		for (var x = 0; x < (width-xsize+1); x++) {
+			if (!stash[x][y]) {
+				if (_Sc_StashSpotIsFree(stash, x, y, xsize, ysize))
+					return new coord(x,y);
+			}
+		}
+	}
+	return null;
+}
+
+function _Sc_StashSpotIsFree(stash, x, y, xsize, ysize)
+{
+	var width = stash.length;
+	var height = stash[0].length;
+	
+	if ((x + xsize) > width)
+		return false;
+	if ((y + ysize) > height)
+		return false;
+	
+	var free = true;
+	for (var i = y; i < y+ysize; i++) {
+		for (var j = x; j < x+xsize; j++) {
+			if (stash[j][i]) {
+				free = false;
+				break;
+			}
+		}
+	}
+	return free;
+}
+
+function _Sc_TownFindSpot(act,  spot)
+{
+	if (act == 0) {
+		if (spot == "waypoint") {
+			var wp = getUnit(2, "Waypoint");
+			if (wp) {
+				_townpoints[0]["waypoint"].set(wp);
+				return _townpoints[0]["waypoint"];
+			}
+			if (!Sc_TownMove(1, "stash"))
+				return null;
+			wp = getUnit(2, "Waypoint");
+			if (wp) {
+				_townpoints[0]["waypoint"].set(wp);
+				return _townpoints[0]["waypoint"];
+			}			
+		}
+		else if (spot == "exit") {
+			if (!Sc_TownMove("cain"))
+				return null;
+			
+			var fire = getUnit(2, "fire");
+			if (!fire) {
+				Sc_Error("Failed to find fire, cant detect town exit");
+				return null;
+			}
+			
+			fire = getUnit(2, "fire");
+			var npc = getUnit(1, "an evil force");
+			var pos = new coord();
+			do {
+				if (npc) {
+					var x = npc.x - fire.x;
+					var y = npc.y - fire.y;
+					
+					index = _movepoints[0].length;
+					if (x == 21 && y == -29) {
+						_townpoints[0]["exit"].set(fire.x+14, fire.y-49);
+						_movepoints[0][index++] = new coord(fire.x+25, fire.y-40);
+						_movepoints[0][index++] = new coord(fire.x+6, fire.y-43);
+						_movepoints[0][index++] = new coord(fire.x-1, fire.y-37);
+						_movepoints[0][index++] = new coord(fire.x+2, fire.y-26);
+						return _townpoints[0]["exit"];
+					}
+					else if (x == 20 && y == 36) {
+						_townpoints[0]["exit"].set(fire.x+14, fire.y+61);
+						_movepoints[0][index++] = new coord(fire.x+27, fire.y+41);
+						_movepoints[0][index++] = new coord(fire.x+26, fire.y+52);
+						_movepoints[0][index++] = new coord(fire.x+19, fire.y+56);
+						return _townpoints[0]["exit"];
+					}
+					else if (x == -26 && y == -15) {
+						_townpoints[0]["exit"].set(fire.x-66, fire.y+4);
+						_movepoints[0][index++] = new coord(fire.x-30, fire.y-6);
+						_movepoints[0][index++] = new coord(fire.x-41, fire.y-5);
+						_movepoints[0][index++] = new coord(fire.x-52, fire.y-8);
+						_movepoints[0][index++] = new coord(fire.x-61, fire.y+1);
+						return _townpoints[0]["exit"];
+					}
+					else if (x == 43 && y == 18) {
+						_townpoints[0]["exit"].set(fire.x+78, fire.y+1);
+						_movepoints[0][index++] = new coord(fire.x+62, fire.y-28);
+						_movepoints[0][index++] = new coord(fire.x+70, fire.y-20);
+						_movepoints[0][index++] = new coord(fire.x+69, fire.y-9);
+						return _townpoints[0]["exit"];
+					}
+				}
+			}while(npc && npc.getNext("an evil force"));
+		}
+	}
+	else if (act == 1) {
+		if (spot == "exit") {
+			if (!Sc_TownMoveXY(2, 5098, 5053))
+				return null;
+
+			var found = false;			
+			var obj = getUnit(2, "Dummy");
+			do {
+				if (obj && obj.x == 5107 && obj.y == 5052) {
+					_townpoints[1]["exit"].set(5096,5009);
+					// exit direction (0, -1)
+					found = true;
+				}
+			}while(obj && obj.getNext());
+			
+			if (!found) {
+				_townpoints[1]["exit"].set(5011,5066);
+				// exit direction (-1, 0)
+			}
+			
+			return _townpoints[1]["exit"];
+		}
+	}
+	return null;
+}
+
+function _Sc_GetMyTomeOfTownportals()
+{
+	var timer = 500;
+	do {
+		var item = getUnit(4, "tbk", 100);
+		do {
+			if (item && item.mode == 0 && item.itemloc == 0 && item.getParent() && item.getParent().name == me.name) {
+				return item;
+			}
+		}while(item && item.getNext());
+		delay(50);
+		timer -= 50;
+	}while(timer > 0);
+	
+	Sc_Error("No Tome of Townportals found");
+	return null;
+}
+
+/*******************************************************************************
+* Dijkstra pathfinding. Modified version of Syadasti's Pathfinding
+*******************************************************************************/
+
+function _TownMoveCreateDijkstra(act, targetx, targety, maxsep)
+{
+	_Sc_DebugMsg("_TownMoveCreateDijkstra called");
+	var v = new Array;
+	
+	for (var i = 0; i < _movepoints[act].length; i++)
+		v[i] = new _Vertex();
+		
+	_Sc_DebugMsg("Vertex array created");
+	
+	_movepoints[act][0] = new coord(me);
+	_movepoints[act][1] = new coord(targetx, targety);
+	
+	for (var i = 0; i < _movepoints[act].length; i++) {
+		for (var j = 0; j < _movepoints[act].length; j++) {
+			if (i != j) {
+				var d = _movepoints[act][i].dist(_movepoints[act][j]);
+				if (d <= maxsep) {
+					v[i].push(j, d); 
+				} 
+			} 
+		} 
+	}
+	
+	_Sc_DebugMsg("Vertex array initialized, starting dijkstra algo");
+	_TownMoveDijkstra(v, _movepoints[act].length);
+	_Sc_DebugMsg("Dijkstra algo done");
+	
+	var path = new Array();
+	if (!_TownMoveCreateDijkstraPath(v, 0, 1, _movepoints[act], path)) {
+		_Sc_DebugMsg("No path found, returning null");
+		return null;
+	}
+	_Sc_DebugMsg("Path found, _TownMoveDijkstra done");
+	return path;
+}
+
+function _Vertex() {
+	this.NumAdjacencies = 0;
+	this.Adjacent = new Array;
+	this.AdjacencyWeight = new Array;
+	this.Previous = 0;
+	this.Cost = 0;
+	this.push = _PushMethod;
+}
+
+function _PushMethod(neighbor, Cost) {
+	this.Adjacent[this.NumAdjacencies] = neighbor;
+	this.AdjacencyWeight[this.NumAdjacencies] = Cost;
+	this.NumAdjacencies++;
+}
+
+function _TownMoveDijkstra(v, size) {
+	var _INFINITY = 32767;
+	var Cost = new Array;
+	var done = new Array;
+	var to_do = size;
+
+	for (var i = 0; i < size; i++) {
+		v[i].Cost = Cost[i] = _INFINITY;
+		v[i].Previous = -1;
+		done[i] = 0;
+	}
+
+	Cost[0] = 0;
+	while (to_do) {
+
+		for (var i = 0; i < size; i++) {
+			if (!done[i]) {
+				iMin=i;
+				break;
+			}
+		}
+
+		for (var i = iMin + 1; i < size; i++) {
+			if (!done[i] && Cost[i] < Cost[iMin]) {
+				iMin = i;
+			}
+		}
+
+		done[iMin] = 1;
+		to_do--;
+		for (var i = 0; i < v[iMin].NumAdjacencies; i++) {
+			if (Cost[iMin] + v[iMin].AdjacencyWeight[i] < Cost[v[iMin].Adjacent[i]]) {
+				v[v[iMin].Adjacent[i]].Previous = iMin;
+				v[v[iMin].Adjacent[i]].Cost = Cost[v[iMin].Adjacent[i]] =
+					Cost[iMin] + v[iMin].AdjacencyWeight[i];
+			}
+		}
+	}
+}
+
+function _TownMoveCreateDijkstraPath(v, source, dest, points, path) {	
+	if (source == dest) {
+		index = path.length;
+		path[index] = new coord(points[dest]);
+		path[index].data = points[dest].data;
+	}
+	else {
+		if (v[dest].Previous != -1) {
+			_TownMoveCreateDijkstraPath(v, source, v[dest].Previous, points, path);
+			index = path.length;
+			path[index] = new coord(points[dest]);
+			path[index].data = points[dest].data;
+		}
+		else {
+			Sc_Error("Unable to build Dijkstra path");
+			return false;
+		}
+	}
+	return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+function _Sc_DebugMsg(msg)
+{
+	if (_townmovesettings["debugfunc"])
+		_townmovesettings["debugfunc"]("TownMove Debug: " + msg);
+}
+
+function Sc_DoneQuest(act, quest)
+{
+	var qnum = quest-1+(act-1)*6;
+	return me.getQuest(qarray[qnum],0);
+}
+/*
+function main()
+{
+	Sc_TownMoveSetting("debugfunc", testing);
+	Sc_TownMoveSetting("buy_scrolls", true);	
+	Sc_TownMoveSetting("buy_scrolls_percent", 75);
+	Sc_TownMoveSetting("buy_pots", true);
+	Sc_TownMoveSetting("buy_pots_percent", 75);
+		
+	Sc_TownRepair(true, true);
+}
+
+function testing(msg)
+{
+	print(msg);
+}
+*/

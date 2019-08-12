@@ -1,0 +1,69 @@
+
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.Pathing) != 'function') {
+	BotOS.Pathing = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+
+}
+
+BotOS.Pathing.MapCacher = function () 
+{
+	
+	var AreaCache = new Object();
+	this.LastError = ""; 
+	
+	this.Log = new BotOS.Logging.Log("output/MapCache.log", 0, 0);
+
+	//////////////////////////////////////////////////////////////////////
+	// Area Caching Functions
+	// -------------------------------------------------------------------
+	// These area a collection of functions that will allow you to cache
+	// an areas map data so that it can be instantly retrieved, rather
+	// than having to reinitialize a map.
+	//////////////////////////////////////////////////////////////////////
+	this.AreaCacheSave = function(_area)
+	{
+		if ( _area )
+		{
+			this.Log.write("mlMap:AreaCacheSave - Cannot save to cache: no area is initialized");
+			this.LastError = ("mlMap:AreaCacheSave - Cannot save to cache: no area is initialized");
+			return false;
+		}
+		AreaCache[_area.Number] = _area;
+		return true;
+	}
+
+	this.AreaCacheLoad = function (area, _delete)
+	{
+		if ( !AreaCache[area] )
+		{
+			this.Log.write("mlMap:AreaCacheLoad - Could not load from cache: Area not in cache");
+			this.LastError = ("mlMap:AreaCacheLoad - Could not load from cache: Area not in cache");
+			return null;
+		}
+		var tempa = AreaCache[area];
+		if ( _delete ) this.AreaCacheDelete(area);
+		return tempa;
+	}
+
+	this.AreaCacheDelete = function(area)
+	{
+		if ( AreaCache[area] ) delete AreaCache[area];
+		runGC();
+	}
+
+	this.AreaCacheClear = function ()
+	{
+		AreaCache = new Object();
+		runGC();
+	}
+
+}

@@ -1,0 +1,420 @@
+//PLUGINS MODULE
+// Plugins can go in any file as long as you push it onto the plugin queue
+//or use the plugin loader task
+include("taskbot/charsetup.d2l");
+
+const mlPLUGINBYTIME = 0;
+const mlPLUGINBYLOOPS = 1;
+
+
+
+
+
+function LoadSystemPlugins()
+{
+	PluginManager.Load("plugIKplayer", 		"IKplayer", null, true, true);
+	PluginManager.Load("plugMLHealth", 		"MLHealth", null, true, true);
+	PluginManager.Load("plugMLHealthDrop", 		"MLHealthDrop", null, true, true);
+	PluginManager.Load("plugMLAIThought", 		"MLAIThought", null, true, true);
+	PluginManager.Load("plugMLSnagit", 		"MLSnagit", null, true, true);
+	//PluginManager.Load("plugMLRepairCheck", 	"MLRepairCheck", null, true, true);
+	PluginManager.Load("plugMLCoord", 		"MLCoord", null, true, true);
+	PluginManager.Load("plugMLRunTime", 		"MLRunTime", null, true, true);
+	PluginManager.Load("plugMLShowQueue", 		"MLShowQueue", null, true, true);
+	//PluginManager.Load("plugMLLogQueue", 		"MLLogQueue", null, true, true);
+	PluginManager.Load("plugMLCPS", 		"MLCPS", null, true, true);
+	PluginManager.Load("plugMLCLI", 		"MLCLI", null, true, true);
+	PluginManager.Load("plugMLThreatDisplay", 	"MLThreatDisplay", null, true, true);
+	//PluginManager.Load("plugIKplayersetup", 	"IKsetup", null, true, true);
+	PluginManager.Load("plugAIInfo", 		"AIInfo", null, true, true);
+	PluginManager.Load("plugChests", 		"Chests", null, true, true);
+	PluginManager.Load("plugDoors", 		"Doors", null, true, true);
+	PluginManager.Load("plugAmmo", 			"Ammo", null, true, true);
+	//PluginManager.Load("plugStash", 		"Stash", null, true, true)
+	//PluginManager.Load("plugWPs", 			"WPs", null, true, true);
+	//PluginManager.Load("plugPickup", 		"PickupCheck", null, true, true);
+	//PluginManager.Load("plugAutoStats", 		"AutoStatnSkillAssigner", null, true, true);
+	//PluginManager.Load("plugMerc", 		"Merc", null, true, true);
+}
+
+function oPlugins(_plugins)
+{
+	this.Plugins = new Object();
+	this.Unload = oPlugins_Unload;
+	this.Load = oPlugins_Load;
+	this.Execute = oPlugins_Execute;
+	this.ExecuteAll = oPlugins_ExecuteAll;
+	this.ExecuteFunction = oPlugins_ExecuteFunction;
+	this.Enable = oPlugins_Enable;
+	this.Disable = oPlugins_Disable;
+	this.getLength = oPlugins_getlength;
+
+	function oPlugins_Load(_plugname, _instname, _data, _enabled, _displaycredits)
+	{
+		eval("this.Plugins[\"" + _instname + "\"] = new " + _plugname + " (\"" + _instname + "\");");
+
+		if(_enabled == false)
+			this.Plugins[_instname].Enabled = false;
+		if(_displaycredits)
+			print("ÿc7Plugin: ÿc2" + this.Plugins[_instname].Name + " v"
+				+ this.Plugins[_instname].Version
+				+ " ÿc7by ÿc8" + this.Plugins[_instname].Author + " ÿc7Loaded");
+		this.Plugins[_instname].OnLoad(_data);
+	}
+
+	function oPlugins_Unload(_instname, _data, _noevent)
+	{
+		if(!_instname) return false;
+		if(!_noevent) this.Plugins[_instname].OnUnload(_data);
+		else {
+			delete this.Plugins[_instname];
+			return true;
+		}
+	}
+
+	function oPlugins_Execute(_instname, _resetcounter)
+	{
+		switch(this.Plugins[_instname].TimingMethod) {
+			case mlPLUGINBYTIME:
+				if(_resetcounter)
+					this[_instname]._lasttime = new Date();
+				this.Plugins[_instname][this.Plugins[_instname].Function]();
+				break;
+			case mlPLUGINBYLOOPS:
+				if(_resetcounter)
+					this.Plugins[_instname]._lasttime = 0;
+				this.Plugins[_instname][this.Plugins[_instname].Function]();
+				break;
+		}
+	}
+
+	function oPlugins_ExecuteAll()
+	{
+		for(var _instname in this.Plugins)
+		{
+			if(this.Plugins[_instname].Enabled){
+				switch(this.Plugins[_instname].TimingMethod) {
+					case mlPLUGINBYTIME:
+						if(new Date() - this.Plugins[_instname]._lasttime > this.Plugins[_instname].Timing) {
+							//print("About to execute TIMED plugin: " + _instname);
+							this.Plugins[_instname]._lasttime = new Date();
+							this.Plugins[_instname][this.Plugins[_instname].Function]();
+							//print("Done executing: " + _instname);
+						}
+						break;
+					case mlPLUGINBYLOOPS:
+						if(this.Plugins[_instname]._lasttime++ >= this.Plugins[_instname].Timing){
+							//print("About to execute LOOPED plugin: " + _instname);
+							this.Plugins[_instname]._lasttime = 0;
+							this.Plugins[_instname][this.Plugins[_instname].Function]();
+							//print("Done executing: " + _instname);
+						}
+						break;
+				}
+			}
+		}
+	}
+
+	function oPlugins_ExecuteFunction(_instname, _function, _data)
+	{
+		this.Plugins[_instname][_function](_data);
+	}
+
+	function oPlugins_Enable(_instname)
+	{
+		this.Plugins[_instname].Enabled = true;
+	}
+
+	function oPlugins_Disable(_instname)
+	{
+		this.Plugins[_instname].Enabled = false;
+	}
+
+	function oPlugins_GetPlugin(_instname)
+	{
+		return this.Plugins[_instname];
+	}
+
+	function oPlugins_getlength()
+	{
+		var count = 0;
+		for(var _instname in this.Plugins)
+		{
+			count++;
+		}
+
+		return count;
+	}
+
+}
+
+
+
+//COMMON PLUGINS
+///////////////////////////////////////////////////
+//On screen cps display
+function plugMLCPS(instname)
+{
+	this.temp = oPlugin;
+	this.temp("UpdateCPS", mlPLUGINBYLOOPS, 0, "On Screen Core Loops per Second", "1.0", "mattlant", instname);
+	delete this.temp;
+
+	this.shcps = new ScreenHook("Core Loops/s: 0", 10, 348);
+	this.cpstime = new Date();
+	this.cps = 0;
+
+	this.UpdateCPS = function() {
+		this.cps++;
+		if(new Date() - this.cpstime >= 1000)
+		{
+			this.shcps.UpdateText("Core Loops/s: " + this.cps);
+			this.cps = 0;
+			this.cpstime = new Date();
+		}
+	}
+}
+
+
+function plugMLTicker(instname)
+{
+	this.temp = oPlugin;
+	this.temp("Update", mlPLUGINBYTIME, 150, "On Screen Ticker", "1.0", "IProto. Made into a plugin by mattlant", instname);
+	delete this.temp;
+
+	this.Ticker = new Ticker();
+}
+
+//On screen coordinate display
+function plugMLCoord(instname)
+{
+	this.temp = oPlugin;
+	this.temp("UpdateCoord", mlPLUGINBYTIME, 100, "On Screen Coodinates", "1.0", "mattlant", instname);
+	delete this.temp;
+
+	this.sh = new ScreenHook("", 355, 540);
+
+	this.UpdateCoord = function() {
+		this.sh.UpdateText(me.x + ", " + me.y);
+	}
+}
+
+//On screen Character State AI Info
+function plugAIInfo(instname)
+{
+	/*
+	plugAIInfo Revision History
+	------------------------------------------------------------------------
+	v0.1.0
+	- Added in a PathMove function to hold an entire path
+	
+	plugAIInfo Todo's:
+	- Continue adding in the new clickMap stuff
+	------------------------------------------------------------------------
+	*/
+	
+	this.temp = oPlugin;
+	this.temp("UpdateAIInfo", mlPLUGINBYTIME, 500, "On Screen AI State Info", "0.0.1", "mattlant & Gshock", instname);
+	delete this.temp;
+
+	var sState1 = "Level 1 State: ";
+	var sState2 = "Level 2 State: ";
+	var sState3 = "Level 3 State: ";
+	var sSkill = "Skill: ";
+	var sPos = "Positioning: ";
+	var sHealPick = "Heal Pickup Tracking: ";
+	var sHealUse = "Heal Usage Tracking: ";
+	var sManaPick = "Mana Pickup Tracking: ";
+	var sManaUse = "Mana Usage Tracking: ";
+	this.shTitle = new ScreenHook("Character AI/State Info", 540, 14);
+	//this.shState1 = new ScreenHook(sState1, 540, 28);
+	//this.shState2 = new ScreenHook(sState2, 540, 42);
+	//this.shState3 = new ScreenHook(sState3, 540, 56);
+	this.shSkill = new ScreenHook(sSkill, 540, 140);
+	this.shPos = new ScreenHook(sPos, 540, 154);
+	this.shHealPick = new ScreenHook(sSkill, 540, 168);
+	this.shHealUse = new ScreenHook(sPos, 540, 182);
+	this.shManaPick = new ScreenHook(sSkill, 540, 196);
+	this.shManaUse = new ScreenHook(sPos, 540, 210);
+
+	this.UpdateAIInfo = function() {
+		//this.shState1.UpdateText(sState1 + AI.StateL1);
+		//this.shState2.UpdateText(sState2 + AI.StateL2);
+		//this.shState3.UpdateText(sState3 + AI.StateL3);
+		this.shHealPick.UpdateText(sHealPick + PotionManager.PotionTracking.hp.length);
+		this.shHealUse.UpdateText(sHealUse + PotionManager.PotionUsageTracking.hp.length);
+		this.shManaPick.UpdateText(sManaPick + PotionManager.PotionTracking.mp.length);
+		this.shManaUse.UpdateText(sManaUse + PotionManager.PotionUsageTracking.mp.length);
+	}
+	
+	this.UpdateSkill = function(_text) {
+		this.shSkill.UpdateText(sSkill + _text);
+	}
+	this.UpdatePosition = function(_text) {
+		this.shPos.UpdateText(sPos + _text);
+	}
+}
+
+
+///////////////////////////////////////////////////
+//On Screen Run Timer
+function plugMLRunTime(instname)
+{
+	this.temp = oPlugin;
+	this.temp("UpdateRunTime", mlPLUGINBYTIME, 300, "Run Timer", "1.0", "mattlant", instname);
+	delete this.temp;
+
+	this.StartTime = new Date();
+	this.shtime = new ScreenHook("", 560, 540);
+	this.TotalTime = 0;
+
+	this.UpdateRunTime = function() {
+		this.TotalTime = (new Date() - this.StartTime) / 1000;
+		this.shtime.UpdateText("Runtime: " +this.TotalTime+ " s");
+	}
+
+	this.LogTime = function(_data) {
+		//TODO
+	}
+
+	this.OnUnLoad = function() {
+		this.shtime.Remove();
+	}
+
+}
+
+
+///////////////////////////////////////////////////
+//On screen task list display
+function plugMLShowQueue(instname)
+{
+	this.temp = oPlugin;
+	this.temp("UpdateQueue", mlPLUGINBYLOOPS, 0,"On Screen QueueList", "1.0", "mattlant", instname);
+	delete this.temp;
+
+	this.shqlisttitle = new ScreenHook("Task Queue:", 440, 446, 2);
+	this.shqlist = new Array();
+	this.shqlist[1] = new ScreenHook("No Task", 440, 460);
+	this.shqlist[2] = new ScreenHook("No Task", 440, 474);
+	this.shqlist[3] = new ScreenHook("No Task", 440, 488);
+	this.shqlist[4] = new ScreenHook("No Task", 440, 502);
+	this.shqlist[5] = new ScreenHook("No Task", 440, 516);
+
+	this.UpdateQueue = function ()
+	{
+		this.shqlisttitle.UpdateText("Task Queue: " + TaskQueue.getLength());
+
+		if(!TaskQueue.getLength())
+		{
+			for(var i = 1; i<this.shqlist.length; i++)
+				this.shqlist[i].UpdateText("No Task", 440, 446+i*14);
+		}
+		
+		
+		TaskQueue.Index = 0;
+		for(var i = 1; i<this.shqlist.length; i++) {
+			var tt = TaskQueue.getNext();
+			if(tt){
+				var tqstring = tt.p + " " + tt.Function + " ";
+				for(var pval in tt.Data)
+					tqstring += (pval + ":" + tt.Data[pval] + " ");
+				this.shqlist[i].UpdateText(tqstring, 440, 446+i*14);
+			}
+			else
+				this.shqlist[i].UpdateText("No Task", 440, 446+i*14);
+		}
+	}
+
+}
+///////////////////////////////////////////////////
+//On screen task list display
+function plugMLLogQueue(instname)
+{
+	this.temp = oPlugin;
+	this.temp("LogQueue", mlPLUGINBYLOOPS, 0,"Queue Logger", "1.0", "mattlant", instname);
+	delete this.temp;
+
+
+	this.LogQueue = function ()
+	{
+			var tt = TaskQueue.Peek();
+			if(tt){
+				var tqstring = tt.p + " " + tt.Function + " ";
+				for(var pval in tt.Data) {
+					if(pval == "Path") {
+						tqstring += ("Path: " + tt.Data[pval].length);
+						continue;
+					}
+					tqstring += (pval + ":" + tt.Data[pval] + " ");
+				}
+				mlprint(tqstring);
+			}
+		
+	}
+
+}
+
+//PLUGIN BASE CLASS - All other plugins inherit this class
+function oPlugin(_function, _method, _timing, _name, _version, _author, _instname)
+{
+	this.Function = _function;
+	this.TimingMethod = _method;
+	this.Timing = _timing;
+	this.Name = _name;
+	this.Version = _version;
+	this.Author = _author;
+	this.InstanceName = _instname;
+	this.Enabled = true;
+	this._lasttime = new Date();
+	this._loopcount = 0;
+	this.BaseClassName = "oPlugin";
+	this.ClassName = "oPlugin";
+	this.OnLoad = function(){}; 		//Overide this function with your own OnLoad code
+	this.OnUnload = function(){};		//Overide this function with your own OnUnLoad code
+	this.OnAreaChange = function(){};	//Overide this function with your own OnAreaChange code
+	this.OnDeath = function(){};		//Overide this function with your own OnDeath code
+	//this.OnMessage = function() {};
+	//this.OnKey = function() {};
+}
+
+//task for loading, unloading and executing plugin functions
+function oTaskPlugin(_p, _function, _data, _object, _tag)
+{
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.Load = oTaskPlugin_load;
+	this.Unload = oTaskPlugin_unload;
+	this.ExecuteFunction = oTaskPlugin_executefunction;
+	this.Enable = oTaskPlugin_enable;
+	this.Disable = oTaskPlugin_disable;
+
+	function oTaskPlugin_load()
+	{
+		if(!this.Data.PluginName || !this.Data.InstanceName) return false;
+		PluginManager.Load(this.Data.PluginName, this.Data.InstanceName, this.Data.Data, this.Data.Enabled, this.Data.DisplayCredits);
+	}
+
+	function oTaskPlugin_unload()
+	{
+		if(!this.Data.InstanceName) return false;
+		PluginManager.Unload(this.Data.InstanceName);
+	}
+
+	function oTaskPlugin_executefunction()
+	{
+		if(!this.Data.InstanceName || !this.Data.Function) return false;
+		PluginManager.Plugins[this.Data.InstanceName][this.Data.Function](this.Data.Data);
+	}
+
+	function oTaskPlugin_enable()
+	{
+		PluginManager.Enable(this.Data.InstanceName);
+	}
+
+	function oTaskPlugin_disable()
+	{
+		PluginManager.Disable(this.Data.InstanceName);
+	}
+}
+

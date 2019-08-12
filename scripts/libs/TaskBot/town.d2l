@@ -1,0 +1,209 @@
+//Town
+
+var queststarted = false;
+var doingrepair = false;
+var doingheal = false;
+var doingstash = false;
+var lastrepaircheck = new Date();
+var stashitems = true;
+//var repairduringquest = true;
+/*******************************************************************************
+* FUNCTIONS:                                                                   *
+* ---------------------------------------------------------------------------- *                                                        *
+* Sc_TownMoveSetting(setting, value)                                           *
+*   Use this to set settings for townmove. Valid settings are down this file   *
+* Sc_TownMove(spot), Sc_TownMove(act, spot)                                    *
+*   Moves character to target spot. If act is spacified moves character to     *
+*   target spot in specified act                                               *
+* Sc_TownMoveXY(act, x, y)                                                     *
+*   Moves your character to the 'x' and 'y' coordinate in 'act'                *
+* Sc_TownWP(act, place)                                                        *
+*   Moves to, and takes the wp to specified act/place                          *
+* Sc_TownHeal(heal, move_back, func)                                           *
+*   Moves to closest healer in town. Casting a tp if out of town. If 'heal' is *
+*   set to true, it heals at npc and buys pots/scrolls if needed.              *
+*   If 'move_back' is set to true, it will move back to where it came from,    *
+*   taking tp back if needed                                                   *
+* Sc_TownRepair(repair, move_back, func)                                       *
+*   Moves to closest repairing npc in town. Casting a tp if out of town.       *
+*   If 'repair' is set to true, it repairs.                                    *
+*   If 'move_back' is set to true, it will move back to where it came from,    *
+*   taking tp back if needed                                                   *
+* Sc_TownRevive(revive, move_back, func)                                       *
+*   Moves to closest reviving npc in town. Casting a tp if out of town.        *
+*   If 'revive' is set to true, it revives merc.                               *
+*   If 'move_back' is set to true, it will move back to where it came from,    *
+*   taking tp back if needed                                                   *
+* Sc_TownStash(stash, move_back, func)                                         *
+*   Moves to closest stash. Casting a tp if out of town.                       *
+*   If 'stash' is set to true, it stashes items.                               *
+*   If 'move_back' is set to true, it will move back to where it came from,    *
+*   taking tp back if needed                                                   *
+* Sc_InTown(target)                                                            *
+*   Returns true when 'target' is in town, otherwise false                     *
+* Sc_GotoTown()                                                                *
+*   Casts a tp and goes to town                                                *
+*******************************************************************************/
+
+
+function plugMLRepairCheck(instname)
+{
+	this.temp = oPlugin;
+	this.temp("RepairCheck", mlPLUGINBYTIME, 5000, "Repair Checking", "1.0", "mattlant", instname);
+	delete this.temp;
+
+	this._repairduringquest = repairduringquest;
+
+	this.RepairCheck = function() {
+		if(this._repairduringquest || InTown(me))
+		{
+			if(checkforrepair() && GetTomePortals())
+			{
+				print("Need to repair - Going to Town");
+				new oTaskCommon(980, "DoCommand", {Command:"SCTown.Repair(null, true);"}).Insert();
+				new oTaskPlugin(979, "Enable", {InstanceName:this.InstanceName}).Insert();
+				this.Enabled = false;
+			}
+		}
+	}
+}
+
+function oGoalTown(_p, _function, _data, _tasks, _tag)
+{
+	this.temp = oGoal;
+	this.temp(_p, _function, _data, _tasks, _tag);
+	delete this.temp;
+
+	this.TownHeal;
+	this.TownRepair;
+	this.TownCheck = oGoalTown_check;
+
+	function oGoalTown_check()
+	{
+		new oTaskCommon(3999, "DoCommand", {Command:"corpsecollect();"}).Insert();
+		if(me.hp < me.hpmax*(hphealstart/100) || me.mp < me.mpmax*(mphealstart/100) && this.Data.Heal)
+		{
+			new oTaskCommon(3998, "DoCommand", {Command:"Sc_TownHeal(true);"}).Insert();
+			new oTaskCommon(3997, "SetVariable", {Var:"doingheal", Val:"false"}).Insert();
+			doingheal = true;
+		}
+		if(this.Data.Repair)
+		{
+			if(checkforrepair())
+			{
+				print("Need to repair");
+				new oTaskCommon(3996, "DoCommand", {Command:"SCTown.Repair(null, true);"}).Insert();
+				new oTaskCommon(3995, "SetVariable", {Var:"doingrepair", Val:"false"}).Insert();
+				doingrepair = true;
+			}
+		}
+		if(this.Data.Stash && stashitems)
+		{
+			if(NeedStash())
+			{
+				print("Need to stash");
+				new oTaskCommon(3994, "DoCommand", {Command:"Sc_TownStash(true);"}).Insert();
+				new oTaskCommon(3993, "SetVariable", {Var:"doingstash", Val:"false"}).Insert();
+				doingstash = true;
+			}
+		}
+	}
+}
+
+
+function checkforrepair()
+{
+	//print("start checkforrepair");
+	var lowestitem = 100;
+	var check = getUnit(4, null,1);
+	var checkitem;
+	if (check) do
+	{
+		var owner = check.getParent();
+		if (owner && owner.name == me.name && check.mode == 1)
+		{
+			if(check.getStat(73) > 0)
+			{
+				if (check.getStat(75) > 0)
+				{
+					currentitem = parseInt(((check.getStat(72) * check.getStat(75)) / check.getStat(73)) * 100);
+				}
+				else currentitem = parseInt((check.getStat(72) / check.getStat(73)) * 100);
+				if (currentitem < lowestitem) lowestitem = currentitem;
+				if (currentitem <= repairpercent)
+				{
+					print("end checkforrepair");
+					return true;
+				}
+			}
+		}
+	}
+	while (check.getNext());
+	//print("end checkforrepair");
+	return false;
+}
+
+//Thanks scavenger
+function NeedStash()
+{
+	mlprint("NeedStash called");
+
+	var gld = me.getStat(14);
+	mlprint("Gold: " + gld + ", StashGoldAmount: " + goldstashamount);
+	if (gld && gld >= goldstashamount) {
+		mlprint("Need to stash gold");
+		return true;
+	}
+
+	mlprint("No need to stash gold");
+
+	// dont know howmuch types there are
+	var nostashlist = new Array();
+	nostashlist[5] = true;
+	nostashlist[6] = true;
+	nostashlist[18] = true;
+	nostashlist[76] = true;
+	nostashlist[77] = true;
+	nostashlist[79] = true;
+	nostashlist[80] = true;
+	nostashlist[81] = true;
+	nostashlist[22] = true;
+	nostashlist[41] = true;
+	nostashlist[78] = true;
+
+	mlprint("Going to look trough the items");
+
+	var item = getUnit(4);
+	do {
+		if (item) {
+			if (item.mode == 0 && item.itemloc == 0 && item.getParent() && item.getParent().name == me.name && item.itemtype && !nostashlist[item.itemtype]) {
+				if (item.itemtype == 82 || item.itemtype == 83 || item.itemtype == 84) {
+					if (!item.getFlag(0x10)) {
+						mlprint("Need to ID and stash a charm");
+						return true;
+					}
+				}
+				else {
+					mlprint("Need to stash an item");
+					return true;
+				}
+			}
+		}
+	}while(item && item.getNext());
+
+	mlprint("NeedStash done");
+}
+
+
+function GetTomePortals()
+{
+	item = getUnit(4);
+	do {
+		if (item && item.code == "tbk" && item.mode == 0 && item.itemloc == 0 && item.getParent() && item.getParent().name == me.name) {
+			return item;
+		}
+	}while(item && item.getNext());
+
+	Sc_Error("No Tome of Townportals found");
+	return null;
+}

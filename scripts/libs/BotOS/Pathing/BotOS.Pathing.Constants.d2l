@@ -1,0 +1,307 @@
+//##################################################
+//####   Matts Pathing Framework Library 3.0   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+
+----------------------------------------------------
+*/
+//////////////////////////////////////////////////////////////////////
+// CONSTANT VARIABLES
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+var SCORE = [1, 1.414];
+var FORWARDHEURISTICS = ["NoFH", "Euclidian", "EuclidianNoSqrt", "Manhattan", "DiagShortcut", "MaxDxDy"];
+
+var mlFHNONE = 0;
+var mlFHEUCLIDIAN = 1;
+var mlFHEUCLIDIANNOSQRT = 2;
+var mlFHMANHATTAN = 3;
+var mlFHDIAGSHORTCUT = 4;
+var mlFHMAXDXDY = 5;
+
+//path reduction types
+var mlWALK = 0;
+var mlTELEPORT = 1;
+
+//path algo types
+var mlBREADTHFIRST = 1;
+var mlASTAR = 0;
+
+//path reduction algo types
+var mlREDUCEWALK = 0;
+var mlREDUCESORC = 1;
+var mlREDUCEJUMP = 2; //Not Used
+
+//Warp types
+var WARPS = [0,0,3,3,1,0,3,4,1,0,4,1,0,1,0,0,1,1,0,3,4,3,1,0,5,3,1,1,0,0,1,1,0,3,3,3,3,3,3,4,5,6,7,8,9,1,0,3,1,0,4,3,1,4,5,1,0,3,1,1,0,4,1,1,5,1,1,0,0,0,1,3,4,1,0,3,3,1,0,3,4,1,0];
+
+var mlWARPNONE = 99;
+var mlWARPNEXT = 0;
+var mlWARPPREVIOUS = 1;
+var mlWARPWAYPOINT = 2;
+var mlWARPOTHER1 = 3;
+var mlWARPOTHER2 = 4;
+var mlWARPOTHER3 = 5;
+var mlWARPOTHER4 = 6;
+var mlWARPOTHER5 = 7;
+var mlWARPOTHER6 = 8;
+var mlWARPOTHER7 = 9;
+var mlWARPOTHER8 = 10;
+var mlWARPUNDERGROUNDPASSAGE = 0;
+var mlWARPUNDERGROUNDPASSAGEOTHER = 3;
+var mlWARPUGPASSAGE = 0;
+var mlWARPUGPASSAGEOTHER = 3;
+var mlWARPDEN = 3;
+var mlWARPHOLE = 3;
+var mlWARPCAVE = 3;
+var mlWARPPIT = 3;
+var mlWARPCRYPT = 3;
+var mlWARPMAUSOLEUM = 4;
+var mlWARPTOWER = 4;
+var mlWARPTOWNTOSEWERTRAP = 3;
+var mlWARPTOWNTOSEWERDOCK = 4;
+var mlWARPSEWERTOTOWNDOCK = 3;
+var mlWARPTOWNTOHAREM = 5;
+var mlWARPHAREMTOTOWN = 3;
+var mlWARPTOMB = 3;
+var mlWARPVIPER = 3;
+var mlWARPTALTOMB1 = 3;
+var mlWARPTALTOMB2 = 4;
+var mlWARPTALTOMB3 = 5;
+var mlWARPTALTOMB4 = 6;
+var mlWARPTALTOMB5 = 7;
+var mlWARPTALTOMB6 = 8;
+var mlWARPTALTOMB7 = 9;
+var mlWARPMAGGOT = 3;
+var mlWARPDESSERTSEWERTRAP = 4;
+var mlWARPSPIDER = 3;
+var mlWARPDUNGEONFORT = 4;
+var mlWARPDUNGEONHOLE = 5;
+var mlWARPKURASTTOSEWER = 3;
+var mlWARPKURASTTOTEMPLE = 4;
+var mlWARPTRAVINCALTOMEPH = 5;
+var mlWARPCITYTORIVER = 0;
+var mlWARPRIVERTOCITY = 1;
+var mlWARPBARRICADEDOWN = 3;
+var mlWARPBARRICADEDOWNWALL = 4;
+var mlWARPICECAVEDOWNFLOOR = 3;
+var mlWARPTEMPLETONIHL = 3;
+var mlWARPMOUNTAINTOICE = 3;
+var mlWARPMOUNTAINTOBAAL = 4;
+
+//Waypoint varants DO NOT USE
+var mlWAYPOINTS = new Array(119,145,156,157,237,238,288,323,324,398,402,429,494,496,511,539);
+
+
+
+//Direction constants
+var mlNORTH = 0;
+var mlEAST = 1;
+var mlSOUTH = 2;
+var mlWEST = 3;
+
+//Walkcalls return values
+var mlCONTINUE = 1;
+var mlSTOP = 2;
+var mlSTEPAHEAD = 100;
+var mlSTEPBACK = 200;
+
+//Settings constants
+var mlNO = 0;
+var mlYES = 1;
+
+var mlMAPMULTI = 1;
+var mlMAPSINGLE = 2;
+
+
+//Areas
+var mlAREASOUTDOORFLAG = new Array(0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 
+1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+var PORTAL = 1;
+var ARCANEPORTAL = 298; // need to interact twice (first time = activate it, second time = take it) number = classid
+var TRAP_DOOR = 74; // need to interact twice (first time = open it, second time = take it) number = classid
+var HORAZONSJOURNAL = 357;
+var CANYON_PORTAL = 60; // need to interact with horazons journal (classid 357) first to open portal (classid 60, I think 60 is for all (red?) portals)
+var STAIRS = 194; // need to activate stairs to get to disused fane
+var STAIRS2 = 195; // need to activate stairs to get to ruined temple fane
+var AS_GATE1 = 564; // Arreat Summit Gate down to Ancient's way
+var AS_GATE2 = 547; // Arreat Summit Gate down to Worldstone Keep
+var PORTAL_WS = 563; // Portal to worldstone Chamber
+
+var TP = 2;
+
+//Area Constants
+var D2JSP_AREA_NONE                                                 = 0;
+var D2JSP_AREA_ROGUE_ENCAMPMENT                                     = 1;
+var D2JSP_AREA_BLOOD_MOOR                                           = 2;
+var D2JSP_AREA_COLD_PLAINS                                          = 3;
+var D2JSP_AREA_STONY_FIELD                                          = 4;
+var D2JSP_AREA_DARK_WOOD                                            = 5;
+var D2JSP_AREA_BLACK_MARSH                                          = 6;
+var D2JSP_AREA_TAMOE_HIGHLAND                                       = 7;
+var D2JSP_AREA_DEN_OF_EVIL                                          = 8;
+var D2JSP_AREA_CAVE_LEVEL_1                                         = 9;
+var D2JSP_AREA_UNDERGROUND_PASSAGE_LEVEL_1                          = 10;
+var D2JSP_AREA_HOLE_LEVEL_1                                         = 11;
+var D2JSP_AREA_PIT_LEVEL_1                                          = 12;
+var D2JSP_AREA_CAVE_LEVEL_2                                         = 13;
+var D2JSP_AREA_UNDERGROUND_PASSAGE_LEVEL_2                          = 14;
+var D2JSP_AREA_HOLE_LEVEL_2                                         = 15;
+var D2JSP_AREA_PIT_LEVEL_2                                          = 16;
+var D2JSP_AREA_BURIAL_GROUNDS                                       = 17;
+var D2JSP_AREA_CRYPT                                                = 18;
+var D2JSP_AREA_MAUSOLEUM                                            = 19;
+var D2JSP_AREA_FORGOTTEN_TOWER                                      = 20;
+var D2JSP_AREA_TOWER_CELLAR_LEVEL_1                                 = 21;
+var D2JSP_AREA_TOWER_CELLAR_LEVEL_2                                 = 22;
+var D2JSP_AREA_TOWER_CELLAR_LEVEL_3                                 = 23;
+var D2JSP_AREA_TOWER_CELLAR_LEVEL_4                                 = 24;
+var D2JSP_AREA_TOWER_CELLAR_LEVEL_5                                 = 25;
+var D2JSP_AREA_MONASTERY_GATE                                       = 26;
+var D2JSP_AREA_OUTER_CLOISTER                                       = 27;
+var D2JSP_AREA_BARRACKS                                             = 28;
+var D2JSP_AREA_JAIL_LEVEL_1                                         = 29;
+var D2JSP_AREA_JAIL_LEVEL_2                                         = 30;
+var D2JSP_AREA_JAIL_LEVEL_3                                         = 31;
+var D2JSP_AREA_INNER_CLOISTER                                       = 32;
+var D2JSP_AREA_CATHEDRAL                                            = 33;
+var D2JSP_AREA_CATACOMBS_LEVEL_1                                    = 34;
+var D2JSP_AREA_CATACOMBS_LEVEL_2                                    = 35;
+var D2JSP_AREA_CATACOMBS_LEVEL_3                                    = 36;
+var D2JSP_AREA_CATACOMBS_LEVEL_4                                    = 37;
+var D2JSP_AREA_TRISTRAM                                             = 38;
+var D2JSP_AREA_MOO_MOO_FARM                                         = 39;
+var D2JSP_AREA_LUT_GHOLEIN                                          = 40;
+var D2JSP_AREA_ROCKY_WASTE                                          = 41;
+var D2JSP_AREA_DRY_HILLS                                            = 42;
+var D2JSP_AREA_FAR_OASIS                                            = 43;
+var D2JSP_AREA_LOST_CITY                                            = 44;
+var D2JSP_AREA_VALLEY_OF_SNAKES                                     = 45;
+var D2JSP_AREA_CANYON_OF_THE_MAGI                                   = 46;
+var D2JSP_AREA_A2_SEWERS_LEVEL_1                                    = 47;
+var D2JSP_AREA_A2_SEWERS_LEVEL_2                                    = 48;
+var D2JSP_AREA_A2_SEWERS_LEVEL_3                                    = 49;
+var D2JSP_AREA_HAREM_LEVEL_1                                        = 50;
+var D2JSP_AREA_HAREM_LEVEL_2                                        = 51;
+var D2JSP_AREA_PALACE_CELLAR_LEVEL_1                                = 52;
+var D2JSP_AREA_PALACE_CELLAR_LEVEL_2                                = 53;
+var D2JSP_AREA_PALACE_CELLAR_LEVEL_3                                = 54;
+var D2JSP_AREA_STONY_TOMB_LEVEL_1                                   = 55;
+var D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_1                            = 56;
+var D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_2                            = 57;
+var D2JSP_AREA_CLAW_VIPER_TEMPLE_LEVEL_1                            = 58;
+var D2JSP_AREA_STONY_TOMB_LEVEL_2                                   = 59;
+var D2JSP_AREA_HALLS_OF_THE_DEAD_LEVEL_3                            = 60;
+var D2JSP_AREA_CLAW_VIPER_TEMPLE_LEVEL_2                            = 61;
+var D2JSP_AREA_MAGGOT_LAIR_LEVEL_1                                  = 62;
+var D2JSP_AREA_MAGGOT_LAIR_LEVEL_2                                  = 63;
+var D2JSP_AREA_MAGGOT_LAIR_LEVEL_3                                  = 64;
+var D2JSP_AREA_ANCIENT_TUNNELS                                      = 65;
+var D2JSP_AREA_TAL_RASHAS_TOMB1                                     = 66;
+var D2JSP_AREA_TAL_RASHAS_TOMB2                                     = 67;
+var D2JSP_AREA_TAL_RASHAS_TOMB3                                     = 68;
+var D2JSP_AREA_TAL_RASHAS_TOMB4                                     = 69;
+var D2JSP_AREA_TAL_RASHAS_TOMB5                                     = 70;
+var D2JSP_AREA_TAL_RASHAS_TOMB6                                     = 71;
+var D2JSP_AREA_TAL_RASHAS_TOMB7                                     = 72;
+var D2JSP_AREA_DURIELS_LAIR                                         = 73;
+var D2JSP_AREA_ARCANE_SANCTUARY                                     = 74;
+var D2JSP_AREA_KURAST_DOCKTOWN                                      = 75;
+var D2JSP_AREA_SPIDER_FOREST                                        = 76;
+var D2JSP_AREA_GREAT_MARSH                                          = 77;
+var D2JSP_AREA_FLAYER_JUNGLE                                        = 78;
+var D2JSP_AREA_LOWER_KURAST                                         = 79;
+var D2JSP_AREA_KURAST_BAZAAR                                        = 80;
+var D2JSP_AREA_UPPER_KURAST                                         = 81;
+var D2JSP_AREA_KURAST_CAUSEWAY                                      = 82;
+var D2JSP_AREA_TRAVINCAL                                            = 83;
+var D2JSP_AREA_SPIDER_CAVE                                          = 84;
+var D2JSP_AREA_SPIDER_CAVERN                                        = 85;
+var D2JSP_AREA_SWAMPY_PIT_LEVEL_1                                   = 86;
+var D2JSP_AREA_SWAMPY_PIT_LEVEL_2                                   = 87;
+var D2JSP_AREA_FLAYER_DUNGEON_LEVEL_1                               = 88;
+var D2JSP_AREA_FLAYER_DUNGEON_LEVEL_2                               = 89;
+var D2JSP_AREA_SWAMPY_PIT_LEVEL_3                                   = 90;
+var D2JSP_AREA_FLAYER_DUNGEON_LEVEL_3                               = 91;
+var D2JSP_AREA_A3_SEWERS_LEVEL_1                                    = 92;
+var D2JSP_AREA_A3_SEWERS_LEVEL_2                                    = 93;
+var D2JSP_AREA_RUINED_TEMPLE                                        = 94;
+var D2JSP_AREA_DISUSED_FANE                                         = 95;
+var D2JSP_AREA_FORGOTTEN_RELIQUARY                                  = 96;
+var D2JSP_AREA_FORGOTTEN_TEMPLE                                     = 97;
+var D2JSP_AREA_RUINED_FANE                                          = 98;
+var D2JSP_AREA_DISUSED_RELIQUARY                                    = 99;
+var D2JSP_AREA_DURANCE_OF_HATE_LEVEL_1                              = 100;
+var D2JSP_AREA_DURANCE_OF_HATE_LEVEL_2                              = 101;
+var D2JSP_AREA_DURANCE_OF_HATE_LEVEL_3                              = 102;
+var D2JSP_AREA_THE_PANDEMONIUM_FORTRESS                             = 103;
+var D2JSP_AREA_OUTER_STEPPES                                        = 104;
+var D2JSP_AREA_PLAINS_OF_DESPAIR                                    = 105;
+var D2JSP_AREA_CITY_OF_THE_DAMNED                                   = 106;
+var D2JSP_AREA_RIVER_OF_FLAME                                       = 107;
+var D2JSP_AREA_CHAOS_SANCTUM                                        = 108;
+var D2JSP_AREA_HARROGATH                                            = 109;
+var D2JSP_AREA_BLOODY_FOOTHILLS                                     = 110;
+var D2JSP_AREA_RIGID_HIGHLANDS                                      = 111;
+var D2JSP_AREA_ARREAT_PLATEAU                                       = 112;
+var D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_1                           = 113;	// Crystalline Passage
+var D2JSP_AREA_CELLAR_OF_PITY                                       = 114;	// Frozen River
+var D2JSP_AREA_CRYSTALIZED_CAVERN_LEVEL_2                           = 115;	// Glacial Trail
+var D2JSP_AREA_ECHO_CHAMBER                                         = 116;	// Drifter Cavern
+var D2JSP_AREA_TUNDRA_WASTELANDS                                    = 117;	// Frozen Tundra
+var D2JSP_AREA_GLACIAL_CAVES_LEVEL_1                                = 118;	// Ancient's Way
+var D2JSP_AREA_GLACIAL_CAVES_LEVEL_2                                = 119;	// Icy Cellar
+var D2JSP_AREA_ROCKY_SUMMIT                                         = 120;	// Arreat Summit
+var D2JSP_AREA_NIHLATHAKS_TEMPLE                                    = 121;
+var D2JSP_AREA_HALLS_OF_ANGUISH                                     = 122;	// Halls of Anguish
+var D2JSP_AREA_HALLS_OF_DEATHS_CALLING                              = 123;	// Halls of Pain
+var D2JSP_AREA_HALLS_OF_VAUGHT                                      = 124;
+var D2JSP_AREA_HELL1                                                = 125;	// Abaddon
+var D2JSP_AREA_HELL2                                                = 126;	// Pit of Acheron
+var D2JSP_AREA_HELL3                                                = 127; // Infernal Pit
+var D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_1                          = 128;
+var D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_2                          = 129;
+var D2JSP_AREA_THE_WORLDSTONE_KEEP_LEVEL_3                          = 130;
+var D2JSP_AREA_THRONE_OF_DESTRUCTION                                = 131;
+var D2JSP_AREA_THE_WORLDSTONE_CHAMBER                               = 132;

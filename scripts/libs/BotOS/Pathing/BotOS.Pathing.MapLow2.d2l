@@ -1,0 +1,249 @@
+//##################################################
+//####   Matts Pathing Framework Library 3.0   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+----------------------------------------------------
+*/
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.Pathing) != 'function') {
+	BotOS.Pathing = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+BotOS.Pathing.MapLow2 = function(_info) {
+
+	if(!_info.Name) _info.Name = "MapLow2"+_info.Area;
+
+	_info.Low2 = true;
+
+	//inherit from Pathable
+	BotOS.Pathing.Map.call(this, _info);
+
+	//setup the Methods particular to Map
+	this.InitializeRooms = Map_InitializeRooms;
+	//this.Prepare = Map_Prepare;
+	this.Initialize = Map_Initialize;
+	//this.AreaExists = Map_AreaExists;
+
+	this.Low2 = true;
+
+	this.InitializeRooms();
+	
+
+	//////////////////////////////////////////////////////////////////////
+	// Map Methods
+	// -------------------------------------------------------------------
+	//////////////////////////////////////////////////////////////////////
+
+
+	function Map_InitializeRooms(_coll) 
+	{
+		//print("this.Rooms.length: " + this.Rooms.length);
+		if(!this.Rooms || !this.Rooms.length) 
+			throw new BotOS.MappingException("Map.InitializeRooms(internal error) -> this.Rooms is not set", 5000, "Area.d2l");
+		
+		//var currareanum = 0;
+
+		for(var i = 0; i < this.Rooms.length; i++) {
+			//print(i);
+			if(this.Rooms[i].x < this.x)
+				this.x = this.Rooms[i].x;
+			if(this.Rooms[i].y < this.y)
+				this.y = this.Rooms[i].y;
+			if(this.Rooms[i].MaxX > this.MaxX)
+				this.MaxX = this.Rooms[i].MaxX;
+			if(this.Rooms[i].MaxY > this.MaxY)
+				this.MaxY = this.Rooms[i].MaxY;
+
+			//this.PresetUnits = this.PresetUnits.concat(this.Rooms[this.Rooms.length-1].PresetUnits);
+
+		}
+
+
+		this.Width = this.MaxX - this.x;
+		this.Height = this.MaxY - this.y;
+		this.MaxX -= 1;
+		this.MaxY -= 1;
+
+ //   	print(this.Width, this.Height);
+
+		this.Width /= 2;
+		this.Height /= 2;
+
+		if(!this.CollisionData) 
+		{
+
+			this.CollisionData = new Array();
+			this.CollisionData.length = this.Height;
+			for(var i = 0; i<this.Height; i++)
+			{
+				this.CollisionData[i] = new Array();
+				this.CollisionData[i].length = this.Width;
+			}
+
+		}
+
+
+		//added back in area boxing for proper cross area pathing
+		
+		if(this.Areas.length > 1) {
+
+			for(var a = 0; a < this.Areas.length; a++) {
+				hgt = this.Areas[a].Height/2 - 1;
+				wdt = this.Areas[a].Width/2 - 1;
+
+				var xoff = (this.Areas[a].x - this.x)/2;
+				var yoff = (this.Areas[a].y - this.y)/2;
+
+				for(var y = 0; y<hgt; y++)
+				{
+						for(var x = 0; x<wdt; x++) this.CollisionData[y + yoff][x + xoff] = 0xFF;
+						this.CollisionData[y+yoff][xoff] = 0xFF;
+						this.CollisionData[y+yoff][wdt+xoff] = 0xFF;
+				}
+			}
+
+		}
+
+
+//		print("this.Rooms.length: " + this.Rooms.length)
+	}
+
+	function Map_Initialize () {
+		if(!this.Rooms) 
+			throw new BotOS.MappingException("Map.Initialize -> this.Rooms is not set", 1, "Area.d2l");
+		
+		if(this.IsInitialized) return true;
+		/*
+		if(_incr) 
+		{
+			if(this.IncrementCount == this.Rooms.length) 
+			{
+				this.IsInitialized = true;
+				runGC();
+				return true;
+			}
+			BotOS.Pathing.Pathable.ArrayCopy2DLow2(this.CollisionData, this.Rooms[this.IncrementCount].CollisionData, this.Rooms[this.IncrementCount].x-this.x, this.Rooms[this.IncrementCount].y-this.y);
+			this.Rooms[this.IncrementCount].CollisionData = null;
+			this.IncrementCount++;
+			
+			if(!(IncrementCount%200)) {
+				runGC();
+			}
+			
+
+
+		}
+		else*/
+		//{
+
+			for(var i = 0; i<this.Rooms.length; i++) 
+			{
+				BotOS.Pathing.Pathable.ArrayCopy2DLow2(this.CollisionData, this.Rooms[i].CollisionData, this.Rooms[i].x-this.x, this.Rooms[i].y-this.y);
+				this.Rooms[i].CollisionData = null;
+				
+				if(!(i%200)) {
+					runGC();
+				}
+				
+			}
+			this.IsInitialized = true;
+			runGC();
+			return true;
+		//}
+		//runGC();
+		return false;
+	}
+
+
+}
+
+BotOS.Pathing.MapLow2.prototype = new BotOS.Pathing.Map;
+BotOS.Pathing.MapLow2.prototype.IsWalkable = Pathable_IsWalkableLow2;						//Override if you need/want your own functionality
+
+//Deprecated
+//BotOS.Pathing.Map.ContingeousAreas = [[1,2,3,4,17], [5, 6, 7, 26, 27, 28], [40,41,42,43,44,45], [75, 76, 77, 78, 79, 80, 81, 82, 83], [103,104,105, 106], [107,108], [109,110,111,112]];
+
+BotOS.Pathing.Pathable.ArrayCopy2DLow2 = function (largearray, smallarray, offsetx, offsety) {
+	//the copy function does the main res reduction.
+	// I can make more map objhects that reduce res even more if needed.
+	for(var y = 0; y < smallarray.length; y += 2) 
+	{
+		for(var x = 0; x < smallarray[0].length; x += 2) 
+		{
+			/*
+			var c = 0;
+			if(smallarray[y][x] & 1) c++;
+			if(smallarray[y+1][x] & 1) c++;
+			if(smallarray[y][x+1] & 1) c++;
+			if(smallarray[y+1][x+1] & 1) c++;
+			largearray[(offsety+y)/2][(offsetx+x)/2] = (!c?0x0:0x1);
+			*/
+		
+			if(smallarray[y][x] & 1 || smallarray[y+1][x] & 1 || smallarray[y][x+1] & 1 || smallarray[y+1][x+1] & 1) { 
+				largearray[(offsety+y)/2][(offsetx+x)/2] = 1;
+				continue;
+			}
+			largearray[(offsety+y)/2][(offsetx+x)/2] = 0;
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.Pathing.Pathable.IsWalkable(_x, _y)
+// -------------------------------------------------------------------
+// returns: true if walkable else false
+// Acts upon an inplementation of IPathable's CollisionData
+//////////////////////////////////////////////////////////////////////
+function Pathable_IsWalkableLow2(_x, _y)
+{
+	if ( !this.IsInRange(_x, _y) )
+		return false;
+
+	return !(this.CollisionData[Math.floor((_y-this.y)/2)][Math.floor((_x-this.x)/2)] & 1);
+
+}
+
+
+

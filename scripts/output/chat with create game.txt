@@ -1,0 +1,67 @@
+Text	Type	X	Y	XSize	YSize	visible	disabled	Extended Text
+CREATE	6	533	469	120	20	false	false	undefined
+CHANNEL	6	535	490	80	20	false	false	undefined
+JOIN	6	652	469	120	20	false	false	undefined
+LADDER	6	614	490	80	20	false	false	undefined
+QUIT	6	693	490	80	20	false	false	undefined
+null	2	145	69	510	60	false	false	undefined
+null	9	145	69	510	60	false	false	undefined
+Diablo II USEast-USA-20 (36)	4	28	138	354	60	false	false	Diablo II USEast-USA-20 (36)
+null	5	400	390	10	314	false	false	undefined
+You have joined channel: Diablo II USEast-USA-20	4	28	410	354	298	false	false	You have joined channel: Diablo II USEast-USA-20,Welcome to Battle.net!,This server is hosted by AT&T.,There are currently 83981 users playing 48237 games of,     Diablo II Lord of Destruction, and 275716 users playing,     91494 games on Battle.net.,Last logon: Mon Feb 16  12:19 AM,ÿc4<Matriarch StormSaphire> ÿc0i have trangs shield for 1,     290 non ladder anyone need,ÿc4<Matriarch DarkAbysss> ÿc0is 525 mfing good?,ÿc4<Champion MotherAsia> ÿc0cry,ÿc4<Matriarch firery_boner> ÿc0decent,ÿc4<PoonCube> ÿc0...,ÿc4<Matriarch StormSaphire> ÿc02 much mf,ÿc4<Matriarch DarkAbysss> ÿc0whats good?,ÿc4<Champion sar-epidemic> ÿc0ur mom,ÿc4<Matriarch firery_boner> ÿc0600,ÿc4<Matriarch StormSaphire> ÿc0250-350,ÿc4<barb_berry> ÿc0does anyone know why when i try to join,     or make a game the doors just stay closed
+null	2	84	52	147	68	false	false	undefined
+null	2	415	447	373	373	false	false	undefined
+	4	447	398	290	269	false	false	,Please Note: Battle.net Clan Channels have,changed.  User-operated channels previously,known as "clan channels" still function the same,,but are now more accurately referred to as User,Operated or Op channels.  Check www.battle.net,for more information.
+null	2	726	52	147	68	false	false	undefined
+SEND	6	27	470	80	20	false	true	undefined
+WHISPER	6	107	470	80	20	false	true	undefined
+HELP	6	187	470	80	20	false	false	undefined
+SQUELCH	6	27	490	72	20	false	true	undefined
+UNSQUELCH	6	99	490	96	20	false	true	undefined
+EMOTE	6	195	490	72	20	false	true	undefined
+	6	725	583	25	30	true	true	undefined
+	6	751	583	25	30	true	false	undefined
+	6	725	528	25	30	true	true	undefined
+	6	751	528	25	30	true	false	undefined
+	1	28	450	335	32	false	false	undefined
+	6	40	591	60	100	false	false	undefined
+	6	100	591	60	100	false	false	undefined
+	6	160	591	60	100	false	false	undefined
+	6	220	591	60	100	false	false	undefined
+	6	280	591	60	100	false	false	undefined
+	6	340	591	60	100	false	false	undefined
+	6	400	591	60	100	false	false	undefined
+	6	460	591	60	100	false	false	undefined
+	6	520	591	60	100	false	false	undefined
+	6	580	591	60	100	false	false	undefined
+	6	640	591	60	100	false	false	undefined
+null	12	40	591	720	75	false	false	undefined
+	6	398	474	12	13	false	false	undefined
+null	2	415	447	373	373	false	false	undefined
+CREATE GAME	4	496	111	200	22	false	false	CREATE GAME
+Game Name	4	427	134	150	12	false	false	Game Name
+Password (Optional)	4	427	188	300	12	false	false	Password (Optional)
+Game Description (Optional)	4	427	243	300	12	false	false	Game Description (Optional)
+Max. Number of Players:	4	632	306	300	12	false	false	Max. Number of Players:
+CREATE GAME	6	594	433	172	32	false	false	undefined
+CANCEL	6	433	433	96	32	false	false	undefined
+GameName	1	432	162	158	20	false	false	undefined
+null	1	432	217	158	20	false	false	undefined
+GameDescription	1	432	268	333	20	false	false	undefined
+8	1	657	308	27	20	false	false	undefined
+	6	431	341	15	16	false	false	undefined
+null	2	647	346	33	26	false	false	undefined
+7	1	657	342	27	20	false	false	undefined
+Character Difference:	4	632	342	300	12	false	false	Character Difference:,Character Difference:,Character Difference:
+Levels	4	705	342	150	12	false	false	Levels,Levels,Levels
+	6	681	296	15	12	false	false	undefined
+	6	681	310	15	12	false	false	undefined
+	6	681	332	15	12	false	false	undefined
+	6	681	346	15	12	false	false	undefined
+	6	681	346	15	26	false	true	undefined
+	6	698	381	16	16	false	true	undefined
+HELL	4	723	380	150	12	false	true	HELL
+	6	555	381	16	16	false	true	undefined
+NIGHTMARE	4	579	380	150	12	false	true	NIGHTMARE
+NORMAL	4	459	380	150	12	false	true	NORMAL
+	6	430	381	16	16	false	false	undefined

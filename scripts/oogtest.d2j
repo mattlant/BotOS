@@ -1,0 +1,8 @@
+
+
+
+include("BotOS/OOG/BotOS.OOG.d2l");
+
+function main() {
+	print("Hello");
+}

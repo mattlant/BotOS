@@ -1,0 +1,154 @@
+//##################################################
+//####     IProto's WindowAPI Library 0.1      #####
+//####       Part of the BotOS framework       #####
+//##################################################
+/*
+
+Copyright (C) 2004 Evan "IProto" Weatherhead
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+----------------------------------------------------
+History
+Version 0.1.0
+- Beta Release
+
+----------------------------------------------------
+
+*/
+
+//General BotOS Includes
+include("BotOS/BotOS.Exceptions.d2l");
+include("BotOS/BotOS.Variable.d2l");
+
+//Other dependancies
+include("BotOS/Console/Coord.d2l");
+include("BotOS/Console/Line.d2l");
+include("BotOS/Console/Border.d2l");
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1);
+	}
+}
+
+if(typeof(BotOS.Console) != 'function'){
+	BotOS.Console = function () {
+		throw new BotOS.NamespaceException("BotOS.Console Cannot be instantiated", 1);
+	}
+}
+
+BotOS.Console.Window = function (x, y, width, height, c, title) {
+
+	//Inherit from Coord 
+	if(!(BotOS.Variable.IsNumber(x) && BotOS.Variable.IsNumber(y)))
+		BotOS.Console.Coord.call(this, x, y);
+
+	//Initialize private variables
+	
+	var Borders = new Array();
+	var FillLines = new Array();
+	var Title = "";
+	var Height = 0;
+	var Width = 0;
+//	if(!(BotOS.Variable.IsNumber(id) && BotOS.Console.WindowManager.IsUniqueID(id)))
+//		throw new BotOS.ArgumentException("BotOS.Console.Window.ID requires a valid and unique id to be passed", 1, "Window.d2l");
+//	var ID = id;
+	var TitleHook = getScreenHook();
+	var Console = new BotOS.Console.TextConsole(x+5, y+37, Math.floor((height-30)/10), Math.floor((width-10)/8), 500); //TODO: Add in console code
+
+	this.Console getter = function() {
+		return Console;
+	}
+
+	//Title property
+	this.Title setter = function (value) {
+		if(!(BotOS.Variable.IsString(value) && value.length <= 30))
+			throw new BotOS.ArgumentException("BotOS.Console.Window.Title requires a valid string to be passed", 1, "Window.d2l");
+		Title = value;
+		TitleHook.text = value;
+	}
+	this.Title getter = function() { return Title; }
+	
+	//ID property (read-only)
+//	this.ID getter = function() { return ID; }
+	
+	//Set misc vars
+	this.Title = title;
+	this.Height = height;
+	this.Width = width;
+	
+	this.X = x;
+	this.Y = y;
+	
+	TitleHook.x = this.X + 10;
+	TitleHook.y = this.Y + 18;
+	
+	//Fill Borders array
+	
+	Borders.push(new BotOS.Console.Border(this.X, this.Y+20, this.X+this.Width-2, this.Y+20, 3, c)); //Add title bar
+	Borders.push(new BotOS.Console.Border(this.X, this.Y, this.X+this.Width-2, this.Y, 1, c)); //Add top bar
+	Borders.push(new BotOS.Console.Border(this.X, this.Y+this.Height-3, this.X+this.Width-2, this.Y+this.Height-3, 2, c)); //Add bottom bar
+	Borders.push(new BotOS.Console.Border(this.X, this.Y, this.X, this.Y+this.Height-1, 1, c)); //Add left bar
+	Borders.push(new BotOS.Console.Border(this.X-3+this.Width, this.Y, this.X-3+this.Width, this.Y+this.Height-1, 2, c)); //Add right bar
+	
+	//Fill FillLines array
+	
+	for(var i = 0; i < 17; i++)
+	{
+		FillLines.push(new BotOS.Console.Line(this.X+3, i+3, this.X+this.Width-3, i+3, 0));
+	}
+	
+	for(var i = 0; i < Math.ceil((this.Height - 26)/2); i++)
+	{
+		FillLines.push(new BotOS.Console.Line(this.X+3, (i*2)+24, this.X+this.Width-3, (i*2)+25, 0));
+	}
+	
+	//Move the window
+	this.Move = function(x, y) {
+		
+		var xoffset = x - this.X;
+		var yoffset = y - this.Y;
+		
+		for(i = 0; i < 5; i++)
+		{
+			Borders[i].Move(Borders[i].X+xoffset, Borders[i].Y+yoffset);
+		}
+		
+		titleHook.x += xoffset;
+		titleHook.y += yoffset;
+		
+		this.X = x;
+		this.Y = y;
+
+	}
+	
+	//Show the window
+	this.Show = function() {
+		for(i = 0; i < 5; i++)
+		{
+			Borders[i].Show();
+		}
+	}
+	
+	//Hide the window
+	this.Hide = function() {
+		for(i = 0; i < 5; i++)
+		{
+			Borders[i].Hide();
+		}		
+	}
+}

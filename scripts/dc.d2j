@@ -1,0 +1,12 @@
+// njaguar's control dumper
+
+function main() {
+	f=fileOpen("output/_controldump_" + getTickCount() + ".txt",1);
+	f.writeLine("Text\tType\tX\tY\tXSize\tYSize\tvisible\tdisabled\tExtended Text");
+	c=getControl();
+	if(c) do {
+		f.writeLine(c.text+"\t"+c.type+"\t"+c.x+"\t"+c.y+"\t"+c.xsize+"\t"+c.ysize+"\t"+c.visible+"\t"+c.disabled+"\t"+c.getText());
+	} while(c.getNext());
+	f.close();
+}
+

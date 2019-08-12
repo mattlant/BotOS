@@ -1,0 +1,102 @@
+// mlClasses Library - Various Objects
+
+function oUnitArrayParse (_array) {
+
+	this.UnitArray = (_array ? new Array() : _array);
+	this.Add;
+	this.getClosest = oUnitArrayParse_getclosest;
+
+	function oUnitArrayParse_getclosest(_unit) {
+		if(!this.UnitArray.length) {
+			return new oError(304342, "Array is null", "oUnitArrayParse_getclosest");
+		}
+
+		if(!_unit) _unit = {x:me.x, y:me.y};
+
+		var closest = {dist:Number.MAX_NUMBER, element:null};
+
+		for(var i = 0; i < this.UnitArray.length; i++) {
+			var unitdist = mlDist(this.UnitArray[i].x, this.UnitArray[i].y, _unit.x, _unit.y)
+			if(unitdist < closest.dist) {
+				closest.dist = unitdist;
+				closest.element = i;
+			}
+		}
+
+		return this.UnitArray[closest.element];
+	}
+
+}
+//ERRORS GENERATED AND PASSED BACK BY oError
+/*
+
+304342, "Array is null", "oUnitArrayParse_getclosest"
+
+*/
+
+
+function oTimer(_start) {
+
+	this.Stop = oTimer_Stop;
+	this.Start = oTimer_Start;
+	this.Lap = oTimer_Lap;
+
+	this.LastTime = 0;
+
+	_time = null;
+	_startflag = false;
+
+	if(_start) {
+		_time = new Date();
+		_startflag = true;
+	}
+
+	function oTimer_Start() {
+		_time = new Date();
+		_startflag = true;
+	}
+
+	function oTimer_Stop() {
+		if(!_startflag) return null;
+		this.LastTime = new Date() - _time;
+		_time = null;
+		_startflag = false;
+		return this.LastTime;
+	}
+
+	function oTimer_Lap() {
+		if(!_startflag) return null;
+		this.LastTime = new Date() - _time;
+		return this.LastTime();
+	}
+}
+
+
+
+
+
+
+
+
+
+
+function oError (_num, _string, _errorlist) {
+	this.ErrorNumber = _num;
+	this.ErrorString = _string;
+	this.ErrorFunction = _string;
+
+	this.ErrorList = new Array();
+
+	if(_errorlist instanceof Array) {
+		this.ErrorList = this.ErrorList.concat(_errorlist);
+	}
+
+	this.Add = function (_error) {
+		this.ErrorList.push(_error);
+	}
+
+}
+
+
+
+

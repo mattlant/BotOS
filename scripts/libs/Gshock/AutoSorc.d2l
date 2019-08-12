@@ -1,0 +1,32 @@
+function LoadSkill()
+{
+	me.overhead("Loading Sorceress Skills");
+
+	var cList = new Array(
+
+// Skill Name        Type      Element   Scope      Special    Weight   Mana  	        Range
+
+["Attack",			 gRange,   gPhys,    gSingle,   gUntimed,  .8,      0, 				.5 		],
+["Ice Bolt",         gRange,   gCold, 	 gSingle,   gUntimed,  1,       3,				30 		],
+["Charged Bolt",     gRange,   gLight,   gWide,	    gUntimed,  1,       binc(3, .5),    30 		],
+["Fire Bolt",        gRange,   gFire, 	 gNarrow,   gTimed,    1,       2.5,			10 		],
+["Frost Nova",       gRange,   gCold, 	 gNarrow,   gUntimed,  1,       binc(9, 1),     30 		],
+["Inferno",          gRange,   gFire, 	 gNarrow,   gUntimed,  1.1,     binc(7, 1),     8  		],
+["Ice Blast",        gRange,   gCold, 	 gNarrow,   gUntimed,  1,       binc(6, .5),    30		],
+["Nova",             gRange,   gLight,   gNarrow,   gUntimed,  1.2,     binc(15, 1),    10 		],
+["Lightning",        gRange,   gLight,   gNarrow,   gUntimed,  1,       binc(8, .85),   40 		],
+["Fire Ball",        gRange,   gFire, 	 gNarrow,   gUntimed,  1,       binc(5, .5),    25 		],
+["Glacial Spike",    gRange,   gCold, 	 gNarrow,   gUntimed,  1.1,     binc(10, .9),   30 		],
+["Chain Lightning",  gRange,   gLight,   gWide,     gUntimed,  1,       binc(9, .5),	40 		],
+["Fire Wall",        gRange,   gFire, 	 gWide,     gTimed,    1.3,		binc(22, 1),	25 		],
+["Blizzard",         gRange,   gCold, 	 gWide,     gTimed,    1.2,     binc(23, 1),	25 		],
+["Meteor",           gRange,   gFire, 	 gWide,     gTimed,    1.2,     binc(17, .5),   25 		],
+["Frozen Orb",       gRange,   gCold, 	 gNarrow,   gTimed,    1.3,     binc(25, .5),   14 		],
+["Hydra",            gRange,   gFire, 	 gWide,	    gTimed,    1.2,     binc(20, .5),   25      ],
+["Frozen Armor",     gPrct,    gNone,    gNone,     gNone,     0,       7,              gNone	],
+["Chilling Armor",   gPrct,    gNone,    gNone,     gNone,     0,       17,       		gNone   ],
+["Shiver Armor",     gPrct,    gNone,    gNone,     gNone,     0,       11,       		gNone   ]
+
+);
+	return cList;
+}

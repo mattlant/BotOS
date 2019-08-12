@@ -1,0 +1,513 @@
+// ParseIt!
+// by blue mind
+// -----------------------------------------------------------------------------
+// History :
+// 1.54 : Changed to use task based system by mattlant
+// 1.53 : Added in the ability to use | in the inis
+// 1.52 : Made the ini parsing one variable, and cleaned up code
+// 1.51 : Added in <autoid> support
+// 1.5c : Much easier to read logging
+// 1.5a : Fixed a possible memory leak...
+// 1.5 : Added in the ability to log items that are set not to be picked up
+// 1.4 : Bug fixes, added in distance code, and hopefully made it work with pickit
+// 1.3 : Added in belt management and ranged items
+// 1.2 : Added in a better method to deal with the ini in memory from FryGuy
+// 1.1a : Added in checking if items should be ided
+// 1.1 : Completed snagit
+// 1.0a : Added quote removal in the ini parsing
+// 1.0 : Added the start of the code for SnagIt!
+// 0.9a : Added better logging
+// 0.9 : Added quality checking for unique items
+// 0.8 : Added jewel checking method
+// 0.7e : Fixed a ton of bugs
+// 0.7d : Made the library universal to check mods of all items
+// 0.7c : stupid bug in 0.7b
+// 0.7b : removed the need to call getINI() from outside the script
+// 0.7 : items logging
+// 0.6 : standalone reusable library
+//       beta 20+ required for normal/exceptional/elite detection
+//       ini and mods parsing are working
+// 0.5 : ini parsing added
+// 0.4 : working and working fast already. anya support only
+// 0.3- : didn't bother to keep a history log
+
+/* ææææææææææææææææææææææææææææ
+Do not edit anything past this point!
+ææææææææææææææææææææææææææææ */
+/*
+// ** Logging related
+var logging=1;
+var fLog="output/"+me.name+"TaskItemLog.html";
+var writedesc=false;
+
+// ** The INI
+var INI = new Array();
+var WhichINI="temp";
+var idValid=false;
+
+// ** SnagIt variables
+var bitcheck=0;
+var DontLog=false;
+var SkipType=new Array();
+var snagrad=60;
+
+//task based variables
+var currsnagitem = null;
+var snagitemgid = new Array();
+var issnagging = false;
+var snagitenable = true;
+*/
+ItemQueue = new oItemList(null, null, 30);
+
+// ** Mods parsing
+//var itemQual=["none","lowquality","normal","superior","magic","set","rare","unique","craft"];
+
+/* ææææææææææææææææææææææææææææ
+ShopIt! section:
+ææææææææææææææææææææææææææææ */
+
+function ShopIt(who)
+{
+	checkprint=0;
+
+	var shopitem = getUnit(4, null, 0);
+	if (shopitem) do
+	{
+		var owner = shopitem.getParent();
+		if (owner) if (owner.name==who)
+		{
+			if (logging >= 1)
+				writedesc=(shopitem.prefix==""?"":shopitem.prefix +" ") +shopitem.name +(shopitem.suffix==""?"":" "+shopitem.suffix);
+			if (logging >= 2)
+				writedesc+=getAllStats(shopitem);
+
+			if(checkprint == 0)
+			{
+				print("Shopping at: " +who);
+				checkprint++;
+			}
+
+			if (CheckItem(shopitem, "settings/bmShopIt.ini"))
+			{
+				shopitem.interact();
+				DoDel(1000);
+				Slog(shopitem);
+			}
+			if (logging >= 3) PrintFile(STime()+" " +writedesc);
+		}
+	} while(shopitem && shopitem.getNext(null,0));
+	if(checkprint == 0) print("Shopping at " +who +"failed!  If this happens consistently, please increase your lag time, in MarPindleScript.d2j!");
+}
+
+function ShopHer(who) {ShopIt(who);}
+function ShopHim(who) {ShopIt(who);}
+
+/* ææææææææææææææææææææææææææææ
+SnagIt! section:
+ææææææææææææææææææææææææææææ */
+
+var MaxHealInInv = 4;
+var MaxManaInInv = 4;
+var MaxRejuvInInv = 4;
+var PickupNormalPercent = 50;
+var PickUpMana = true;
+
+function plugMLSnagit(instname)
+{
+	this.temp = oPlugin;
+	this.temp("Snagit", mlPLUGINBYTIME, 100, "Hybrid Snagit", "1.0", "FruitBar. Modified by mattlant", instname);
+	delete this.temp;
+
+
+	this.Snagit = function() {
+
+		ItemQueue.Update();
+
+		if(AI.IsAttacking) return;
+		if(AI.IsSnagging) return;
+
+		var itemtosnag = ItemQueue.getClosest();
+		if(itemtosnag) {
+			Log.Write(mlLOGGENERAL, "found item to pickup: " + itemtosnag.Item.name, boLOGCRITICALINFO);
+			//new oTaskMove(this.snagp--, "MoveTo", {x:itemtosnag.Item.x, y:itemtosnag.Item.y}).Insert();
+			new oTaskSnagit(450, "SnagItem", {Item:itemtosnag}).Insert();
+			AI.IsSnagging = true;
+		}
+
+	}
+
+}
+
+function oTaskSnagit(_p, _function, _data, _object, _tag)
+{
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.SnagItem = oTaskSnagit_snagitem;
+	
+	var _attempts = 0;
+	function oTaskSnagit_snagitem()
+	{
+		if(this.Data.ItemName && !this.Data.Item) {
+			var tempit = getUnit(4, this.Data.ItemName)
+			if(!tempit) {
+				tempit = getUnit(4, this.Data.ItemName);
+				if(!this.Data.Item || !this.Data.Item.Item) {
+					//TODO: raise error
+					print("Could not get item");
+					return;
+				}
+			}
+			this.Data.Item = new oItem(0, tempit);
+		}
+		if(this.Data.Item.Item.mode != 3) {
+			if(this.Data.Item.ShouldSnag == 5) PotionManager.Add(this.Data.Item.Item);
+			this.Data.Item.HasBeenSnagged = true;
+			AI.IsSnagging = false;
+			return;
+		}
+			
+		if(DistEuclidian(me.x, me.y, this.Data.Item.Item.x, this.Data.Item.Item.y) > 5 || !Map.LOS(me.x, me.y, this.Data.Item.Item.x, this.Data.Item.Item.y)){
+			new oGoalMove(0, null, {sx:me.x, sy:me.y, dx:this.Data.Item.Item.x, dy:this.Data.Item.Item.y, p:this.p+1, Recalc:true}).PathToXY();
+			this.Insert();
+			return;
+		}
+		if(this.Data.Item.Item.code=="gld" || this.Data.Item.Item.code=="tsc" || this.Data.Item.Item.code=="isc" || this.Data.Item.Item.code=="key" || this.Data.Item.Item.code=="aqv" || this.Data.Item.Item.code=="cqv"){
+			if(this.Data.Item.Item.code=="tsc") {
+				var oldamount = itemCountTotal("tbk");
+			} else if(this.Data.Item.Item.code=="isc") {
+				var oldamount = itemCountTotal("ibk");
+			} else if(this.Data.Item.Item.code=="gld") {
+				var oldamount = me.getStat(14);	
+			} else {
+				var oldamount = itemCountTotal(this.Data.Item.Item.code);
+			}
+			clickMap(0, 0, this.Data.Item.Item);
+			delay(10);
+			clickMap(2, 0, this.Data.Item.Item);
+			//this.Data.Item.Item.interact();
+			new oTaskCommon(this.p, "Delay", {Amount:300 + coreloopdelay + AI.DynamicWalkDelay + me.ping, Reason:"Pickup "+this.Data.Item.Item.name}).Insert();
+			if(this.Data.Item.Item.code=="tsc") {
+				var newamount = itemCountTotal("tbk");
+			} else if(this.Data.Item.Item.code=="isc") {
+				var newamount = itemCountTotal("ibk");
+			} else if(this.Data.Item.Item.code=="gld") {
+				var newamount = me.getStat(14);	
+			} else {
+				var newamount = itemCountTotal(this.Data.Item.Item.code);
+			}
+//			print("Oldamount: "+oldamount+" | Newamount: "+newamount);
+			Log.Write(mlLOGGENERAL, "Oldamount: "+oldamount+" | Newamount: "+newamount, boLOGINFO);
+			
+			if(_attempts < 5 && newamount == oldamount && getUnit(4, this.Data.Item.Item.code)) {
+				_attempts++;
+				this.Insert();
+				return;
+			}
+		}
+		else  {
+			clickMap(0, 0, this.Data.Item.Item);
+			delay(10);
+			clickMap(2, 0, this.Data.Item.Item);
+//			print(this.Data.Item.Item.name+" "+this.Data.Item.Item.mode);
+			Log.Write(mlLOGGENERAL, this.Data.Item.Item.name+" "+this.Data.Item.Item.mode, boLOGINFO);
+			//this.Data.Item.Item.interact();
+			new oTaskCommon(this.p+1, "Delay", {Amount:200 + coreloopdelay + AI.DynamicWalkDelay + me.ping, Reason:"Pickup Item"}).Insert();
+			_attempts++;
+			this.Insert();
+			return;
+		}
+		if(this.Data.Item.ShouldSnag == 5) PotionManager.Add(this.Data.Item.Item);
+		this.Data.Item.HasBeenSnagged = true;
+		AI.IsSnagging = false;
+	}
+}
+
+//ItemList Class
+function oItemList(_items, _data, _range)
+{
+	this._list = new Array();
+	this.Data = _data;
+	this._mylastarea = me.area;
+	this.Range = _range;
+
+	this.Update = oItemList_update;
+	this.getClosest = oItemList_getclosest;
+	this.getLength = oItemList_getlength;
+
+	if(_items instanceof Array)
+		this._list = _items;
+
+	if(!this.Range) this.Range = 70;
+
+	function oItemList_update(type)
+	{
+		for(var i = 0; i<this._list.length; i++) //update all list objects
+			this._list[i].Update();
+
+		if(this._mylastarea != me.area) {
+			this._list.length = 0;
+			this._mylastarea = me.area;
+		}
+		//add items
+		var titem = getUnit(4, null,3);
+		if(titem) itemloop: do {
+			for(var jj = 0; jj<this._list.length; jj++) {
+				if(this._list[jj].Item.gid == titem.gid)
+					continue itemloop;
+			}
+			if(DistEuclidian(me.x, me.y, titem.x, titem.y) < this.Range)
+				this._list.push(new oItem(0, titem));
+		}while(titem.getNext(null,3));
+		//remove items
+		for(var i = 0; i<this._list.length; i++) {
+			if(this._list[i].Item.mode != 3 || this._list[i].Distance > this.Range || this._list[i].HasBeenSnagged) {
+			//if(this._list[i].Item.mode != 3 || this._list[i].Distance > this.Range) {
+					if(!i) this._list.shift();
+					else if(i == this._list.length-1) this._list.pop();
+					else {
+						this._list = this._list.slice(0, i-1).concat(this._list.slice(i+1));
+						i -= 1;
+					}
+			}
+		}
+
+	}
+	function oItemList_getlength()
+	{
+		return this._list.length;
+	}
+
+	function oItemList_getclosest(x, y, range)
+	{
+		var dist = 0xFFFF;
+		var itemel = null;
+		if(range) {
+			for(var j = 0; j<this._list.length; j++) {
+				var distance = DistEuclidian(this._list.Item.x, this._list.Item.y, x, y)
+				if(distance < dist && distance < range && this._list[j].ShouldSnag && !this._list[j].IsBeingSnagged) {
+					dist = this._list[j].Distance;
+					itemel = j;
+				}
+			}
+			if(itemel != null) {
+				this._list[itemel].IsBeingSnagged = true;
+				return this._list[itemel];
+			}
+			else return null;
+		}
+		else {
+			for(var j = 0; j<this._list.length; j++) {
+				if(this._list[j].Distance < dist && this._list[j].ShouldSnag && !this._list[j].IsBeingSnagged) {
+					dist = this._list[j].Distance;
+					itemel = j;
+				}
+			}
+			if(itemel != null) {
+				this._list[itemel].IsBeingSnagged = true;
+				return this._list[itemel];
+			}
+			else return null;
+		}
+	}
+
+	function oItemList_getitems(_data)
+	{
+		//_data.ShouldSnag
+		//_data.IsBeingSnagged
+		//_data.HasBeenSnagged
+		//_data.NotIEA
+		//_data.Boss
+		//_data.NotBoss
+		//_data.Unique
+		//_data.NotUnique
+		//_data.Range
+		//_data.x
+		//_data.y
+		//_Data.Dead
+		/*
+		if(!_data) _data = new Object();
+		if(!_data.Range) _data.Range = this.Range;
+		if(!_data.x || !_data.y) _data.x = me.x; _data.y = me.y;
+		if(!_data.SortType) _data.SortType = mlSORTASC;
+		if(!_data.SortBy) _data.SortBy = mlSORTDIST;
+
+		var tlist = new oMonsterList();
+		var dist = 0xFFFF;
+		monloop:
+		for(var m = 0; m<this.List.length; m++) {
+			if(_data.Dead && !this.List[m].Dead) continue monloop;
+			else if(this.List[m].Dead) continue monloop;
+			if(_data.Boss && !this.List[m].Boss) continue monloop;
+			if(_data.NotBoss && this.List[m].Boss) continue monloop;
+			if(_data.Unique && !this.List[m].Unique) continue monloop;
+			if(_data.NotUnique && this.List[m].Unique) continue monloop;
+			if(_data.Abilities) {
+				var bitcheck = 1;
+				for (var b = 0; b<8; b++) {
+					bitcheck = 1;
+					bitcheck <<= b;
+					if(bitcheck & _data.Abilities) {
+						if(!(this.List[m].Abilities & bitcheck)) continue monloop;
+					}
+				}
+			}
+			if(_data.NotAbilities) {
+				var bitcheck = 1;
+				for (var b = 0; b<8; b++) {
+					bitcheck = 1
+					bitcheck <<= b;
+					if(bitcheck & _data.NotAbilities) {
+						if(this.List[m].Abilities & bitcheck) continue monloop;
+					}
+				}
+			}
+			if(_data.IEA) {
+				var bitcheck = 1;
+				for (var b = 0; b<28; b++) {
+					bitcheck = 1;
+					bitcheck <<= b;
+					if(bitcheck & _data.IEA) {
+						if(!(this.List[m].IEA & bitcheck)) continue monloop;
+					}
+				}
+			}
+			if(_data.NotIEA) {
+				var bitcheck = 1;
+				for (var b = 0; b<28; b++) {
+					bitcheck = 1;
+					bitcheck <<= b;
+					if(bitcheck & _data.NotIEA) {
+						if(this.List[m].IEA & bitcheck) continue monloop;
+					}
+				}
+			}
+			if(DistEuclidian(_data.x, _data.y, this.List[m].Monster.x, this.List[m].Monster.y) > _data.Range) continue monloop;
+//			print("adding the monster");
+			tlist.Insert(this.List[m]);
+		}
+		return tlist;
+		*/
+	}
+
+}
+
+var charsnag = "snagit.ini"
+const mlITEMHEALING = 1;
+const mlITEMMANA = 2;
+const mlITEMREJUV = 3;
+const mlITEMTHAWING = 4;
+const mlITEMANTIDOTE = 5;
+const mlITEMSCROLLTP = 6;
+const mlITEMSCROLLID = 7;
+const mlITEMGOLD = 8;
+
+//Item Class
+function oItem(_p, _item, _snagini)
+{
+	//member properties
+	this.Item = null;
+	this._remove = false;
+	this.Item = copyUnit(_item);
+
+	this.p = _p;
+	this.Direction = 0;
+	this.Distance = 0; //d
+	this.ItemType = 0;
+	this.ShouldSnag = 0;
+	this.IsBeingSnagged = false;
+	this.HasBeenSnagged = false;
+
+	this.Update = oItem_update;
+
+	this.Update();
+
+	//check for potions scrolls and assign type and see if it should be picked up
+	if(getBaseStat(0, this.Item.classid, 82) && this.Item.getFlag(0x200000) && this.Item.name.substr(0,5) != "Scroll") {
+		this.ShouldSnag = PotionManager.CheckPickup(this.Item);
+		StdOutput.Write("Should Snag a pot: " + this.Item.name);
+		return;
+	}
+	if(this.Item.code != false && (this.Item.code == AI.needammo_lowprio || this.Item.code == AI.needammo_urgent)) {
+		this.ShouldSnag = 4;
+		StdOutput.Write("Should snag Arrows/Bolts: "+this.Item.code);
+		return;
+	}
+	if(this.Item.code == "key" && AI.needkeys == true) {
+		this.ShouldSnag = 2;
+		return;
+	}
+	if(this.Item.code == "isc" && AI.needisc == true) {
+		this.ShouldSnag = 3;
+		return;
+	}
+	if(this.Item.code == "tsc" && AI.needtsc == true) {
+		this.ShouldSnag = 3;
+		return;
+	}
+	//might possibly be 14 now instead of 70
+	if(this.Item.code == "gld") {
+		var goldmin = (me.getStat(14) + me.getStat(15))* 0.001;
+		if(this.Item.getStat(14) > goldmin) this.ShouldSnag = 1;
+		return;
+	}
+    if(CheckItem(this.Item, "settings/"+charsnag, 5)) this.ShouldSnag = 10;
+
+	function oItem_update()
+	{
+		//this.Direction = Math.abs(Math.floor((Math.atan2(this.Item.x-me.x ,this.Item.y-me.y)) * 180 / 3.1415) - 180);
+		this.Distance = DistEuclidian(me.x, me.y, this.Item.x, this.Item.y); //d
+	}
+}
+
+
+/*
+function CheckItem(item, which, snagqual)
+{
+	if(WhichINI!=which) getINI(which);
+
+	lloop : for(i=0;i<INI.length;i++)
+	{
+		nKeys=INI[i].length;
+		idValid=false;
+		writedesc=false;
+		DontLog=false;
+		loganyhow=false;
+		var OrSkip=new Array();
+		for(j=1;j<nKeys;j++)
+		{
+			type=INI[i][j][0];
+			key=INI[i][j][1];
+			val=INI[i][j][2];
+			if(type=="|")
+			{
+				if(!OrCase(val,item,OrSkip))
+					continue lloop;
+			}
+			else
+			{
+				if(!KeyCase(type,key,val,item))
+					continue lloop;
+			}
+		}
+		if (loganyhow)
+		{
+			if(writedesc!=false && snagqual==5)
+			{
+				GetDesc(item);
+				//print("Ignoring a "+writedesc+"!");
+				if(!DontLog)
+				{
+					Rcolor();
+					PrintFile(STime()+" " +writedesc);
+				}
+			}
+			continue;
+		}
+		debugprint("!!Keeping an item from section: " +INI[i][0],0);
+		return true;
+	}
+	return false;
+}
+*/

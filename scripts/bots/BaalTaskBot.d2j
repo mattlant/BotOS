@@ -1,0 +1,70 @@
+////////////////////////
+//Bot specific include//
+////////////////////////
+var i = 0;
+//misc necessities
+include("taskbot/settings.d2l");
+include("taskbot/coremanager.d2l");
+include("townmove.d2l");
+
+
+function main()
+{
+	delay(500);
+
+	if (begingamedelay > 0)
+	{
+		print("Waiting " + (parseInt(begingamedelay / 1000)) + " seconds for initialization...");
+		delay(begingamedelay);
+	}
+
+	SystemManager();
+
+	delay(1000);
+	quit();
+}
+
+function credits()
+{
+	print("ÿc@-------------------------------------------------------------");
+	print("ÿc8D2JSP Baal Task Based Script!!!  Version 0.0a");
+	print("ÿc9Script by arathorn");
+	print("ÿc@-------------------------------------------------------------");
+	delay(250);
+}
+
+function LoadQuestData()
+{
+	var gpp = 200;
+
+	//new oGoalTown(gpp--, "TownCheck", {Heal:true, Repair:true, Stash:true}).Insert();
+
+	new oGoalMove(gpp--, "GoToArea", {dx:15090, dy:5071, Area:D2JSP_AREA_THRONE_OF_DESTRUCTION, p:300}).Insert();
+
+	//CLEAR ROOM
+	new oGoalMove(gpp--, "PathToXY", {dx:15075, dy:5071, p:300}).Insert();
+	new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskAttack(0, "Attack", {Range:12}))).Insert();
+	new oGoalMove(gpp--, "PathToXY", {dx:15115, dy:5071, p:300}).Insert();
+	new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskAttack(0, "Attack", {Range:12}))).Insert();
+
+	//KILL MINIONS
+	new oGoal(gpp--, "AddItems", {p:500}, new oTaskCommon(0, "DoCommand", {Command:"WaitForBaal();"})).Insert();
+
+	//TAKE PORTAL
+	new oGoalMove(gpp--, "PathToXY", {dx:15090, dy:5005, p:300}, new oTaskInteract(0, "InteractObject", {ObjectName:"The Worldstone Chamber"})).Insert();
+	new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskCommon(0, "SetVariable", {Var:"moveattack", Val:"false"}))).Insert();
+
+	//KILL BAAL
+	new oGoalMove(gpp--, "PathToXY", {dx:15135, dy:5939, p:300}).Insert();
+	new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskAttack(0, "Attack", {Boss:true}), new oTaskCommon(0, "SetVariable", {Var:"snagitenable", Val:"true"}),
+		new oTaskCommon(401, "SetVariable", {Var:"done", Val:"true"}))).Insert();
+}
+
+function WaitForBaal() {
+	delay(40);
+	TaskQueue.Insert(new oTaskAttack(701, "Attack",{x:15090, y:5018, Range:50, LOS:true}));
+	if (me.x != 15090 || me.y != 5040)
+		TaskQueue.Insert(new oTaskMove(1, "MoveTo", {x:15090, y:5040}));
+	if(getUnit(1, "Baal"))
+			TaskQueue.Insert(new oTaskCommon(0, "DoCommand", {Command:"WaitForBaal();"}));
+}

@@ -1,0 +1,102 @@
+//##################################################
+//####   Matts Pathing Framework Library 3.0   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+----------------------------------------------------
+
+
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+
+*/
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.Pathing) != 'function') {
+	BotOS.Pathing = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+
+BotOS.Pathing.Room = function (_room, _o, _c, _e, _s) 
+{
+	//commented out to make lighter and save some mem
+	//Pathable.call(this, {Name:"Room" + _room.number, NoLogger:true});
+	
+	this.x = _room.x*5;
+	this.y = _room.y*5;
+	this.Number = _room.number;
+	//this.Open = _o?true:false;
+	//this.Closed = _c?true:false;
+	//this.Exclude = _e?true:false;
+	//this.Parent = null;
+   // this.Score = _s?_s:0;
+	//this.dirbits = _d;
+	this.CollisionData = _room.getCollision();
+	//this.Width = this.CollisionData[0].length;
+	//this.Height = this.CollisionData.length;
+	this.Width = _room.getStat(11);
+	this.Height = _room.getStat(12);
+	//this.PresetUnits = _room.getPresetUnits();
+	//this.ID = _room.id;
+	this.MaxX = this.x + this.Width;
+	this.MaxY = this.y + this.Height;
+	//this.OffsetX = this.x - _room.levelx*5;
+	//this.OffsetY = this.y - _room.levely*5;
+
+	//this.RoomGridPositionX = 0;
+	//this.RoomGridPositionY = 0;
+	//this.IsInitialized = true;
+
+//	print("Rooms:this.Area.MaxX: " + this.Area.MaxX);
+//	print("Rooms:this.Area.MaxY: " + this.Area.MaxY);
+//	print("Rooms:this.OffsetX: " + this.OffsetX);
+//	print("Rooms:this.OffsetY: " + this.OffsetY);
+
+//	this.getDistance = function (_x, _y) {
+//		if(_x && _y) return mlDist(_x, _y, this.x, this.y);
+//		return mlDist(me.x, me.y, this.x, this.y);
+//	}
+
+
+
+}
+//oRoom.ptototype = new Pathable;
+
+

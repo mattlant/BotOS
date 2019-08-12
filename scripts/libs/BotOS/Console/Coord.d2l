@@ -1,0 +1,76 @@
+//##################################################
+//####     IProto's WindowAPI Library 0.1      #####
+//####       Part of the BotOS framework       #####
+//##################################################
+/*
+
+Copyright (C) 2004 Evan "IProto" Weatherhead
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+----------------------------------------------------
+History
+Version 0.1.0
+- Beta Release
+
+----------------------------------------------------
+
+*/
+
+//General BotOS Includes
+include("BotOS/BotOS.Exceptions.d2l");
+include("BotOS/BotOS.Variable.d2l");
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1);
+	}
+}
+
+if(typeof(BotOS.Console) != 'function'){
+	BotOS.Console = function () {
+		throw new BotOS.NamespaceException("BotOS.Console Cannot be instantiated", 1);
+	}
+}
+
+BotOS.Console.Coord = function (x, y) {
+
+	var X = 0;
+	var Y = 0;
+	
+	//X property
+	this.X setter = function (value) {
+		if(!(BotOS.Variable.IsNumber(value) && value >= -1 && value <= 800)) 
+			throw new BotOS.ArgumentException("BotOS.Console.Coord.X requires a valid number to be passed", 1, "Coord.d2l");
+		X = value;
+	}
+	this.X getter = function() { return X; }
+
+	//X property
+	this.Y setter = function (value) {
+		if(!(BotOS.Variable.IsNumber(value) && value >= -1 && value <= 600)) 
+			throw new BotOS.ArgumentException("BotOS.Console.Coord.Y requires a valid number to be passed", 1, "Coord.d2l");
+		Y = value;
+	}
+	this.Y getter = function() { return Y; }
+	
+	//Abstract Move Function
+	this.Move = function () { throw new BotOS.NotImplementedException("Move function not over-written yet.  Please overload this method.", 1, "Coord.d2l");}
+	
+	this.X = x;
+	this.Y = y;
+}

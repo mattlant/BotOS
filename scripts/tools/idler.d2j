@@ -1,0 +1,16 @@
+/*
+	njaguar's idler script
+	For Use in Rogues Encampment only
+*/
+
+function main() {
+	while(1) {
+		delay(100);
+		if(rnd(1,50)==1) {
+			me.move(me.x+rnd(-3,3), me.y+rnd(-3,3));
+		}
+		// quit from game if you accidentally wander out of town ^.^
+		if(me.area != 1) quit();
+	}
+}
+

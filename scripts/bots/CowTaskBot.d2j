@@ -1,0 +1,251 @@
+////////////////////////
+//Bot specific include//
+////////////////////////
+
+//misc necessities
+include("taskbot/settings.d2l");
+include("taskbot/coremanager.d2l");
+include("townmove.d2l");
+
+stashitems = false;
+var cowkinglifepercent = 25;
+
+
+
+
+function plugDetectCowKing(instname)
+{
+	this.temp = oPlugin;
+	this.temp("CheckKing", mlPLUGINBYLOOPS, 0, "King Quiter", "1.0", "mattlant", instname);
+	delete this.temp;
+
+	this.CheckKing = function() {
+		var ck = getUnit(1, "The Cow King");
+		if(ck)
+		{
+			if(ck.hpmax / ck.hp * 100 <= cowkinglifepercent)
+				quit();
+		}
+	}
+}
+
+function LoadQuestPlugins() {
+	PluginManager.Load("plugDetectCowKing", "DetectCowKing", null, true, true);
+}
+
+function main()
+{
+
+	credits();
+	mlinitdebuglog();
+	mldebuglevel = 0;
+	mldebuglog="output/BloodTaskBot.log";
+	delay(500);
+	delay(500);
+
+	//mlSettings(mlDOLOGGING, mlYES);
+	//mlSettings(mlPRINTMSG, mlYES);
+
+	Sc_TownMoveSetting("buy_pots", true);
+	Sc_TownMoveSetting("buy_scrolls", true);
+
+	if (begingamedelay > 0)
+	{
+		mlprint("Waiting " + (parseInt(begingamedelay / 1000)) + " seconds for initialization...");
+		delay(begingamedelay);
+	}
+
+	//common begin game stuff
+
+	//START SYSTEM MANAGER
+	mlprint("Starting System Manager");
+	SystemManager();
+
+	mlprint("We're done!!! YAYAYAYA!!!");
+	mlprint("pwned");
+	delay(1000);
+	delay(1000);
+	quit();
+}
+
+function credits()
+{
+	//delay(500);
+	print("ÿc@-------------------------------------------------------------");
+	print("ÿc8D2JSP Cow Bot Task Based Script!!!  Version 0.0.1");
+	print("ÿc9For leveling your characters");
+	print("ÿc9Script by mattlant");
+	print("ÿc@-------------------------------------------------------------");
+	delay(250);
+}
+
+
+function LoadQuestData()
+{
+	var gpp = 200;
+
+	new oGoalTown(gpp--, "TownCheck", {Heal:true, Repair:true, Stash:true}, tasks).Insert();
+
+	var tasks = new Array();
+	tasks.push(new oTaskCommon(0, "SetVariable", {Var:"moveattack", Val:"false"}));
+	tasks.push(new oTaskCommon(0, "SetVariable", {Var:"snagitenable", Val:"false"}));
+	tasks.push(new oTaskCommon(0, "DoCommand", {Command:"Sc_TownWP(1,3);"}));
+	new oGoal(gpp--, "AddItems", {p:500}, tasks).Insert();
+	new oGoalMove(gpp--, "PathToRoom", {Room:160, p:300}, new oTaskInteract(0, "InteractPortal")).Insert();
+	new oGoalMove(gpp--, "PathToXY", {dx:25047, dy:5089, p:300}).Insert();
+	new oGoalMove(gpp--, "PathToXY", {dx:25047, dy:5178, p:300}).Insert();
+	tasks = new Array();
+	tasks.push(new oTaskInteract(0, "InteractObject", {ObjectName:"Wirt's Body"}));
+	tasks.push(new oTaskCommon(0, "Delay", {Amount:2000}));
+	tasks.push(new oTaskAttack(0, "Kill", {x:0, y:0, Range:6}));
+	tasks.push(new oTaskSnagit(0, "SnagItem", {ItemName:"leg"}));
+	tasks.push(new oTaskCommon(0, "DoCommand", {Command:"Sc_GotoTown();"}));
+	tasks.push(new oTaskCommon(0, "DoCommand", {Command:"cmakecowportal();"}));
+	tasks.push(new oTaskCommon(0, "SetVariable", {Var:"moveattack", Val:"true"}));
+	tasks.push(new oTaskCommon(0, "SetVariable", {Var:"moveattackkillall", Val:"true"}));
+	tasks.push(new oTaskInteract(0, "InteractPortal", {Area:39}));
+	new oGoal(gpp--, "AddItems", {p:500}, tasks).Insert();
+	
+	new oGoalMove(gpp--, "ExploreArea", {p:300, Threshold:95, KillAll:true, Range:20}).Insert();
+}
+
+function QuestTrigger()
+{
+
+}
+
+function cmakecowportal()
+{
+	// if we have the leg, find the cube
+	cube = getUnit(4, "box", 100);
+	cubestash = getUnit(4, "box", 104);
+	if (!cube && !cubestash) {
+		print("Cube isn't in inventory or stash!");
+		return false;
+	}
+
+	// check if we have the leg. if so, then try and make the cow portal
+	leg = getUnit(4, "leg", 100);
+	leg_cube = getUnit(4, "leg", 103);
+	if (!leg && !leg_cube) {
+		print("No leg in inventory or cube!");
+		return false;
+	}
+
+	// if we have the cube, see if it's empty
+	empty = getUnit(4, null, 103);
+	count=0;
+	while (empty && (empty.code == "leg"||empty.code == "tbk") && count++<15) empty.getNext(null, 103); // advance it if it's the leg
+	if (empty && count>=15) {
+		print("There are items in the cube! Remove them before starting!");
+		return false;
+	}
+
+	Sc_TownMove(1, "akara");
+	delay(500);
+	akara = getUnit(1, "akara");
+	akara.move();
+	delay(500);
+	akara.interact();
+	delay(500);
+
+	tomecube = getUnit(4, "tbk", 103);
+	tries=0; while (tomecube && (tomecube.code!="tbk" || (tomecube.itemloc!=103 && tomecube.itemloc!=3) || tomecube.x==0) && tries++<5) { tomecube.getNext("tbk", 103); }
+	if (tries>=5) tomecube = false;
+	if (!tomecube) {
+		print("initiating trade");
+		akara.trade();
+		delay(1000);
+		tome = locateItem(akara, "tbk",0);
+		if (tome) {
+			print("we found a tome");
+			tome.interact(1); // buy it
+			delay(2000); // DELAYING IS IMPORTANT :P
+		}
+	} else {
+		print("Skipping to buy a tome.. we already have one code: "+tomecube.code+"; loc: "+tomecube.itemloc+"; mode: "+tomecube.mode+"; x: "+tomecube.x+"; y: "+tomecube.y+"; tries: "+tries);
+	}
+	print("Canceling..");
+	akara.cancel();
+	me.cancel();
+	delay(1000);
+
+	//Sc_TownMove(1, "gheed");	// cancel doens't always work.. this should gaurantee the screen isn't still up
+	Sc_TownMove(1, "stash");
+
+	// open cube
+	print("Opening Cube");
+	cube = getUnit(4, "box", 100);
+	cubestash = getUnit(4, "box", 104);
+	if (cube) {
+		cube.interact(1);
+	} else if (cubestash) {
+		stash = getUnit(2, "bank");
+		if (!stash)
+			return false;
+		stash.move();
+		stash.interact();
+		delay(2000);
+
+		cubestash.interact(1);
+	} else {
+		print("Unable to find cube. This is really bad :(");
+		return false;
+	}
+	delay(1000);
+
+	// put leg in cube
+	leg = getUnit(4, "leg", 100);
+	if (leg && leg.itemloc != 103) {
+		print("Putting leg into cube");
+		leg.interact();
+		tries=0; while(!me.itemoncursor && tries++<50) delay(100);
+		leg.move(2,0,3);
+		delay(2000);
+	} else {
+		print("Leg already in cube.. Skipping");
+		delay(1000);
+	}
+
+	// put tome in cube
+	if (!tomecube) {
+		print("putting tome into cube");
+		tome = getUnit(4, "tbk", 100);
+		if (tome && tome.getStat(70)>6) tome.getNext("tbk", 100);
+		if (!tome || tome.getStat(70)>6) {
+			print("Unable to find unused tome :(");
+			return false;
+		}
+		tome.interact();
+		tries=0; while(!me.itemoncursor && tries++<50) delay(100);
+		tome.move(1,0,3);
+		delay(2000);
+	} else {
+		print("Tome already in cube.. skipping");
+		delay(1000);
+	}
+
+	// transmute
+	if (cube) {
+		print("Transmuting.. cross your fingers!");
+		cube.interact(2);
+		delay(500);
+		//raw("send 4f170000000000");	// cancel cube
+		cube.cancel();
+	} else if (cubestash) {
+		print("Transmuting.. cross your fingers!");
+		cubestash.interact(2);
+		delay(500);
+		//raw("send 4f170000000000");	// cancel cube
+		cubestash.cancel();
+	} else {
+		print("Unable to find cube. This is really bad :(");
+		return false;
+	}
+
+	delay(1000);
+	me.cancel();
+
+	return true;
+}
+

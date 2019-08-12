@@ -1,0 +1,33 @@
+function LoadSkill()
+{
+	me.overhead("Loading Amazon Skills");
+
+	var cList = new Array(
+
+// Skill Name         Type       Element    Scope      Special   Weight  Mana	         Range
+
+["Attack",			  gMelee,    gPhys,     gSingle,   gNone,    .8,     0,		         0     ],
+["Jab",               gMelee,    gPhys,     gSingle,   gNone,    1,      binc(2, .25) ,	 0     ],
+["Magic Arrow",       gBow,      gPhys,     gSingle,   gNone,    1,      1.5,   		 40    ],
+["Power Strike",      gMelee,    gLight,    gSingle,   gNone,    1,      binc(2, .25),	 0     ],
+["Fire Arrow",        gBow,      gFire,     gSingle,   gNone,    1.1,    binc(3, .25),	 20    ],
+["Cold Arrow",        gBow,      gCold,     gSingle,   gNone,    1.1,    binc(2, .25),   20    ]
+["Poison Javelin",    gThrow,    gPsn,      gNarrow,   gNone,    1.1,    binc(4, .3),	 0     ],
+["Impale",            gMelee,    gPhys,     gSingle,   gNone,    1,      binc(2, .25),	 0     ],
+["Multiple Shot",     gBow,      gPhys,     gWide,     gNone,    1.2,    binc(4, 1),	 40    ],
+["Lightning Bolt",    gThrow,    gLight,    gSingle,   gNone,    1,      binc(6, .25),	 0     ],
+["Exploding Arrow",   gBow,      gFire,     gNarrow,   gNone,    1.1,    binc(5, .5),	 40    ],
+["Charged Strike",    gThrow,    gLight,    gSingle,   gNone,    1,      binc(4, .25),	 25    ],
+["Ice Arrow",         gBow,      gCold,     gSingle,   gNone,    1,      binc(4, .25),	 40    ],
+["Plague Javelin",    gThrow,    gPsn,      gNarrow,   gNone,    1.1,    binc(7, 1),	 25    ],
+["Guided Arrow",      gBow,      gPhys,     gSingle,   gNone,    1.1,    binc(8, -.3),	 40    ],
+["Fend",              gMelee,    gPhys,     gNarrow,   gNone,    1.1,    5,		         0     ],
+["Strafe",            gBow,      gPhys,     gWide,     gNone,    1.2,    11,		     40    ],
+["Lightning Strike",  gMelee,    gLight,    gWide,     gNone,    1.1,    9,		         0     ],
+["Immolation Arrow",  gBow,      gFire,     gNarrow,   gNone,    1.1,    binc(6, 1),	 40    ],
+["Lightning Fury",    gThrow,    gLight,    gWide,     gNone,    1.2,    binc(10, .5),	 25    ],
+["Freezing Arrow",    gBow,      gCold,     gWide,     gNone,    1.2,    binc(9, 1),	 40    ]
+
+);
+	return cList;
+}

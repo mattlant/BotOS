@@ -1,0 +1,612 @@
+//##################################################
+//####   Matts Pathing Framework Library 3.0   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+
+----------------------------------------------------
+*/
+/*
+NOTE:
+Use BotOS.Arrays.Heap v 1.0.3 with this release. The new Heap
+yeilds a 15% speed improvement.
+----------------------------------------------------
+Known Issues:
+----------------------------------------------------
+TODO:
+- Add automatic support for doors
+- Finish the exploreing stuff and create room based pathing to further
+speed pathing
+
+----------------------------------------------------
+FIXES and upgrades:
+3.0.0
+- Big rewrite here of most stuff
+- initializing an entire area is ~50% faster
+- Added in incremental Initializing to spread processing over time
+- Can now stitch multiple areas together and treat them as one big map
+- Can now get AREA paths. 
+- Can now precache areas before you get there
+- Added straight line small gap detection in pathing algo
+
+2.2.4
+- Caching now caches Preset Units
+- Fixed again the sorceress recalc
+- Added in a more suitable me.move method
+
+FIXES and upgrades:
+2.2.3
+- Added in a unit perameter for los to check if it is in the los path
+
+2.2.2
+- Fixed a recalc pathing issue for sorcs.
+- Added in the ability to do LOS checks with either line of sight data,
+or collision data.
+
+2.2.1
+- Added in a check for 0.32
+- Fixed out of range issues
+- Added in more error control
+- Changed the pathfinding to work better with PathMove. It will now
+set a flag for PathMove top tell it to walk or teleport according to
+the type of reduction you use. It will also overide Sorc reduction and
+force walking if you have no teleport skill or are not a sorc.
+
+2.2.0 (Requires 0.32)
+- Added PathToWarp(mlWARPTYPE, etc)
+- Added PathToLevel(level, etc)
+- Far waypoints are again supported
+- Added getSafeOffScreenXY(x,y) Use this to calculate an x,y along a 
+line to the target x,y. This will allow you to aim ranged attacks at offscreen
+targets without using the offscreen coordinates(which can be detected by Bnet)
+- Fixed a major flaw in LOS that caused a true state when in in a particular
+quadrant
+- Added the ability to Initliaze Maps on other areas. Will only work for areas in
+the current act. Be advised that this may crash sometimes, maybe once every 2000
+times, but it could still happen. This is due to the way data is gathered from.
+- Made some optimizations through heuristic pruneing which result in a decreased 
+pathing time.  This is now the recommended and default pathing.  To use the older 
+pathing pass _square as true.
+- Added in a padding to the final path to keep it at least 1 unit away from 
+walls and obstacles
+
+2.0.3
+- Fixed a problem with pathing very short distances
+- Fixed a ton of small misc errors
+
+2.0.2
+- Added in Area Caching
+- Added in FindPathToRoom
+- Added in FindPathALongPoints (requested by scavenger)
+- Fixed getMapExit bugs
+- commeneted out some path to map code which may speed pathing a bit
+- fixed some other misc bugs
+
+2.0.1
+- fixed problems in PathMove method
+- removed mlReason and replaced with a member variable called:
+.LastError
+
+2.0.0
+- Made it .29 compliant
+- added in different heuristics and factor options
+- added in a function called FindScore so you can know the cost
+of moving to a destination
+- crosslevel pathing is non functional
+- GetFarObject is non functional
+- Encapsulated all functions inside an object
+
+1.0.3
+- Added in mlFindClosestWalkable(x,y)
+this will return the closest walkable x,y to the given x,y
+- fixed up a couple misnumbered warps
+- added in a couple more range checks
+- fixed up some other small misc code
+- changed to dynamically linked dll(smaller d2h file)
+
+1.0.2
+- Changed communication to completely file I/O
+This should fix problems people were having with the msg function.
+- Fixed some code in the mlMap.d2h, including a 10k per game mem leak :(
+- Added mlgetLevelWarpNumber(warptype, level)
+this will allow you to get the warptypes tile number, so its now easier
+to use getTile function ie:
+stairs = getUnit(5, mlgetLevelWarpNumber(mlWARPNEXT));
+- cleaned up some miscellaneous code
+
+1.0.1
+Area cross level pathing sometomes wouldnt get good coordinates (fixed)
+Act 1 Town cross level pathing (fixed)
+Map edge wrap around in pathing algoritm's if both far edges are open (hehe)(outdoor areas only)(fixed)
+D2MapReply msg's stop processing. (possibly fixed and MUCH faster)
+being added:
+waypoint warps(done)
+getFarObject(done)
+remove printed messages and make them optional(done)
+seperate the dprint into a new function(done)
+have walkcalls passed the actual value for advanced stuff(done)
+out of bounds checks for more stability(done)
+mlMap.d2h optional error log(done)
+
+----------------------------------------------------
+Bit Structure:
+Map bits:
+bit 0 : block walk - 1
+bit 1 : block light - 2
+bit 2 : Block LOS (block jump too) - 4
+bit 3 : block Player's walk but not Mercenary's walk (weird) - 8
+bit 4 : ? - 16
+bit 5 : block light only (not LOS) ?  - 32
+bit 6 : ?
+bit 7 : ?
+NPC/Monster bits: //to be implemented in next release
+bit 8 :
+bit 9 :
+bit 10 :
+bit 11 :
+bit 12 :
+bit 13 :
+bit 14 :
+bit 15 :
+
+*/
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.Pathing) != 'function') {
+	BotOS.Pathing = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+
+//include dependant files
+//print("Including BotOS.Variable");
+include("BotOS/BotOS.Variable.d2l");
+
+//print("Including BotOS.Arrays.Heap");
+include("BotOS/Arrays/BotOS.Arrays.Heap.d2l");
+
+//print("Including BotOS.Logging");
+include("BotOS/BotOS.Logging.d2l");
+
+//print("Including BotOS.Exceptions");
+include("BotOS/BotOS.Exceptions.d2l");
+
+//print("Including BotOS.Pathing.Constants");
+include("BotOS/Pathing/BotOS.Pathing.Constants.d2l");
+
+//print("Including BotOS.Pathing.Pathable");
+include("BotOS/Pathing/BotOS.Pathing.Pathable.d2l");
+
+//print("Including BotOS.Pathing.Area");
+include("BotOS/Pathing/BotOS.Pathing.Area.d2l");
+
+//print("Including BotOS.Pathing.Room");
+include("BotOS/Pathing/BotOS.Pathing.Room.d2l");
+
+//print("Including BotOS.Pathing.Map");
+include("BotOS/Pathing/BotOS.Pathing.Map.d2l");
+
+//print("Including BotOS.Pathing.MapManager");
+//include("BotOS/Pathing/BotOS.Pathing.MapManager.d2l");
+
+//print("Including BotOS.Pathing.Pather");
+include("BotOS/Pathing/BotOS.Pathing.Pather.d2l");
+
+//print("Including BotOS.Linear.Mover");
+include("BotOS/BotOS.Linear.Mover.d2l");
+
+//print("Including BotOS.Pathing.AreaLinker");
+include("BotOS/Pathing/BotOS.Pathing.AreaLinker.d2l");
+
+//print("Including BotOS.Pathing.MapCacher");
+//include("BotOS/Pathing/BotOS.Pathing.MapCacher.d2l");
+
+
+//Create a log for debugging, etc
+BotOS.Pathing.Log = new BotOS.Logging.Log("output/mlMap.log", 0, 0);
+BotOS.Pathing.Log.InitializeLog();
+BotOS.Pathing.Log.Write("mlMap Log Initialized", boLOGINFO);
+
+//////////////////////////////////////////////////////////////////////
+// LIBRARY GLOBAL VARIABLES
+// TO BE PHASED OUT
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+var mlMapMSGDelay = 100;
+var watched = false;
+
+var pathhop = null;
+var walkdel = 150;
+//var RandomMove = 1;
+//var RandomMoveDel = 10;
+
+/*
+var mldebugdelay = 0;
+var mldebuglevel=2;
+var mldebuglog="output/mlMapold.log";
+*/
+
+
+//////////////////////////////////////////////////////////////////////
+// Static Utility Functions
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+/*
+bit 0 : block walk - 1
+bit 1 : block light - 2
+bit 2 : Block LOS (block jump too) - 4
+bit 3 : block Player's walk but not Mercenary's walk (weird) - 8
+bit 4 : ? - 16
+bit 5 : block light only (not LOS) ?  - 32
+bit 6 : ?
+bit 7 : ?
+*/
+
+
+BotOS.Pathing.IsValidArea = function (_area) {
+	return (_area && BotOS.Pathing.AreaLinker.Areas[_area])
+
+}
+
+//////////////////////////////////////////////////////////////////////
+// LOS(_x1, _y1, _x2, _y2, _cutoff, _coll, _unit)
+// -------------------------------------------------------------------
+// returns: true if there is line of sight
+//////////////////////////////////////////////////////////////////////
+BotOS.Pathing.CheckLOS = function (Ax, Ay, Bx, By, _cutoff, _coll, _unit)
+{
+	var _bit = 4;
+	if(_coll) _bit = 1;
+
+	_cutoff = (_cutoff > 45) ? 45 : _cutoff;
+
+	if(_cutoff && BotOS.Pathing.Pather.DiagShortcut(Ax, Ay, Bx, By) > _cutoff) return false;
+
+	//print("calling check collision");
+	return 	!checkCollision(me.area, Ax, Ay, 3, Bx, By, 3, _bit);
+
+
+}
+
+//////////////////////////////////////////////////////////////////////
+// getSafeOffScreenXY(_x1, _y1, _x2, _y2)
+// -------------------------------------------------------------------
+// returns: a safe x,y
+// for example: If you have a monster way off screen, but you want to
+// target it anyways, you can pass the monsters x,y to this function,
+// and it will give you safe coordinates to target so your ranged weapon
+// will still hit (if the monster hasnt moved :D )
+// THANKS TO BRESENHAM
+//////////////////////////////////////////////////////////////////////
+BotOS.Pathing.GetSafeOffScreenXY = function (Ax, Ay, Bx, By, _cutoff, _closestwalkable, _multi)
+{
+	//if(this.euclidian(me.x, me.y, Ax, Ay) < 60 && this.euclidian(me.x, me.y, Bx, By) < 60) {
+
+	if(!_cutoff) _cutoff = 20;
+
+	if(!_multi) _multi = 1;
+
+	var Ox = Ax, Oy = Ay;
+
+	var dX = Math.abs(Bx-Ax)*_multi;
+	var dY = Math.abs(By-Ay)*_multi;
+
+	var Xincr, Yincr;
+
+	if (Ax > Bx) { Xincr=-1; } else { Xincr=1; }
+	if (Ay > By) { Yincr=-1; } else { Yincr=1; }
+
+	if (dX >= dY){
+		var dPr 	= dY<<1;
+		var dPru 	= dPr - (dX<<1);
+		var P 		= dPr - dX;
+		for (; dX>=0; dX--)	{
+			if (BotOS.Pathing.Pather.Euclidian(Ox, Oy, Ax, Ay) > _cutoff) {
+				if(_closestwalkable) return BotOS.Pathing.FindClosestWalkable(Ax, Ay);
+				else return {x:Ax, y:Ay};
+			}
+			if (P > 0){
+				Ax += Xincr;
+				Ay += Yincr;
+				P  += dPru;
+			}
+			else{
+				Ax+=Xincr;
+				P+=dPr;
+			}
+		}
+	}
+	else{
+		var dPr 	= dX<<1;
+		var dPru 	= dPr - (dY<<1);
+		var P 		= dPr - dY;
+		for (; dY>=0; dY--)	{
+			if (BotOS.Pathing.Pather.Euclidian(Ox, Oy, Ax, Ay) > _cutoff) {
+				if(_closestwalkable) return BotOS.Pathing.FindClosestWalkable(Ax, Ay);
+				else return {x:Ax, y:Ay};
+			}
+			if (P > 0){
+				Ax+=Xincr;
+				Ay+=Yincr;
+				P+=dPru;
+			}
+			else{
+				Ay+=Yincr;
+				P+=dPr;
+			}
+		}
+	}
+	return {x:Bx, y:By};
+}
+
+//////////////////////////////////////////////////////////////////////
+// FindClosestWalkable(_x, _y)
+// -------------------------------------------------------------------
+// returns: coordinate of closest walkable
+// TODO: Optimize :D
+//////////////////////////////////////////////////////////////////////
+BotOS.Pathing.FindClosestWalkable = function (x, y)
+{
+
+//     if ( !this.IsInRange(x, y) )
+//     {
+//         return false;
+//     }
+	if ( BotOS.Pathing.IsWalkable(x,y) )
+	{
+		return {x:x, y:y};
+	}
+
+	var dist = 0;
+	while ( 1 )
+	{
+		for ( var vy = -1-dist; vy < 2+dist; vy++ )
+		{
+			for ( var vx = -1-dist; vx < 2+dist; vx++ )
+			{
+				if ( BotOS.Pathing.IsWalkable(x+vx, y+vy) )
+				{
+					return {x:x+vx, y:y+vy};
+				}
+			}
+		}
+		dist++;
+	}
+}
+
+BotOS.Pathing.IsWalkable = function (_x, _y)
+{
+	return !(checkCollision(me.area, _x, _y, 1));
+
+}
+
+//////////////////////////////////////////////////////////////////////
+// getLevelDimensions(area) 
+// -------------------------------------------------------------------
+// returns: The dimensions of the given area number
+//////////////////////////////////////////////////////////////////////
+BotOS.Pathing.getLevelDimensions = function (area) 
+{
+	var minx = Number.MAX_VALUE, maxx = 0, miny = Number.MAX_VALUE, maxy = 0;
+
+	var troom = getRoom(area);
+
+	do 
+	{
+		if (troom.x*5 > maxx) 
+		{
+			maxx = troom.x*5;
+		}
+		if (troom.y*5 > maxy) 
+		{
+			maxy = troom.y*5;
+		}
+		if (troom.x*5 < minx) 
+		{
+			minx = troom.x*5;
+		}
+		if (troom.y*5 < miny) 
+		{
+			miny = troom.y*5;
+		}
+	} while(troom.getNext());
+
+	return {minx:minx, maxx:maxx, miny:miny, maxy:maxy};
+}
+
+//#################
+//Utility Functions OLD
+//#################
+function mlinitdebuglog()
+{
+	var debugfile = fileOpen(mldebuglog, 1);
+	debugfile.writeLine("Debug Initialized");
+	debugfile.close();
+}
+
+function mlprint(string)
+{
+	if (mldebuglevel > 0)
+	{
+		var debugfile = fileOpen(mldebuglog, 2);
+		debugfile.writeLine(string);
+		debugfile.close();
+	}
+	if (mldebuglevel > 1)
+	{
+		print(string);
+		delay(mldebugdelay);
+	}
+}
+
+function mlCast(which,usehand,x,y)
+{
+	if(!usehand) usehand = 0;
+
+	me.setSkill(which,usehand);
+	var count=0;
+	while(1) {
+		if(me.getSkill(usehand) == which) break;
+		delay(20);
+		count++;
+		if(count>50) {
+			print("Could not set skill");
+			return false;
+		}
+	}
+
+	switch(arguments.length)
+	{
+		case 0: break;
+		case 2: me.useSkill(usehand); break;
+		case 3:	x.useSkill(usehand);
+			break;
+		case 4: me.useSkillAt(x,y,usehand); break;
+	}
+	var mcheck=mlModeWait();
+	while (me.mode==mcheck)
+	{
+		if(x)
+		{
+			if (x.hp <= 0) return true;
+		}
+		delay(10);
+	}
+	return true;
+}
+
+function mlModeWait()
+{
+	for (var qw = 1; qw <= 20; qw++)
+	{
+		var mymode = me.mode;
+		if (mymode==7 || mymode==8 || (mymode>9 && mymode<19)) return mymode;
+		delay(20);
+	}
+	return 10;
+}
+
+function mlgetClosestObject(x, y, r, n, s) {
+	if (arguments.length < 4)
+	{
+		n = null;
+		s = null;
+	}
+	var closest_dist = r; var obj_id = 0;
+	var obj = getUnit(2, n, s);
+	var p;
+	var dist;
+	
+	if (obj) do {
+			p = obj.getParent();
+			if (!p || p.name != me.name) {
+				dist = mlDist(obj.x, obj.y, x, y);
+				if (dist <= closest_dist) {
+					closest_dist = dist;
+					obj_id = obj.id
+				}
+			}
+	}while(obj && obj.getNext(n));
+	// - skip this if no objs found
+	if (obj_id)
+	{
+		obj = getUnit(2, n, s);
+		if (obj) do {
+				p = obj.getParent();
+				if (!p || p.name != me.name) {
+					if (obj.id == obj_id) {
+						return obj;
+					}
+				}
+		}while(obj && obj.getNext());
+		print("Close object not on 2nd detect");
+	}
+	return false;
+}
+
+function mlDist(x1, y1, x2, y2) {
+	return Math.floor(Math.sqrt(mlDist2(x1, y1, x2, y2))); }
+
+function mlDist2(x1, y1, x2, y2) {
+	return Math.floor((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)); }
+
+function mlInTown(unit) {
+	switch(unit.area) {
+		case 1: case 40: case 75: case 103: case 109: return true;
+		default: return false;
+	}
+}
+
+
+
+function getAngle(x1, y1, x2, y2) {
+	return Math.floor((Math.atan2(y2-y1 , x2-x1)) * 180 / 3.1415);
+}
+
+
+
+//thanks scav, njag
+function mlmemove(x, y)
+{
+	if(parseFloat(me.version) >= 0.33)
+		clickMap(0, 0, x, y);
+	else
+		me.move(x, y);
+
+	var xoff = parseInt(rnd(0,12)/6) * (x - me.x<0 ? -1 : 1);
+	var yoff = parseInt(rnd(0,12)/6) * (y - me.y<0 ? -1 : 1);
+	delay(rnd(10,50));
+	if(parseFloat(me.version) >= 0.33)
+		clickMap(2, 0, x+xoff, y+yoff);
+	else
+		me.move(x+xoff, y+yoff);
+}
+
+me.prototype.InTown = function (unit) {
+	if(!unit) unit = me;
+	switch(unit.area) {
+		case 1: case 40: case 75: case 103: case 109: return true;
+		default: return false;
+	}
+}
+

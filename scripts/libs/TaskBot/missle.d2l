@@ -1,0 +1,203 @@
+//missle.d2l
+
+//Monster Class an monster list class
+function oMissleList(_mons, _data, _range)
+{
+	this.List = new Array();
+	this.Data = _data;
+	this._lastdirupdate = new Date();
+	this._mylastarea = me.area;
+	this.Range = _range;
+
+	this.Insert = oMissleList_insert;
+	this.Remove = oMissleList_remove;
+	this.Update = oMissleList_update;
+	this.AutoAdd = oMissleList_autoadd;
+	this.getClosest = oMissleList_getclosest;
+	this.getLength = oMissleList_getlength;
+	this.IsOnList = oMissleList_isonlist;
+	this.Sort = oMissleList_sort;
+
+	if(_mons instanceof Array)
+		this.List = _mons;
+
+	if(!this.Range) this.Range = 70;
+
+	function oMissleList_insert(d)
+	{
+		if(d instanceof oMissle)
+			this.List.push(d);
+	}
+
+	function oMissleList_remove(by_value_huh)
+	{
+	}
+
+	function oMissleList_update(type)
+	{
+		if(this._lastdirupdate - new Date() > 200) {
+			var monupdatetype = 0;
+			this._lastdirupdate = new Date();
+		}
+		else
+			var monupdatetype = 3;
+
+		for(var i = 0; i<this.List.length; i++)
+			if(this.List[i].Update(monupdatetype)) this.Kills++;
+
+		if(this._mylastarea != me.area) {
+			this.List.length = 0;
+			this._mylastarea = me.area;
+		}
+
+		if((!type || type == 3))
+			this.AutoAdd();
+
+		if((!type || type == 2))
+		{
+			for(var i = 0; i<this.List.length; i++) {
+				if(this.List[i].Monster.area != me.area || this.List[i].Distance > this.Range) {
+						if(!i) this.List.shift();
+						else if(i == this.List.length-1) this.List.pop();
+						else {
+							this.List = this.List.slice(0, i-1).concat(this.List.slice(i+1));
+							i -= 1;
+						}
+				}
+			}
+		}
+
+	}
+	function oMissleList_autoadd()
+	{
+			mon = getUnit(1);
+			if(mon) do {
+				monbreak:
+				if(mlIsValidMonster(mon, me.x, me.y, this.Range, true)) {
+					for(var jj = 0; jj<this.List.length; jj++) {
+						if(this.List[jj].Monster.gid == mon.gid) {
+							break monbreak;
+						}
+					}
+					this.List.push(new oMissle(0, mon));
+				}
+			}while(mon && mon.getNext());
+	}
+
+	function oMissleList_isonlist(_monster)
+	{
+		for(var j = 0; j<this.List.length; j++) {
+			if(this.List[j].Monster.gid == _monster.gid) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	function oMissleList_getlength()
+	{
+		return this.List.length;
+	}
+
+	function oMissleList_getclosest(x,y,range)
+	{
+		var dist = 0xFFFF;
+		var monel = null;
+		if(range) {
+			for(var j = 0; j<this.List.length; j++) {
+				if(this.List[j].Dead) continue;
+				var distance = DistEuclidian(this.List[j].Monster.x, this.List[j].Monster.y, x, y)
+				if(distance < dist && distance < range) {
+					dist = this.List[j].Distance;
+					monel = j;
+				}
+			}
+		}
+		else {
+			for(var j = 0; j<this.List.length; j++) {
+				if(this.List[j].Dead) continue;
+				if(this.List[j].Distance < dist) {
+					dist = this.List[j].Distance;
+					monel = j;
+				}
+			}
+		}
+		if(monel != null)
+			return this.List[monel];
+		else
+			return null;
+	}
+
+
+	function oMissleList_sort(_type, _how) {
+		if(!_how) _how = mlSORTASC;
+		if(!_type) _type = mlSORTDIST;
+
+		switch(_type) {
+			case mlSORTDIST:
+				switch(_how) {
+					case mlSORTASC:
+						this.List.sort(this._sortdistasc);
+					case mlSORTDESC:
+						this.List.sort(this._sortdistdesc);
+				}
+			case mlSORTDIR:
+		}
+	}
+
+	this._sortdistasc = function(a,b) {
+		return b.Distance - a.Distance;
+	}
+	this._sortdistdesc = function(a,b) {
+		return a.Distance - b.Distance;
+	}
+}
+
+function oMissle(_p, _mon)
+{
+	//member properties
+	this.Monster = null;
+	this._remove = false;
+	var tmon = getUnit(1)
+	do {
+		if(tmon.gid == _mon.gid){
+			this.Monster = tmon;
+			break;
+		}
+	} while(tmon && tmon.getNext());
+	this.p = _p;
+	this.Dead = false;
+	this.Abilities = 0;
+	this.IEA = 0; //d
+	this.Unique = false;
+	this.Boss = false;
+	this.Direction = -1;
+	this.Distance = 0; //d
+	this.gid = _mon.gid;
+	this.Lastx = _mon.x;
+	this.Lasty = _mon.y;
+	this._lastdirupdate = new Date();
+	//member functions
+	this.Update = oMissle_update;
+
+	this.Update();
+
+
+
+	function oMissle_update(type)
+	{
+		var kill = false;
+
+		if((this.Monster.mode == 12 || this.Monster.mode == 0) && !this.Dead) {
+			kill = true;
+			this.Dead = true;
+		}
+		else if (this.Monster.mode != 12 && this.Monster.mode !=0)
+			this.Dead = false;
+
+		this.Distance = DistEuclidian(me.x, me.y, this.Monster.x, this.Monster.y); //d
+		return kill;
+	}
+
+
+}

@@ -1,0 +1,12 @@
+Text	Type	X	YXSize	YSize	visible	disabled	Extended Text
+null	2	0	599	800	600	false	undefined	undefined
+null	2	400	120	181	170	false	undefined	undefined
+null	2	400	120	188	177	false	undefined	undefined
+GATEWAY: U.S. EAST	6	264	391	272	25	false	false	undefined
+BATTLE.NET	6	264	366	272	35	false	false	undefined
+OTHER MULTIPLAYER	6	264	433	272	35	false	false	undefined
+SINGLE PLAYER	6	264	324	272	35	false	false	undefined
+CREDITS	6	264	528	135	25	false	false	undefined
+CINEMATICS	6	402	528	135	25	false	false	undefined
+EXIT DIABLO II	6	264	568	272	35	false	false	undefined
+v 1.10	4	0	599	200	40	false	false	v 1.10

@@ -1,0 +1,251 @@
+
+//##################################################
+//######   BotOS Framework - Out of Game    ########
+//##################################################
+/*
+----------------------------------------------------*/
+/*----------------------------------------------------
+Copyright (C) 2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as permission is 
+granted by the author, Matt Lanteigne.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG) != 'function') {
+	BotOS.OOG = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+if(typeof(BotOS.OOG.Controls) != 'function') {
+	BotOS.OOG.Controls = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+BotOS.OOG.ClickDelay = 200;
+
+
+BotOS.OOG.Controls.Control = function (type, x, y, xs, ys, canclick, settext, name) {
+	//abstract control class
+	//TODO: add in exception checking
+
+	this.Type = type;
+	this.X = x;
+	this.Y = y;
+	this.XSize = xs;
+	this.YSize = ys;
+	this.ID = null;
+	this.ExtendedText = null;
+
+	this.IsClickable = canclick;
+	this.IsTextSettable = settext;
+
+	this.Name = name;
+
+	this.Handle;
+
+	this.IsVisible getter = function () {
+		return (this.Handle && this.Handle.visible);
+	}
+	
+	this.IsEnabled getter = function () {
+		return !(this.Handle && this.Handle.Disabled);
+	}
+
+	this.Text getter = function () {
+		if(this.Handle) {
+			return this.Handle.text;
+		}
+		else
+			throw new BotOS.OOGException("Control.Text (getter) -> Connot get Text on a control that is not refernced", 1, "BotOS.OOG.Control.d2l");
+	}
+
+	this.Text setter = function (t) {
+		if(this.Handle) {
+			this.Handle.setText(t);
+		}
+		else
+			throw new BotOS.OOGException("Control.Text (setter) -> Connot set Text on a control that is not refernced", 1, "BotOS.OOG.Control.d2l");
+	}
+
+	this.Get = function () {
+		//add in exception checking
+		this.Handle = getControl(this.Type, this.X, this.Y, this.XSize, this.YSize);
+		if(!this.Handle) 
+			throw new BotOS.OOGException("Control.Get -> Connot get this control: " + this.Name, 1, "BotOS.OOG.Control.d2l");
+		this.Type = this.Handle.type;
+		this.X = this.Handle.x;
+		this.Y = this.Handle.y;
+		this.XSize = this.Handle.xsize;
+		this.YSize = this.Handle.ysize;
+		this.ID = this.Handle.id;
+
+		return this.Handle;
+	}
+
+	this.GetByName = function () {
+		//add in exception checking
+		var control = getControl();
+		if(control) do {
+			if(control.text == this.Name) {
+				this.Handle = control;
+				break
+			}
+
+		} while(control.getNext());
+		if(!control)
+			throw new BotOS.OOGException("Control.Get -> Connot get any matching controls to name: " + this.Name, 1, "BotOS.OOG.Control.d2l");
+		this.Type = this.Handle.type;
+		this.X = this.Handle.x;
+		this.Y = this.Handle.y;
+		this.XSize = this.Handle.xsize;
+		this.YSize = this.Handle.ysize;
+		this.ID = this.Handle.id;
+
+		return this.Handle;
+	}
+
+
+	this.Click = function (x, y) {
+		if(this.Handle) {
+			if(this.IsClickable) {
+				if(arguments.length > 0)
+					this.Handle.click(x, y);
+				else
+					this.Handle.click();
+				delay(BotOS.OOG.ClickDelay);
+			}
+			else
+				throw new BotOS.OOGException("Control.Click -> Connot click this control: " + this.Name, 1, "BotOS.OOG.Control.d2l");
+		}
+		else
+			throw new BotOS.OOGException("Control.Click -> Connot click a not referenced control: " + this.Name, 1, "BotOS.OOG.Control.d2l");
+	}
+
+}
+
+BotOS.OOG.Controls.Button = function (x, y, xs, ys, name) {
+	//inherit from Control
+	BotOS.OOG.Controls.Control.call(this, 6, x, y, xs, ys, true, false, name);
+}
+//make sure prototype chain is setup
+BotOS.OOG.Controls.Button.prototype = new BotOS.OOG.Controls.Control;
+
+BotOS.OOG.Controls.RadioButton = function (x, y, xs, ys, name) {
+	//inherit from Control
+	BotOS.OOG.Controls.Control.call(this, 6, x, y, xs, ys, true, false, name);
+}
+//make sure prototype chain is setup
+BotOS.OOG.Controls.RadioButton.prototype = new BotOS.OOG.Controls.Control;
+
+BotOS.OOG.Controls.TextBox = function (x, y, xs, ys, name) {
+	//inherit from Control
+	BotOS.OOG.Controls.Control.call(this, 1, x, y, xs, ys, false, true, name);
+}
+//make sure prototype chain is setup
+BotOS.OOG.Controls.TextBox.prototype = new BotOS.OOG.Controls.Control;
+
+BotOS.OOG.Controls.CharacterControl = function (which, name) {
+	//inherit from Control
+	switch(which) {
+		case 1:
+			BotOS.OOG.Controls.Control.call(this, 4, 37,	178,	200,	92, true, false, name);
+			break;
+		case 2:
+			BotOS.OOG.Controls.Control.call(this, 4, 309,	178,	200,	92, true, false, name);
+			break;
+		case 3:
+			BotOS.OOG.Controls.Control.call(this, 4, 37,	271,	200,	92, true, false, name);
+			break;
+		case 4:
+			BotOS.OOG.Controls.Control.call(this, 4, 309,	271,	200,	92, true, false, name);
+			break;
+		case 5:
+			BotOS.OOG.Controls.Control.call(this, 4, 37,	364,	200,	92, true, false, name);
+			break;
+		case 6:
+			BotOS.OOG.Controls.Control.call(this, 4, 309,	364,	200,	92, true, false, name);
+			break;
+		case 7:
+			BotOS.OOG.Controls.Control.call(this, 4, 37,	457,	200,	92, true, false, name);
+			break;
+		case 8:
+			BotOS.OOG.Controls.Control.call(this, 4, 309,	457,	200,	92, true, false, name);
+			break;
+		default:
+			throw new BotOS.OOGException("BotOS.OOG.Controls.CharacterControl.ctor -> invalid slot number: " + which, 1, "BotOS.OOG.Control.d2l");
+	}
+}
+//make sure prototype chain is setup
+BotOS.OOG.Controls.CharacterControl.prototype = new BotOS.OOG.Controls.Control;
+
+BotOS.OOG.Controls.ScrollBar = function (x, y, xs, ys, name) {
+	//inherit from Control
+	BotOS.OOG.Controls.Control.call(this, 5, x, y, xs, ys, true, false, name);
+
+	//Add in a ScrollUp and ScrollDown method
+	this.ScrollUp = function () {
+
+	}
+	this.ScrollDown = function () {
+
+	}
+}
+//make sure prototype chain is setup
+BotOS.OOG.Controls.ScrollBar.prototype = new BotOS.OOG.Controls.Control;
+
+BotOS.OOG.Controls.ListBox = function (x, y, xs, ys, name) {
+	//inherit from Control
+	BotOS.OOG.Controls.Control.call(this, 4, x, y, xs, ys, true, false);
+
+	this.Items = new Array();
+
+	//Override so we can get the extended text and add to the Items Array
+	this.Get = function () {
+		//add in exception checking
+		this.Handle = getControl(this.Type, this.X, this.Y, this.XSize, this.YSize);
+		if(!this.Handle) 
+			throw new BotOS.OOGException("ListBox.Get -> Connot get this control: " + this.Name, 1, "BotOS.OOG.Control.d2l");
+		this.Type = this.Handle.type;
+		this.X = this.Handle.x;
+		this.Y = this.Handle.y;
+		this.XSize = this.Handle.xsize;
+		this.YSize = this.Handle.ysize;
+		this.ID = this.Handle.id;
+		this.ExtendedText = new String(this.Handle.getText());
+
+		var titems = this.ExtendedText.split(",");
+		for(var i = 0; i < titems.length; i+=2) {
+			var temp = [titems[i], titems[(i+1)]];
+			this.Items.push(temp);
+		}
+		return this.Handle;
+	}
+}
+//make sure prototype chain is setup
+BotOS.OOG.Controls.ListBox.prototype = new BotOS.OOG.Controls.Control;
+
+
+
+
+
+
+
+
+

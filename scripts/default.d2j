@@ -1,0 +1,73 @@
+/*
+	default.d2j, modify the values below to suit your needs.
+
+	lines starting with // are comments and are ignored by d2jsp.
+
+	the setting "case "pwnbot":" is the name of your character you
+	want to load a script for. it is the exact name contained in the quotes
+	CaPs DO matter.
+
+	If you don't completely understand how to edit this use the program
+	"d2jsp Character Config.exe" included in this release.
+
+	below are some examples to load some of the included scripts in this release:
+
+	* pwnbot = a bot that will use the PwnPindleBot Script. Read the file
+	  "scripts/bots/PwnagePindle.readme.txt" for more install directions
+
+	* mephpindle = a bot that will use the Meph+Pindle script, Read the file
+	  "scripts/bots/MarsPindleMephScript.readme.txt" for more install directions
+
+	* countess = a bot that will load up the countess script... the script file
+	  "scripts/bots/nookiecb.d2j" has settings at the top you should check and
+	  edit.
+
+	* bloody = loads up the bloody foothills bot.. the script file
+	  "scripts/bots/editedbloody.d2j" has settings at the top you should check
+	  and edit.
+
+	* mysorc = an example of running more then one script at once, it will
+	  load the autoskills and guardian_angel scripts and location, which displays
+	  your x,y location over your head. These are not bots.
+
+	* the default (loaded for all other characters that you haven't configured
+	  this file for) will load the pwn pindle bot.
+
+
+*/
+/// test
+
+
+function main() {
+delay(200);
+
+	switch(me.name) {
+
+		default:
+			//load("bots/ingamespam.d2j");
+			//load("test.d2j");
+			//load("libs/mld2info.d2l");
+			load("maptest.d2j");
+			//load("libs/mlD2Info.d2l");
+			//load("bots/MephTaskBot.d2j");
+			//load("bots/LifeTool.d2j");
+			//load("bots/ExploreTaskBot.d2j");
+			//load("bots/CrossAreaTaskBot.d2j");
+			//load("bots/FoothillsTaskBot.d2j");
+			//load("bots/testTaskBot.d2j");
+			//load("bots/CowTaskBot.d2j");
+			//load("bots/BloodTaskBot.d2j");
+			//load("bots/PindleTaskBot.d2j");
+			//load("bots/BaalTaskBot.d2j");
+			//load("bots/Commando.d2j");
+			//load("bots/idleBot.d2j");
+			//load("bots/CountessTaskBot.d2j");
+			//load("bots/MarsMattMephistoScript.d2j");
+			//load("libs/MarsMattGeneralInclude.d2l");
+			//load("libs/MarsMattSettings.d2l");
+			//load("bots/bb.d2j");
+
+			print("loading the default, no character config'd");
+			break;
+	}
+}

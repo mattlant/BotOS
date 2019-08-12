@@ -1,0 +1,69 @@
+//##################################################
+//######   BotOS Framework - Out of Game    ########
+//##################################################
+/*
+----------------------------------------------------*/
+/*----------------------------------------------------
+Copyright (C) 2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as permission is 
+granted by the author, Matt Lanteigne.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG) != 'function') {
+	BotOS.OOG = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG.Controls) != 'function') {
+	BotOS.OOG.Controls = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG.Controls Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+include("BotOS/OOG/BotOS.OOG.Controls.d2l");
+
+
+BotOS.OOG.Screen = function (controls, name, doinit) {
+	//abstract screen class
+	//TODO: add in exception checking
+	//we still inherit from Control since the screen is a control itself 
+	BotOS.OOG.Controls.Control.call(this, 2, 0, 599, 0, 0, false, false, name);
+
+	if(doinit) this.Initialize();
+
+	this.Controls = new Array();
+
+	this.Add = function (control, name) {
+		if(!(control instanceof BotOS.OOG.Controls.Control)) {
+			throw new BotOS.ArgumentException("Screen.Add -> Control must be of the Base Class BotOS.OOG.Controls.Control", 1, "BotOS.OOG.Control.d2l");
+		}
+		this.Controls[name] = control;
+	}
+
+	this.Initialize = function () {
+		for(var prop in this.Controls) {
+			this.Controls[prop].Get();
+		}
+	}
+}
+BotOS.OOG.Screen.prototype = new BotOS.OOG.Controls.Control;
+
+
+

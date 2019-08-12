@@ -1,0 +1,27 @@
+Text	Type	X	Y	XSize	YSize	visible	disabled	Extended Text
+null	2	0	599	800	600	false	undefined	undefined
+OK	6	627	572	128	35	false	false	undefined
+EXIT	6	33	572	128	35	false	false	undefined
+CREATE NEW	6	33	528	168	60	false	false	undefined
+CONVERT TO	6	233	528	168	60	false	true	undefined
+DELETE	6	433	528	168	60	false	false	undefined
+biatch	4	85	78	466	42	false	false	biatch
+null	5	585	457	10	363	false	false	undefined
+null	4	564	457	34	371	false	false	undefined
+	4	237	178	72	93	false	false	
+	4	37	178	200	92	false	false	,biatch,Level 1 Sorceress,EXPANSION CHARACTER
+	4	509	178	72	93	false	false	
+	4	309	178	200	92	false	false	,freak,Level 1 Necromancer,EXPANSION CHARACTER
+	4	237	271	72	93	false	false	
+	4	37	271	200	92	false	false	,hello,Level 1 Assassin,EXPANSION CHARACTER
+	4	509	271	72	93	false	false	
+	4	309	271	200	92	false	false	,blah,Level 1 Druid,EXPANSION CHARACTER
+	4	237	364	72	93	false	false	
+	4	37	364	200	92	false	false	,slottree,Level 1 Paladin,EXPANSION CHARACTER
+	4	509	364	72	93	false	false	
+	4	309	364	200	92	false	false	,slotsix,Level 1 Amazon,EXPANSION CHARACTER
+	4	237	457	72	93	false	false	
+	4	37	457	200	92	false	false	,slotfive,Level 1 Paladin,EXPANSION CHARACTER
+	4	509	457	72	93	false	false	
+Matriarch 	4	309	457	200	92	false	false	Matriarch ,Killkeeper_Jav,Level 99 Amazon,EXPANSION CHARACTER
+null	2	37	178	272	93	false	false	undefined

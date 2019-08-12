@@ -1,0 +1,240 @@
+//##################################################
+//######   Matts Map and Pathing Library    ########
+//##################################################
+/*
+----------------------------------------------------*/
+//Area.d2l
+//This file contains Classes used in mlMap
+/*----------------------------------------------------
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as original header
+and credits stay.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+//info object contains:
+// .AreaNumber = ARea Number to init
+// .InitDoors = yes or no to have door support
+// .Logger = a reference to an oLogSingle from mlLogger 
+// .LogWriteLevel
+// .LogPrintLevel
+
+
+include("mlMap2004/Pathable.d2l");
+
+function Area(_info) {
+
+	if(!_info) _info = new Object();
+	
+	if(!_info.AreaNumber) 
+		_info.AreaNumber = me.area;
+
+	Pathable.call(this, {Name:"Area" + _info.AreaNumber, NoLogger:true});
+
+
+	this.Number = _info.AreaNumber;
+	this.Rooms = new Array();
+	this.RoomMap;
+	this.RoomCount = 0;
+
+	//Area Specific Functions
+	this.InitializeRooms = Area_InitRooms;
+	this.InitializeRoom = Area_InitRoom;
+	this.Initialize = Area_Initialize;
+
+	this.IncrementCount = 0;
+
+	this.AreaDefinition = AreaLinks[this.Number];
+
+	if(_info.AreaNumber < 0) {
+		_info.AreaNumber = Math.abs(_info.AreaNumber);
+		this.Load(_info.AreaNumber);
+	}
+	else {
+		this.InitializeRooms();
+	}
+
+	runGC();
+
+
+	function Area_InitRooms(_coll) 
+	{
+		var currareanum = 0;
+		if(this.Logger)
+			this.Logger.Write("Initializing Rooms for AreaBLAHBLAH: " + this.Number, boLOGINFO);
+
+		this.InitializeRoom(this.Number);
+
+		this.Width = this.MaxX - this.x;
+		this.Height = this.MaxY - this.y;
+		this.MaxX -= 1;
+		this.MaxY -= 1;
+
+		var hgt = this.Height - 1;
+		var wdt = this.Width - 1;
+
+		if(!this.CollisionData && !_info.NoCollisionData) 
+		{
+			this.CollisionData = new Array();
+			this.CollisionData.length = this.Height;
+			for(var i = 0; i<this.Height; i++)
+			{
+				this.CollisionData[i] = new Array();
+				this.CollisionData[i].length = this.Width;
+				if(mlAREASOUTDOORFLAG[this.Number] && (!i || i == hgt))
+				{
+					for(var j = 0; j<this.Width; j++) this.CollisionData[i][j] = 0xFF;
+				}
+				else if(mlAREASOUTDOORFLAG[this.Number]) 
+				{
+					this.CollisionData[i][0] = 0xFF;
+					this.CollisionData[i][wdt] = 0xFF;
+				}
+			}
+		}
+		
+		if(this.Logger) {
+			this.Logger.Write("Area " + this.Number + " Dims: " + this.x + " " + this.MaxX + " " + this.y + " " + this.MaxY + " " + this.Height + " " + this.Width, boLOGINFO);
+			this.Logger.Write("this.Rooms.length: " + this.Rooms.length);
+		}
+
+
+	}
+
+	function Area_InitRoom(_a) {
+		if(_a == me.area)
+			var _rooms = getRoom();
+		else
+			var _rooms = getRoom(_a);
+
+		if(!_rooms) 
+			throw new MappingException("Area.InitRooms -> Could not get a refernce to the areas rooms enumeration", 1, "Area.d2l");
+
+		do {
+			this.Rooms[this.Rooms.length] = new oRoom(_rooms, 0, 0, 0, 0);
+			if(_rooms.x*5 < this.x)
+				this.x = _rooms.x*5;
+			if(_rooms.y*5 < this.y)
+				this.y = _rooms.y*5;
+			if(this.Rooms[this.Rooms.length-1].MaxX > this.MaxX)
+				this.MaxX = this.Rooms[this.Rooms.length-1].MaxX;
+			if(this.Rooms[this.Rooms.length-1].MaxY > this.MaxY)
+				this.MaxY = this.Rooms[this.Rooms.length-1].MaxY;
+
+			//this.PresetUnits = this.PresetUnits.concat(this.Rooms[this.Rooms.length-1].PresetUnits);
+
+		}while(_rooms.getNext());
+
+	}
+
+	this.BuildRoomMap = function () {
+
+	}
+
+	function Area_Initialize(_incr) 
+	{
+		if(!this.Rooms) 
+			throw new MappingException("Area.Initialize -> this.Rooms is not set", 1, "Area.d2l");
+
+		if(_incr) 
+		{
+			if(this.IncrementCount == this.Rooms.length) 
+			{
+				this.IsInitialized = true;
+				return true;
+			}
+			Pathable.ArrayCopy2D(this.CollisionData, this.Rooms[this.IncrementCount].CollisionData, this.Rooms[this.IncrementCount].x-this.x, this.Rooms[this.IncrementCount].y-this.y);
+			this.IncrementCount++;
+		}
+		else
+		{
+			if(this.IsInitialized) return true;
+
+			for(var i = 0; i<this.Rooms.length; i++) 
+			{
+				Pathable.ArrayCopy2D(this.CollisionData, this.Rooms[i].CollisionData, this.Rooms[i].x-this.x, this.Rooms[i].y-this.y);
+			}
+			this.IsInitialized = true;
+			return true;
+		}
+		//runGC();
+		return false;
+
+	}
+
+	
+	this.getRooms = function() 
+	{
+		return this.Rooms;
+	}
+
+}
+Area.ptototype = new Pathable;
+
+function Area_Save() 
+{
+	//instead of saving full bit structure, just save walkable, and LOS bit, for now
+	var line = "";
+	var bitwalk = 0x1;
+	var bitlos = 0x4;
+
+	var hFile = fileOpen("output/" + "mlMapSaveArea" + this.Number + ".map", 1);
+	hFile.writeLine(this.Number);
+	hFile.writeLine(this.x);
+	hFile.writeLine(this.y);
+	hFile.writeLine(this.MaxX);
+	hFile.writeLine(this.MaxY);
+	hFile.writeLine(this.Width);
+	hFile.writeLine(this.Height);
+	hFile.writeLine(this.RoomCount);
+	hFile.writeLine(this.IncrementCount);
+	for (var y = 0; y < this.Height; y++) {
+		for (var x = 0; x < this.Width; x++) {
+			line += (this.CollisionData[y][x] & 0x7).toString(16);
+		}
+		hFile.writeLine(line);
+		line = "";
+	}
+
+	hFile.close();
+}
+
+function Area_Load(_number) {
+	var hFile = fileOpen("output/" + "mlMapSaveArea" + _number + ".map", 0);
+	this.Number = hFile.readLine();
+	this.x = hFile.readLine();
+	this.y = hFile.readLine();
+	this.MaxX = hFile.readLine();
+	this.MaxY = hFile.readLine();
+	this.Width = hFile.readLine();
+	this.Height = hFile.readLine();
+	this.RoomCount = hFile.readLine();
+	this.IncrementCount = hFile.readLine();
+	this.CollisionData = null;
+
+	this.InitializeRooms(this.Number);
+	for (var y = 0; y < this.Height; y++) {
+		var line = hFile.readLine();
+		for (var x = 0; x < this.Width; x++) {
+			this.CollisionData[y][x] = line.charAt(x);
+		}
+	}
+}
+

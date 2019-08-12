@@ -1,0 +1,2707 @@
+/*******************************************************************************
+*                                                                              *
+*                                  Town Move                                   *
+*                                    v1.01                                     *
+*                                                                              *
+* ---------------------------------------------------------------------------- *
+* Copyright (C) 2002-2003 Jan Onno Tuinenga (Scavenger)                        *
+* email: tha_scavenger@hotmail.com                                             *
+* ---------------------------------------------------------------------------- *
+*                                                                              *
+* This program is free software; you can redistribute it and/or modify         *
+* it under the terms of the GNU General Public License as published by         *
+* the Free Software Foundation; either version 2 of the License, or            *
+* (at your option) any later version.                                          *
+*                                                                              *
+* This program is distributed in the hope that it will be useful,              *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of               *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
+* GNU General Public License for more details.                                 *
+*                                                                              *
+*******************************************************************************/
+
+/*******************************************************************************
+* CREDITS:                                                                     *
+* ---------------------------------------------------------------------------- *
+* mattlant: author of the mlMap pathfinding library                            *
+* njaguar: author of d2jsp                                                     *
+*******************************************************************************/
+
+/*******************************************************************************
+* Todo:                                                                        *
+* ---------------------------------------------------------------------------- *
+* - add a4 en a5 red portal                                                    *
+* - add StashItem function that takes care of the actual stashing              *
+* - add buying id tome + scrolls                                               *
+* - fix not working GetWaypoint(), it works but it needs an interact first     *
+*******************************************************************************/
+
+/*******************************************************************************
+* History:                                                                     *
+* ---------------------------------------------------------------------------- *
+* V1.01:                                                                       *
+*  - Added money check before reviving                                         *
+*  - Fixed an incorrect function call                                          *
+*  - Added extra checks before starting on town actions                        *
+*  - Changed the settings 'BuyHPPots' and 'BuyMPPots'. They are now percents   *
+*  - Added an 'force' parameter to the NeedPots and NeedScrolls function. If   *
+*    its set to 'true' it will always return buy info.                         *
+* v1.00:                                                                       *
+*  - First version of the totally rewritten townmove                           *
+*******************************************************************************/
+
+include("mlmap.d2l");
+include("vec_coord.d2l");
+
+function TownMove()
+{
+	this.NPCs = new Array(new Array(), new Array(), new Array(), new Array(), new Array());
+	this.Objects = new Array(new Array(), new Array(), new Array(), new Array(), new Array());
+	this.Maps = new Array(5);
+	this.HealHP = 50;
+	this.HealMP = 50;
+	this.BuyHPPots = 50;		// 50% lifepots by default
+	this.BuyMPPots = 0;			// only enable with LOD v1.10
+	this.BuyTPScrolls = 20;		// 20% (4 scrolls)
+	this.BuyAmmoPercent = 20;	// 20% (70 arrows / 50 bolts)
+	this.RepairPercent = 50;	// 10% min durability of item to go repair
+	this.StashCube = true;		// stash to cube?
+	this.StashGold = 50000;		// min amount of gold when going to stash it
+	this.PathMoveDist = 4;		// min dist to pathnode
+	this.PathBuildDist = 4;		// build dist for path
+	this.Version = 0.33;		// d2jsp version to work on (auto detected, dont set it manually)
+	
+	this.Waypoints = 
+	[
+	[0x01,0x03,0x04,0x05,0x06,0x1b,0x1d,0x20,0x23],
+	[0x28,0x30,0x2a,0x39,0x2b,0x2c,0x34,0x4a,0x2e],
+	[0x4b,0x4c,0x4d,0x4e,0x4f,0x50,0x51,0x53,0x65],
+	[0x67,0x6a,0x6b],
+	[0x6d,0x6f,0x70,0x71,0x73,0x7b,0x75,0x76,0x81]
+	];
+	
+	this.WaypointAreaID = [0,119,0,119,119,119,119,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,119,0,157,0,0,119,0,0,157,0,0,0,0,156,0,156,156,156,0,402,0,323,0,0,0,288,0,0,0,0,156,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,402,237,237,237,237,237,237,237,0,237,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,324,0,398,0,0,238,238,0,429,0,496,496,511,0,511,0,496,511,0,0,0,0,496,0,0,0,0,0,494];
+	
+	this.WayPointCodeID = 
+	[
+	[119,119,119,119,119,119,157,119,157],
+	[156,323,156,156,156,156,288,402,402],
+	[237,237,237,237,237,237,237,237,324],
+	[398,238,238],
+	[429,496,496,511,511,496,496,511,494]
+	];
+	
+	this.NoStashList = new Array();
+	
+	this.Init = function()
+	{
+		this.DebugPrint("Initializing TownMove");
+		
+		this.Version = parseFloat(me.version);
+		
+		// set act 1 NPCs
+		
+		this.NPCs[0].push(new NPC("akara", 
+								  148, 
+								  1, 
+								  new coord(56, -30),
+								  NF_HEAL | NF_SHOP | NF_SCROLLS | NF_POTS));
+		
+		this.NPCs[0].push(new NPC("kashya", 
+								  150, 
+								  1, 
+								  new coord(14, -4),
+								  NF_REVIVE));
+		
+		this.NPCs[0].push(new NPC("cain",
+								  265,
+								  1,
+								  new coord(6, -5),
+								  NF_IDENTIFY));
+		
+		this.NPCs[0].push(new NPC("charsi",
+								  154,
+								  1,
+								  new coord(-39, -25),
+								  NF_REPAIR | NF_SHOP | NF_AMMO));
+		
+		this.NPCs[0].push(new NPC("gheed",
+								  147,
+								  1,
+								  new coord(-34, 36),
+								  NF_GAMBLE | NF_SHOP | NF_AMMO));
+		
+		this.NPCs[0].push(new NPC("warriv",
+								  155,
+								  1,
+								  new coord(-3, -6),
+								  0));
+		
+		// act 2 NPCs
+		
+		this.NPCs[1].push(new NPC("fara",
+								  178,
+								  2,
+								  new coord(5124, 5082),
+								  NF_HEAL | NF_SHOP | NF_AMMO | NF_REPAIR));
+		
+		this.NPCs[1].push(new NPC("lysander",
+								  202,
+								  2,
+								  new coord(5118,5104),
+								  NF_POTS | NF_SHOP));
+		
+		this.NPCs[1].push(new NPC("drognan",
+								  177,
+								  2,
+								  new coord(5097, 5035),
+								  NF_POTS | NF_SCROLLS | NF_SHOP));
+		
+		this.NPCs[1].push(new NPC("greiz",
+								  198,
+								  2,
+								  new coord(5033,5053),
+								  NF_POTS | NF_SHOP));
+		
+		this.NPCs[1].push(new NPC("elzix",
+								  199,
+								  2,
+								  new coord(5032,5102),
+								  NF_SHOP | NF_AMMO | NF_GAMBLE));
+		
+		this.NPCs[1].push(new NPC("jerhyn",
+								  201,
+								  2,
+								  new coord(5074,5149),
+								  0));
+		
+		this.NPCs[1].push(new NPC("cain",
+								  244,
+								  2,
+								  new coord(5124,5082),
+								  NF_IDENTIFY));
+		
+		this.NPCs[1].push(new NPC("atma",
+								  176,
+								  2,
+								  new coord(5138, 5055),
+								  0));
+		
+		this.NPCs[1].push(new NPC("meshif",
+								  210,
+								  2,
+								  new coord(5205, 5058),
+								  0));
+		
+		this.NPCs[1].push(new NPC("warriv",
+								  175,
+								  2,
+								  new coord(5205, 5058),
+								  0));
+		
+		// set act 3 NPCs
+		
+		this.NPCs[2].push(new NPC("meshif",
+								  264,
+								  3,
+								  new coord(5119, 5167),
+								  0));
+		
+		this.NPCs[2].push(new NPC("ormus",
+								  255,
+								  3,
+								  new coord(5129, 5093),
+								  NF_HEAL | NF_POTS | NF_SCROLLS | NF_SHOP));
+		
+		this.NPCs[2].push(new NPC("asheara",
+								  252,
+								  3,
+								  new coord(5043,5093),
+								  NF_REVIVE | NF_SHOP | NF_AMMO));
+		
+		this.NPCs[2].push(new NPC("alkor",
+								  254,
+								  3,
+								  new coord(5083, 5016),
+								  NF_SHOP | NF_GAMBLE));
+		
+		this.NPCs[2].push(new NPC("cain",
+								  245,
+								  3,
+								  new coord(5169,5056),
+								  NF_IDENTIFY));
+								  
+		this.NPCs[2].push(new NPC("hratli",
+								  253,
+								  3,
+								  new coord(5223, 5048),
+								  NF_REPAIR | NF_SHOP | NF_AMMO,
+								  new coord(5128, 5165)));
+		
+		// set act 4 NPCs
+		
+		this.NPCs[3].push(new NPC("cain",
+								  246,
+								  4,
+								  new coord(5029, 5036),
+								  NF_IDENTIFY));
+		
+		this.NPCs[3].push(new NPC("tyrael",
+								  367,
+								  4,
+								  new coord(5024, 5024),
+								  NF_REVIVE));
+		
+		this.NPCs[3].push(new NPC("halbu",
+								  257,
+								  4,
+								  new coord(5087, 5030),
+								  NF_REPAIR | NF_SHOP | NF_AMMO));
+		
+		this.NPCs[3].push(new NPC("jamella",
+								  405,
+								  4,
+								  new coord(5090, 5055),
+								  NF_GAMBLE | NF_SHOP | NF_POTS | NF_SCROLLS));
+		
+		// set act 5 NPCs
+		
+		this.NPCs[4].push(new NPC("larzuk",
+								  511,
+								  5,
+								  new coord(5139, 5044),
+								  NF_REPAIR | NF_SHOP | NF_SOCKETS | NF_AMMO));
+								  
+		this.NPCs[4].push(new NPC("malah",
+								  513,
+								  5,
+								  new coord(5075, 5025),
+								  NF_HEAL | NF_SHOP | NF_POTS| NF_SCROLLS));
+		
+		this.NPCs[4].push(new NPC("qual-kehk",
+								  515,
+								  5,
+								  new coord(5067, 5082),
+								  NF_REVIVE));
+		
+		this.NPCs[4].push(new NPC("cain",
+								  520,
+								  5,
+								  new coord(5081, 5089),
+								  NF_IDENTIFY));
+								  
+		this.NPCs[4].push(new NPC("nihlathak",
+								  514,
+								  5,
+								  new coord(5075, 5111),
+								  NF_GAMBLE));
+								  
+		this.NPCs[4].push(new NPC("anya",
+								  512,
+								  5,
+								  new coord(5113, 5119),
+								  NF_GAMBLE | NF_SHOP | NF_PERSONALIZE | NF_AMMO));
+		
+		
+		// set act 1 'objects'
+		
+		this.Objects[0].push(new Obj("portalspot",
+							         0,
+							         1,
+							         new coord(22, 28)));
+		
+		this.Objects[0].push(new Obj("stash",
+							         267,
+							         1,
+							         new coord(-7, -12)));
+		
+		// set act 2 'objects'
+		
+		this.Objects[1].push(new Obj("waypoint",
+							         156,
+							         2,
+							         new coord(5068, 5083)));
+		
+		this.Objects[1].push(new Obj("stash",
+							         267,
+							         2,
+							         new coord(5122, 5074)));
+							         
+		this.Objects[1].push(new Obj("portalspot",
+							         0,
+							         2,
+							         new coord(5171, 5054)));
+							         
+		// set act 3 'objects'
+		
+		this.Objects[2].push(new Obj("waypoint",
+							         237,
+							         3,
+							         new coord(5158, 5048)));
+		
+		this.Objects[2].push(new Obj("stash",
+							         267,
+							         3,
+							         new coord(5143, 5059)));
+							         
+		this.Objects[2].push(new Obj("portalspot",
+							         0,
+							         3,
+							         new coord(5155, 5064)));
+							         
+		// set act 4 'objects'
+		
+		this.Objects[3].push(new Obj("waypoint",
+							         398,
+							         4,
+							         new coord(5043, 5018)));
+		
+		this.Objects[3].push(new Obj("stash",
+							         267,
+							         4,
+							         new coord(5021, 5040)));
+							         
+		this.Objects[3].push(new Obj("portalspot",
+							         0,
+							         4,
+							         new coord(5047, 5039)));
+							         
+		// set act 5 'objects'
+		
+		this.Objects[4].push(new Obj("waypoint",
+							         429,
+							         5,
+							         new coord(5113, 5068)));
+		
+		this.Objects[4].push(new Obj("stash",
+							         267,
+							         5,
+							         new coord(5026, 5061)));
+							         
+		this.Objects[4].push(new Obj("portalspot",
+							         0,
+							         5,
+							         new coord(5099, 5024)));
+		
+		this.Objects[4].push(new Obj("portal",
+							         60,
+							         5,
+							         new coord(5119, 5119)));
+
+		this.NoStashList[5] = true;
+		this.NoStashList[6] = true;
+		this.NoStashList[18] = true;
+		this.NoStashList[76] = true;
+		this.NoStashList[77] = true;
+		this.NoStashList[79] = true;
+		this.NoStashList[80] = true;
+		this.NoStashList[81] = true;
+		this.NoStashList[22] = true;
+		this.NoStashList[41] = true;
+		this.NoStashList[78] = true;
+		
+		if (this.InTown())
+		{
+			switch(me.act)
+			{
+				case 1:
+					this.InitAct1();
+					break;
+				case 2:
+					this.InitAct2();
+					break;
+				case 3:
+					this.InitAct3();
+					break;
+				case 4:
+					this.InitAct4();
+					break;
+				case 5:
+					this.InitAct5();
+					break;
+			}
+		}
+		
+		this.DebugPrint("TownMove initialized");
+	}
+	
+/************************************************************************************
+* MoveTo                                                                            *
+* --------------------------------------------------------------------------------- *
+* Moves to a npc, object or x,y coordinate in town                                  *
+*  1, 2 or 3 arguments vars are valid                                               *
+*  1 argument var: (name)                                                           *
+*  2 arguments: (x, y) or (name, act)                                               *
+*  3 arguments: (x, y, act)                                                         *
+************************************************************************************/
+
+	this.MoveTo = function()
+	{
+		if (!this.InTown()) {
+			if (!this.GotoTown())
+				return false;
+		}
+		
+		this.InitAct();
+		
+		if (arguments.length == 1) {
+			var target = null;
+			if (arguments[0] instanceof NPC || arguments[0] instanceof Obj)
+				target = arguments[0];
+			else 
+				target = this.GetTownSpot(arguments[0].toLowerCase());
+			
+			if (!target) {
+				this.Error("Failed to find '" + arguments[0] + "'");
+				return false;
+			}
+			
+			if (target.Act != me.act) {
+				if (!this.GotoAct(target.Act))
+					return false;
+			}
+			
+			if (!this.PathTo(target.Location.x, target.Location.y, target.act))
+				return false;
+			
+			if (target.ID) {
+				var unit = getUnit(target.Type, target.ID);
+				if (!unit && target.ExtraLocation) {
+					ret = this.PathTo(target.ExtraLocation.x, target.ExtraLocation.y, target.act);
+					unit = getUnit(target.Type, target.ID);
+				}
+				if (!unit)
+					ret = false;
+			}
+			
+			return true;
+		}
+		else if (arguments.length == 2) {
+			if (parseInt(arguments[0]) && parseInt(arguments[1]))
+				return this.PathTo(arguments[0], arguments[1]);
+			
+			var name = arguments[0].toLowerCase();
+			var act = parseInt(arguments[1]);
+			var target = this.GetTownSpot(name, act);
+			
+			if (!target) {
+				this.Error("Failed to find '" + arguments[0] + "'");
+				return false;
+			}
+			
+			if (target.Act != me.act) {
+				if (!this.GotoAct(target.Act))
+					return false;
+			}
+			
+			if (!this.PathTo(target.Location.x, target.Location.y, target.act))
+				return false;
+			
+			if (target.ID) {
+				var unit = getUnit(target.Type, target.ID);
+				if (!unit && target.ExtraLocation) {
+					ret = this.PathTo(target.ExtraLocation.x, target.ExtraLocation.y, target.act);
+					unit = getUnit(target.Type, target.ID);
+				}
+				if (!unit)
+					ret = false;
+			}
+			
+			return true;
+		}
+		else if (arguments.length == 3) {
+			if (Number(arguments[2]) != me.act) {
+				if (!this.GotoAct(arguments[2]))
+					return false;
+			}
+			
+			return this.PathTo(arguments[0], arguments[1]);
+		}
+		else {
+			this.Error("Invalid arguments count for TownMove.MoveTo()");
+			return false;
+		}
+	}
+	
+	this.GetTownSpot = function(name, act)
+	{
+		name = name.toLowerCase();
+		var target = null;
+		
+		if (act) {
+			// check npc's for act
+			for (var i = 0; i < this.NPCs[act-1].length; i++) {
+				if (this.NPCs[act-1][i].Name == name) {
+					target = this.NPCs[act-1][i];
+					break;
+				}
+			}
+			
+			if (target)
+				return target;
+				
+			// check npc's for act
+			for (var i = 0; i < this.Objects[act-1].length; i++) {
+				if (this.Objects[act-1][i].Name == name) {
+					target = this.Objects[act-1][i];
+					break;
+				}
+			}
+			
+			return target;
+		}
+		
+		
+		// check npc's for current act
+		for (var i = 0; i < this.NPCs[me.act-1].length; i++) {
+			if (this.NPCs[me.act-1][i].Name == name) {
+				target = this.NPCs[me.act-1][i];
+				break;
+			}
+		}
+		
+		// check objects for current act
+		if (!target) {
+			for (var i = 0; i < this.Objects[me.act-1].length; i++) {
+				if (this.Objects[me.act-1][i].Name == name) {
+					target = this.Objects[me.act-1][i];
+					break;
+				}
+			}
+		}
+		
+		// check all npcs
+		if (!target) {
+			for (var i = 0; i < this.NPCs.length; i++) {
+				for (var j = 0; j < this.NPCs[i].length; j++) {
+					if (this.NPCs[i][j].Name == name) {
+						target = this.NPCs[i][j];
+						break 
+					}
+				}
+				if (target)
+					break;
+			}
+		}
+		
+		// check all objects
+		if (!target) {
+			for (var i = 0; i < this.Objects.length; i++) {
+				for (var j = 0; j < this.Objects[i].length; j++) {
+					if (this.Objects[i][j].Name == name) {
+						target = this.Objects[i][j];
+						break 
+					}
+				}
+				if (target)
+					break;
+			}
+		}
+		
+		return target;
+	}
+	
+	// callback: function(npc, npcinfo) : gets called after townmove did the required trading
+	// moveback: set to true to move back after healing/buying
+	this.Heal = function(callback, move_back)
+	{
+		// check if healing is needed
+		var pots = this.NeedPots();
+		var scrolls = this.NeedScrolls();
+		var heal = this.NeedHeal();
+		
+		if (!heal && !scrolls && !pots)
+			return true; // nothing to do
+		
+		var area = me.area;
+		if (!this.InTown()) {
+			area = me.area;
+			if (!this.GotoTown())
+				return false;
+		}
+		var backpos = new coord(me);
+		backpos.data = area;
+		
+		var npc = null;
+		var npcinfo = this.GetNPCInfo(NF_HEAL);
+		
+		var fail = false;
+		
+		if (npcinfo) {
+			if (this.MoveTo(npcinfo)) {
+				npc = getUnit(1, npcinfo.ID);
+				if (npc) {
+					if (this.Interact(npc)) {
+						// check if needs and can get pots, if so, trade, call the callback
+						var flags = 0;
+						
+						if (!pots && npcinfo.Flags & NF_POTS)
+							pots = this.NeedPots(true);
+						if (!scrolls && npcinfo.Flags & NF_SCROLLS)
+							scrolls = this.NeedScrolls(true);
+						
+						if (pots)
+							flags |= NF_POTS;
+						if (scrolls)
+							flags |= NF_SCROLLS;
+						
+						if (callback || npcinfo.Flags & flags) {
+							if (this.Trade(npc, npcinfo)) {
+								if (pots && npcinfo.Flags & NF_POTS) {
+									if (this.BuyPots(npc, pots))
+										fail = true;
+									flags &= ~NF_POTS;
+								}
+								
+								if (scrolls && npcinfo.Flags & NF_SCROLLS) {
+									if (!this.BuyScrolls(npc, scrolls))
+										fail = true;
+									flags &= ~NF_SCROLLS;
+								}
+								
+								if (callback && typeof(callback) == "function")
+									callback(npc, npcinfo);
+							}
+							else
+								fail = true;
+						}
+						
+						this.CloseInteract(npc);
+						
+						if (flags) {
+							// didnt bought shit, get other npc and buy it
+							npcinfo = this.GetNPCInfo(flags);
+							if (!npcinfo || npcinfo.ID == npc.classid) {
+								this.Error("Failed to find npc for buying scrolls or pots");
+								fail = true;
+							}
+							else {
+								if (this.MoveTo(npcinfo)) {
+									npc = getUnit(1, npcinfo.ID);
+									if (npc) {
+										if (this.Interact(npc)) {
+											if (this.Trade(npc, npcinfo)) {
+												if (pots && npcinfo.Flags & NF_POTS) {
+													if (this.BuyPots(npc, pots))
+														fail = true;
+													flags &= ~NF_POTS;
+												}
+												if (scrolls & npcinfo.Flags & NF_SCROLLS) {
+													if (!this.BuyScrolls(npc, scrolls))
+														fail = true;
+													flags &= ~NF_SCROLLS;
+												}
+												
+												if (callback && typeof(callback) == "function")
+													callback(npc, npcinfo);
+											}
+											else
+												fail = true;
+											
+											this.CloseInteract(npc);
+										}
+										else
+											fail = true;
+									}
+									else
+										fail = true;
+								}
+								else {
+									this.Error("Failed to move to " + npcinfo.Name);
+									fail = true;
+								}
+							}		
+						}
+					}
+					else
+						fail = true;
+				}
+				else {
+					this.Error("Failed to detect NPC");
+					fail = true;
+				}
+			}
+			else
+				fail = true;
+		}
+		else {
+			this.Error("Failed to get NPC for healing");
+			fail = true;
+		}
+		
+		if (move_back) {
+			if (!this.MoveBack(backpos)) {
+				this.Error("Failed to move back");
+				fail = true;
+			}
+		}
+		
+		return !fail;
+	}
+	
+	this.Repair = function(callback, move_back)
+	{
+		// check if need ammo, repair or callback
+		var repair = this.NeedRepair();
+		var ammo = this.NeedAmmo();
+		
+		if (!repair && !ammo)
+			return true;
+		
+		var area = me.area;
+		if (!this.InTown()) {
+			area = me.area;
+			if (!this.GotoTown())
+				return false;
+		}
+		var backpos = new coord(me);
+		backpos.data = area;
+		
+		var npc = null;
+		var npcinfo = this.GetNPCInfo(NF_REPAIR);
+		
+		var fail = false;
+		
+		if (npcinfo) {
+			if (this.MoveTo(npcinfo)) {
+				npc = getUnit(1, npcinfo.ID);
+				if (npc) {
+					if (this.Interact(npc)) {
+						if (this.Trade(npc, npcinfo)) {
+							if (ammo) {
+								this.DebugPrint("Going to buy ammo");
+								this.BuyAmmo(npc, ammo);
+							}
+							if (repair) {
+								this.DebugPrint("Going to repair");
+								this.DoRepair(npc, repair);
+								delay(1000);
+							}
+							
+							if (callback && typeof(callback) == "function")
+								callback(npc, npcinfo);
+								
+							this.CloseInteract(npc);
+						}
+						else
+							fail = true;
+					}
+					else
+						fail = true;
+				}
+				else {
+					this.Error("Failed to detect npc " + npcinfo.Name);
+					fail = true;
+				}
+			}
+			else
+				fail = true;
+		}
+		else {
+			this.Error("Failed to get NPC for repairing");
+			fail = true;
+		}
+		
+		if (move_back)
+		{
+			if (!this.MoveBack(backpos))
+			{
+				this.Error("Failed to move back");
+				fail = true;
+			}
+		}
+		
+		return !fail;
+	}
+	
+	this.Revive = function(callback, move_back)
+	{
+		if (!this.NeedRevive()) // revive not needed or no money
+			return;
+			
+		var area = me.area;
+		if (!this.InTown()) {
+			if (!this.GotoTown())
+				return false;
+		}
+		var backpos = new coord(me);
+		backpos.data = area;
+		
+		var npc = null;
+		var npcinfo = this.GetNPCInfo(NF_REVIVE);
+		
+		var fail = false;
+		
+		if (npcinfo) {
+			if (this.MoveTo(npcinfo)) {
+				npc = getUnit(1, npcinfo.ID);
+				if (npc) {
+					if (this.Interact(npc)) {
+						if (!this.DoRevive(npc))
+							fail = true;
+						if (npcinfo.Flags & NL_SHOP && callback && typeof(callback) == "function") {
+							if (this.Trade(npc, npcinfo))
+								callback(npc, npcinfo);
+						}
+						this.CloseInteract(npc);
+					}
+					else
+						fail = true;
+				}
+				else {
+					this.Error("Failed to detect npc " + npcinfo.Name);
+					fail = true;
+				}
+			}
+			else
+				fail = true;
+		}
+		else {
+			this.Error("Failed to get NPC for repairing");
+			fail = true;
+		}
+		
+		if (move_back) {
+			if (!this.MoveBack(backpos)) {
+				this.Error("Failed to move back");
+				fail = true;
+			}
+		}
+		
+		return !fail;
+	}
+	
+	this.Stash = function(callback, move_back)
+	{
+		if (!this.NeedStash())
+			return true;
+		
+		var area = me.area;
+		if (!this.InTown()) {
+			if (!this.GotoTown())
+				return false;
+		}
+		var backpos = new coord(me);
+		backpos.data = area;
+		
+		var stash = null;
+		var stashinfo = this.GetObjInfo("stash");
+		var fail = false;
+		
+		if (stashinfo) {
+			if (this.MoveTo(stashinfo)) {
+				stash = getUnit(2, stashinfo.ID);
+				if (stash) {
+					if (this.OpenStash(stash)) {
+						// do the stashing
+						if (callback && typeof(callback) == "function")
+							callback(stash, stashinfo);
+						this.DoStash();
+						this.CloseStash(stash);
+					}
+					else
+						fail = true;
+				}
+				else {
+					this.Error("Failed to detect stash " + stashinfo.Name);
+					fail = true;
+				}
+			}
+			else
+				fail = true;
+		}
+		else {
+			this.Error("Stash not found");
+			fail = true;
+		}
+		if (move_back) {
+			if (!this.MoveBack(backpos)) {
+				this.Error("Failed to move back");
+				fail = true;
+			}
+		}
+		
+		return !fail;
+	}
+	
+	this.Shop = function(npcname, callback)
+	{
+		npcinfo = this.GetNPCInfo(npcname, true);
+		if (!npcinfo) {
+			this.Error("NPC " + npcname + " not found");
+			return false;
+		}
+		
+		if (!(npcinfo.Flags & NF_SHOP)) {
+			this.Error("NPC " + npcinfo.Name + " does not have a shop");
+			return false;
+		}
+		
+		if (npcinfo.Act != me.act) {
+			if (!this.TakeWP(npcinfo.Act, 1))
+				return false;
+		}
+		
+		if (!this.MoveTo(npcinfo))
+			return false;
+
+		var npc = getUnit(1, npcinfo.ID);
+		if (!npc) {
+			this.Error("NPC not detected");
+			return false;
+		}
+		if (!this.Interact(npc))
+			return false;
+		if (!this.Trade(npc, npcinfo))
+			return false;
+			
+		if (callback && typeof(callback) == "function")
+			callback(npc, npcinfo);
+		
+		this.CloseInteract(npc);
+		return true;
+	}
+	
+	this.Gamble = function(npcname, callback)
+	{
+		npcinfo = this.GetNPCInfo(npcname, true);
+		if (!npcinfo) {
+			this.Error("NPC " + npcname + " not found");
+			return false;
+		}
+		
+		if (!(npcinfo.Flags & NF_GAMBLE)) {
+			this.Error("NPC " + npcinfo.Name + " cannot gamble");
+			return false;
+		}
+		
+		if (npcinfo.Act != me.act) {
+			if (!this.TakeWP(npcinfo.Act, 1))
+				return false;
+		}
+		
+		if (!this.MoveTo(npcinfo))
+			return false;
+
+		var npc = getUnit(1, npcinfo.ID);
+		if (!npc) {
+			this.Error("NPC not detected");
+			return false;
+		}
+		if (!this.Interact(npc))
+			return false;
+		if (!this.GambleTrade(npc, npcinfo))
+			return false;
+		
+		if (callback && typeof(callback) == "function")
+			callback(npc, npcinfo);
+		
+		this.CloseInteract(npc);
+		return true;
+	}
+	
+	// returns true when successfull, false otherwise
+	this.Interact = function(npc)
+	{
+		if (!npc) {
+			this.Error("No NPC in Interact()");
+			return false;
+		}
+		
+		var timer = 8000;
+		do {
+			if ((timer % 1000) == 0) {
+				if (timer <= 6000) {
+					npc.cancel(1); // could be talking, cancel that shit
+					delay(250);
+				}
+				
+				if (this.Version < 0.33) {
+					npc.interact();
+				}
+				else {
+					clickMap(CLICKMAP_LEFT_DOWN, 0, npc);
+					delay(rnd(10,50));
+					clickMap(CLICKMAP_LEFT_UP, 0, npc);
+				}
+				
+			}
+			timer -= 50;
+			delay(50);
+		}while(!getUIFlag(0x08) && timer > 0);
+		
+		if (!getUIFlag(0x08)) {
+			this.Error("Failed to interact with npc " + npc.name);
+			return false;
+		}
+		return true;
+	}
+	
+	this.Trade = function(npc, npcinfo)
+	{
+		if (!npc) {
+			this.Error("No NPC in Trade()");
+			return false;
+		}
+		
+		if (!getUIFlag(0x08)) {
+			this.Error("Not interacting in Trade()");
+			return false;
+		}
+		
+		if (!(npcinfo.Flags & NF_SHOP)) {
+			this.Error("Cannot trade npc " + npc.name);
+			return false;
+		}
+		var trade_code = npcinfo.Flags & NF_REPAIR ? 0x0D06 : 0x0D44;
+		
+		var timer = 3000;
+		do {
+			if ((timer % 1000) == 0)
+				npc.useMenu(trade_code);
+			timer -= 50;
+			delay(50);
+		}while(!getUIFlag(0x0C) && timer > 0);
+		
+		return (getUIFlag(0x0C) != 0);
+	}
+	
+	this.GambleTrade = function(npc, npcinfo)
+	{
+		if (!npc) {
+			this.Error("No NPC in Trade()");
+			return false;
+		}
+		
+		if (!getUIFlag(0x08)) {
+			this.Error("Not interacting in Trade()");
+			return false;
+		}
+		
+		if (!(npcinfo.Flags & NF_GAMBLE)) {
+			this.Error("Cannot trade npc " + npc.name);
+			return false;
+		}
+
+		var timer = 3000;
+		do {
+			if ((timer % 1000) == 0)
+				npc.useMenu(0x0D46);
+			timer -= 50;
+			delay(50);
+		}while(!getUIFlag(0x0C) && timer > 0);
+		
+		return (getUIFlag(0x0C) != 0);
+	}
+	
+	this.CloseInteract = function(npc)
+	{
+		while(getUIFlag(0x0C)) {
+			npc.cancel(0);
+			delay(500);
+		}
+		while(getUIFlag(0x08)) {
+			npc.cancel(1);
+			delay(500);
+		}
+	}
+	
+	this.OpenStash = function(stash)
+	{
+		if (!stash) {
+			this.Error("No Stash in Openstash()");
+			return false;
+		}
+		
+		var timer = 5000;
+		do {
+			if ((timer % 1000) == 0) {
+				if (this.Version < 0.33) {
+					stash.interact();
+				}
+				else {
+					clickMap(CLICKMAP_LEFT_DOWN, 0, stash);
+					delay(rnd(10,50));
+					clickMap(CLICKMAP_LEFT_UP, 0, stash);
+				}
+				
+			}
+			timer -= 50;
+			delay(50);
+		}while(!getUIFlag(0x19) && timer > 0);
+		
+		if (!getUIFlag(0x19)) {
+			this.Error("Failed to open stash");
+			return false;
+		}
+		return true;
+	}
+	
+	this.CloseStash = function(stash)
+	{
+		var counter = 0;
+		do {
+			if (counter % 20 == 0)
+				stash.cancel(0);
+			delay(50);
+			counter++;
+		}while(getUIFlag(0x19));
+	}
+	
+	this.BuyPots = function(npc, buyinfo)
+	{
+		for (var i = 0; i < buyinfo.length; i++) {
+			var pot = null;
+			for (var j = 5; j > 0; j--) {
+				pot = this.LocateItem(npc, buyinfo[i].type + j, -1);
+				if (pot) {
+					if (buyinfo[i].shift) {
+						var price = pot.getItemCost(COST_BUY);
+						var total_price = price * buyinfo[i].amount;
+						
+						if (total_price > (me.getStat(14) + me.getStat(15))) {
+							while(price <= (me.getStat(14) + me.getStat(15))) {
+								pot.shop(npc, SHOP_BUY);
+								delay(500);
+							}
+						}
+						else {
+							pot.shop(npc, SHOP_SHIFTBUY);
+							delay(500);
+						}
+					}
+					else {
+						pot.shop(npc, SHOP_BUY);
+						delay(500);
+					}
+					var code = buyinfo[i].shift ? SHOP_SHIFTBUY : SHOP_BUY;
+					if (pot.getItemCost(COST_BUY) <= (me.getStat(14) + me.getStat(15))) {
+						this.DebugPrint("Buying " + pot.code + " -> " + code);
+						pot.shop(npc, code);
+						delay(500);
+					}
+					else
+						this.DebugPrint("Not enough money to buy " + pot.name);
+					break;
+				}
+			}
+			if (!pot)
+				this.Error("Failed to buy pot: " + buyinfo[i].type);
+		}
+		
+		return true;
+	}
+	
+	this.BuyScrolls = function(npc, buyinfo)
+	{
+		if (buyinfo == 2) {
+			var inv = this.GetInv();
+			if (this.FindStashSpot(inv, 1, 2)) { // check if theres room for the tome in the inventory
+				do {
+					var tome = this.LocateItem(npc, "tbk", -1);
+					if (!tome) {
+						this.Error("No tome of townportals found at " + npc.name);
+						return false;
+					}
+					var price = tome.getItemCost(COST_BUY);
+					if (price > (me.getStat(14) + me.getStat(15))) {
+						this.DebugPrint("No money to buy tome of townportal");
+						return false;
+					}
+					tome.shop(npc, SHOP_BUY);
+					delay(500);
+				}while(this.NeedScrolls() == 2);
+			}
+			else {
+				this.Error("No room to hold tome of townportal");
+				return false;
+			}
+		}
+		
+		var tome = this.LocateItem(me, "tbk", 0);
+		if (!tome) {
+			this.Error("No tome of townportals detected");
+			return false;
+		}
+		
+		var scroll = this.LocateItem(npc, "tsc", -1);
+		if (!scroll) {
+			this.Error("No scroll of townportal found at " + npc.name);
+			return false;
+		}
+		
+		var amount = 20 - tome.getStat(70);
+		var price = tome.getItemCost(COST_BUY);
+		
+		if ((amount * price) > (me.getStat(14) + me.getStat(15))) {
+			while(price <= (me.getStat(14) + me.getStat(15))) {
+				scroll.shop(npc, SHOP_BUY);
+				delay(500);
+			}
+		}
+		else {
+			scroll.shop(npc, SHOP_SHIFTBUY);
+			delay(500);
+		}
+		
+		return true;
+	}
+	
+	this.DoRepair = function(npc, repairinfo)
+	{
+		var price = 0;
+		var item = getUnit(4);
+		do {
+			if (item && item.mode == 1 && item.getParent() && item.getParent().name == me.name && !item.getFlag(0x400000)) {
+				pirce += item.getItemCost(COST_REPAIR);
+			}
+		}while(item && item.getNext());
+		
+		var goldamount = me.getStat(14) + me.getStat(15);
+		if (price <= goldamount) {
+			npc.repair();
+			delay(1000);
+			return true;
+		}
+		
+		this.Error("Not enough money to repair");
+		return false;
+	}
+	
+	this.NeedRevive = function()
+	{
+		var merc = this.GetMerc();
+		if (merc)
+			return false;
+		if ((me.getStat(14) + me.getStat(15)) < 50000)
+			return false;
+		
+		return true;
+	}
+	
+	this.DoRevive = function(npc)
+	{
+		var m = this.GetMerc();
+		if (m)
+			return true;
+		
+		if ((me.getStat(14) + me.getStat(15)) < 50000)
+			return false;
+			
+		
+		var timer = 3000;
+		do {
+			if (timer % 1000 == 0)
+				npc.useMenu(0x1507);
+			delay(50);
+			timer -= 50;
+			m = this.GetMerc();
+		}while(!m && timer > 0);
+		
+		return m != null;
+	}
+	
+	this.DoStash = function(stash)
+	{
+		var stash = this.GetStash();
+		var cube = this.StashCube ? this.GetCube() : null;
+		
+		var item = getUnit(4, null, 100);
+		do {
+			var type = this.GetItemType(item); //getBaseStat(0, item.classid, 70);
+			if (item && item.mode == 0 && item.itemloc == 0 && !this.NoStashList[type]) {
+				if ((type == 82 || type == 83 || type == 84) && item.getFlag(0x10))
+					continue;
+				var p = item.getParent();
+				if (!p || (p && p.name != me.name))
+					continue;
+				
+				xsize = this.GetXSize(item); //getBaseStat(0, item.classid, 55);
+				ysize = this.GetYSize(item); //getBaseStat(0, item.classid, 56);
+				spot = this.FindStashSpot(stash, xsize, ysize);
+				if (spot) {
+					var counter = 0;
+					do {
+						if (counter % 20 == 0) // try once a second
+							clickItem(0, item);
+						delay(50);
+						counter++;
+					}while(item.mode != 4);
+					
+					counter = 0;
+					do {
+						if (counter % 20 == 0) // try once a second
+							clickItem(0, spot.x, spot.y, 4);
+						delay(50);
+						counter++;
+					}while(item.mode == 4);
+					
+					for (var y = spot.y; y < spot.y+ysize; y++) {
+						for (var x = spot.x; x < spot.x+xsize; x++) {
+							stash[x][y] = 1;
+						}
+					}
+				}
+				else if (cube) {
+					spot = this.FindStashSpot(cube, xsize, ysize);
+					if (spot) {
+						var counter = 0;
+						do {
+							if (counter % 20 == 0) // try once a second
+								clickItem(0, item);
+							delay(50);
+							counter++;
+						}while(item.mode != 4);
+						
+						counter = 0;
+						do {
+							if (counter % 20 == 0) // try once a second
+								clickItem(0, spot.x, spot.y, 3);
+							delay(50);
+							counter++;
+						}while(item.mode == 4);
+						
+						for (var y = spot.y; y < spot.y+ysize; y++) {
+							for (var x = spot.x; x < spot.x+xsize; x++) {
+								cube[x][y] = 1;
+							}
+						}
+					}
+				}
+				else
+					this.DebugPrint("No room to stash item");
+			}
+		}while(item && item.getNext(null, 100));
+		
+		var gld = me.getStat(14);
+		if (gld) {
+			gold(gld, 3);
+			delay(500);
+		}
+	}
+
+	this.NeedStash = function()
+	{
+		// check inv for items that needs to be stashed and check if they can be stashed
+		stash = this.GetStash();
+		cube = this.StashCube ? this.GetCube() : null;
+		
+		var stashlist = new Array();
+		
+		var item = getUnit(4, null, 100);
+		do {
+			var type = this.GetItemType(item); //getBaseStat(0, item.classid, 70);
+			if (item && item.mode == 0 && item.itemloc == 0 && !this.NoStashList[type]) {
+				if ((type == 82 || type == 83 || type == 84) && item.getFlag(0x10))
+					continue;
+				var p = item.getParent();
+				if (!p || (p && p.name != me.name))
+					continue;
+				
+				xsize = this.GetXSize(item); //getBaseStat(0, item.classid, 55);
+				ysize = this.GetYSize(item); //getBaseStat(0, item.classid, 56);
+				spot = this.FindStashSpot(stash, xsize, ysize);
+				if (spot)
+					return true;
+				else if (cube) {
+					spot = this.FindStashSpot(cube, xsize, ysize);
+					if (spot)
+						return true;
+				}
+			}
+		}while(item && item.getNext(null, 100));
+		
+		//FIXME: check gold amount stash can hold
+		if (me.getStat(14) >= this.StashGold)
+			return true;
+		
+		return false;
+	}
+	
+	this.GetStash = function()
+	{
+		var width = 6;
+		var height = 8;
+		if (me.gametype == 0) {
+			width = 6;
+			height = 4;
+		}
+		var stash = new Array(width);
+		for (var i = 0; i < width; i++) {
+			stash[i] = new Array(height);
+			for (var j = 0; j < height; j++) {
+				stash[i][j] = 0;
+			}
+		}
+		
+		var xsize = 0;
+		var ysize = 0;
+		var item = getUnit(4);
+		do {
+			if (item && item.mode == 0) {
+				var p = item.getParent();
+				if (!p || (p && p.name != me.name))
+					continue;
+				
+				if (item.itemloc == 4) {
+					xsize = this.GetXSize(item); //getBaseStat(0, item.classid, 55);
+					ysize = this.GetYSize(item); //getBaseStat(0, item.classid, 56);
+					// Item found in stash 
+					for (var x = 0; x < xsize; x++) {
+						for (var y = 0; y < ysize; y++) {
+							stash[item.x+x][item.y+y] = 1;
+						}
+					}
+				}
+			}
+		}while(item && item.getNext());
+		
+		return stash;
+	}
+	
+	this.GetCube = function()
+	{
+		var cube = null;
+		if (me.gametype != 0) {
+			var c = getUnit(4, 549);
+			do {
+				if (c && c.getParent() && c.getParent().name == me.name)
+					break;
+			}while(c && c.getNext());
+			
+			if (!c)
+				return null;
+			
+			cube = new Array(3);
+			for (var i = 0; i < 3; i++) {
+				cube[i] = new Array(4);
+				for (var j = 0; j < 4; j++) {
+					cube[i][j] = 0;
+				}
+			}
+			
+			var xsize = 0;
+			var ysize = 0;
+			var item = getUnit(4);
+			do {
+				if (item && item.mode == 0) {
+					var p = item.getParent();
+					if (!p || (p && p.name != me.name))
+						continue;
+					
+					if (cube && item.itemloc == 3) {
+						xsize = this.GetXSize(item); //getBaseStat(0, item.classid, 55);
+						ysize = this.GetYSize(item); //getBaseStat(0, item.classid, 56);
+						for (var x = 0; x < xsize; x++) {
+							for (var y = 0; y < ysize; y++) {
+								cube[item.x+x][item.y+y] = 1;
+							}
+						}
+					}
+				}
+			}while(item && item.getNext());
+		}
+		
+		return cube;
+	}
+	
+	this.GetInv = function()
+	{
+		var width = 10;
+		var height = 4;
+
+		var inv = new Array(width);
+		for (var i = 0; i < width; i++) {
+			inv[i] = new Array(height);
+			for (var j = 0; j < height; j++) {
+				inv[i][j] = 0;
+			}
+		}
+		
+		var xsize = 0;
+		var ysize = 0;
+		var item = getUnit(4, null, 100);
+		do {
+			if (item) {
+				// needed??
+				var p = item.getParent();
+				if (!p || (p && p.name != me.name))
+					continue;
+				
+				xsize = this.GetXSize(item); //getBaseStat(0, item.classid, 55);
+				ysize = this.GetYSize(item); //getBaseStat(0, item.classid, 56);
+				
+				for (var x = 0; x < xsize; x++) {
+					for (var y = 0; y < ysize; y++) {
+						inv[item.x+x][item.y+y] = 1;
+					}
+				}
+			}
+		}while(item && item.getNext(null, 100));
+		
+		return inv;
+	}
+	
+	this.FindStashSpot = function(stash, xsize, ysize)
+	{
+		var width = stash.length;
+		var height = stash[0].length;
+		
+		for (var y = 0; y < (height-ysize+1); y++) {
+			for (var x = 0; x < (width-xsize+1); x++) {
+				if (!stash[x][y]) {
+					if (this.StashSpotIsFree(stash, x, y, xsize, ysize))
+						return new coord(x,y);
+				}
+			}
+		}
+		return null;
+	}
+	
+	this.StashSpotIsFree = function(stash, x, y, xsize, ysize)
+	{
+		var width = stash.length;
+		var height = stash[0].length;
+		
+		if ((x + xsize) > width)
+			return false;
+		if ((y + ysize) > height)
+			return false;
+		
+		var free = true;
+		for (var i = y; i < y+ysize; i++) {
+			for (var j = x; j < x+xsize; j++) {
+				if (stash[j][i])
+					return false;
+			}
+		}
+		return true;
+	}
+	
+	this.BuyAmmo = function(npc, buyinfo)
+	{
+		if (!this.BuyAmmoPercent)
+			return true;
+		if (!buyinfo)
+			return true;
+		
+		var fail = false;
+		
+		var start_sel = weaponSwitch(1);
+		
+		for (var i = 0; i < buyinfo.length; i++) {
+			while(buyinfo[i].sel != weaponSwitch(1)) {
+				weaponSwitch();
+				delay(500);
+			}
+			
+			var ammo = this.LocateItem(npc, buyinfo[i].type, -1);
+			if (ammo) {
+				var cur_ammo = this.GetSelectedAmmo();
+				var sell_price = cur_ammo ? cur_ammo.getItemCost(COST_SELL) : 0;
+				if ((ammo.getItemCost(COST_BUY) - sell_price) <= (me.getStat(14) + me.getStat(15))) {
+					if (cur_ammo) {
+						cur_ammo.shop(npc, SHOP_SELL);
+						delay(500);
+					}
+					ammo.shop(npc, SHOP_BUY);
+					delay(500);
+				}
+				else {
+					this.Error("Not enough gold to buy ammo");
+					fail = true;
+				}
+			}
+			else {
+				this.Error("Ammo " + buyinfo[i].type + " not found at " + npc.name);
+				fail = true;
+			}
+		}
+		
+		while(weaponSwitch(1) != start_sel) {
+			weaponSwitch();
+			delay(500);
+		}
+		
+		return !fail;
+	}
+	
+	this.MoveBack = function(backpos)
+	{
+		if (!this.MoveTo(backpos.x, backpos.y)) {
+			this.Error("Failed to move back");
+			return false;
+		}
+		
+		if (backpos.data && backpos.data != me.area) {
+			var portal = getUnit(2, PORTAL_CLASSID);
+			do {
+				if (portal && portal.getParent() == me.name) {
+					return this.TakeTP(portal);
+				}
+			}while(portal && portal.getNext(PORTAL_CLASSID));
+			
+			if (this.WaypointAreaID[backpos.data])
+				this.TakeWP(backpos.data);
+		}
+		
+		return true;
+	}
+	
+	this.GetNPCInfo = function(flags, all_acts)
+	{
+		// flags can be name too
+		var name = null;
+		if (!parseInt(flags))
+			name = flags.toLowerCase();
+			
+		// first look for npc in current act, otherwise in other acts
+		var npclist = new Array();
+		
+		for (var i = 0; i < this.NPCs[me.act-1].length; i++) {
+			if (name) {
+				if (this.NPCs[me.act-1][i].Name.toLowerCase() == name)
+					return this.NPCs[me.act-1][i];
+			}
+			else {
+				if ((this.NPCs[me.act-1][i].Flags & flags) == flags) {
+					this.DebugPrint("Possible NPC's: " + this.NPCs[me.act-1][i].Name + ": " + (this.NPCs[me.act-1][i].Flags & flags));
+					npclist.push(this.NPCs[me.act-1][i]);
+				}
+			}
+		}
+		
+		if (npclist.length == 1) {
+			return npclist[0];
+		}
+		else if (npclist.length > 1) {
+			var pos = new coord(me);
+			var best = npclist[0];
+			for (var i = 1; i < npclist.length; i++) {
+				if (pos.dist(best.Location) > pos.dist(npclist[i].Location))
+					best = npclist[i];
+			}
+			return best;
+		}
+		
+		if (all_acts) {
+			// look through all npc's in all acts, return first match found
+			for (var i = 0; i < this.NPCs.length; i++) {
+				for (var j = 0; j < this.NPCs[i].length; j++) {
+					if (name) {
+						if (this.NPCs[i][j].Name.toLowerCase() == name)
+							return this.NPCs[i][j];
+					}
+					else {
+						if (this.NPCs[i][j].Flags & flags)
+							return this.NPCs[i][j];
+					}
+				}
+			}
+		}
+		
+		return null; // nothing found
+	}
+	
+	this.GetObjInfo = function(name, all_acts)
+	{
+		name = name.toLowerCase();
+		for (var i = 0; i < this.Objects[me.act-1].length; i++) {
+			if ((this.Objects[me.act-1][i].Name.toLowerCase()) == name) {
+				return this.Objects[me.act-1][i];
+			}
+		}
+		
+		if (all_acts) {
+			for (var i = 0; i < this.Objects.length; i++) {
+				for (var j = 0; j < this.Objects[i].length; j++) {
+					if (this.Objects[i][j].Name.toLowerCase() == name)
+						return this.Objects[i][j];
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	this.NeedHeal = function()
+	{
+		var hpmax = Math.floor(((100 + me.getStat(76)) / 100) * me.hpmax);
+		var mpmax = Math.floor(((100 + me.getStat(77)) / 100) * me.mpmax);
+		if ((me.hp / hpmax) * 100 <= this.HealHP)
+			return true;
+		if ((me.mp / mpmax) * 100 <= this.HealMP)
+			return true;
+		return false;
+	}
+	
+	this.NeedPots = function(force)
+	{
+		if (!this.BuyHPPots && !this.BuyMPPots)
+			return false;
+		
+		var row_count = this.GetBeltSize();
+		var belt_layout = new Array(new Array(row_count), new Array(row_count), new Array(row_count), new Array(row_count));
+		
+		for (var i = 0; i < belt_layout.length; i++) {
+			for (var j = 0; j < belt_layout[i].length; j++) {
+				belt_layout[i][j] = 0;
+			}
+		}
+		
+		var row = 0;
+		var col = 0;
+
+		var u = getUnit(4, null, 2);
+		do {
+			if (u) {
+				col = u.x % 4;
+				row = Math.floor(u.x / 4);
+				
+				if (u.code.match(/hp[1-5]/))
+					belt_layout[col][row] = POT_HP;
+				else if (u.code.match(/mp[1-5]/))
+					belt_layout[col][row] = POT_MP;
+				else
+					belt_layout[col][row] = POT_OTHER;
+			}
+		}while(u && u.getNext(null, 2));
+		
+		var have = [0,0,0,0];
+		var free = [0,0,0,0];
+		
+		var type = 0;
+		for (var i = 0; i < belt_layout.length; i++)
+		{
+			type = belt_layout[i][0];
+			for (var j = 0; j < belt_layout[i].length; j++) {
+				if (!type && belt_layout[i][j] != 0) {
+					type = belt_layout[i][j];
+					free[type] += j;
+				}
+				else if (!belt_layout[i][j]) {
+					free[type]++;
+				}
+				else {
+					have[type]++;
+				}
+			}
+		}
+		
+		var total_hp = have[POT_HP] + free[POT_HP];
+		var total_mp = have[POT_MP] + free[POT_MP];
+		var total_other = have[POT_OTHER] + free[POT_OTHER];
+		
+		var hpot = have[POT_HP] + have[POT_OTHER];
+		
+		var need_pots = false;
+		
+		if (!force)
+		{
+			var hp_space = total_hp + total_other;
+			if (!this.BuyMPPots)
+				hp_space += free[0];
+			
+			if (((have[POT_HP] + have[POT_OTHER]) / hp_space) * 100 <= this.BuyHPPots)
+				need_pots = true;
+			
+			if (this.BuyMPPots) {
+				var mp_space = have[POT_MP] + free[POT_MP];
+				if (!mp_space)
+					need_pots = true;
+				else if ((have[POT_MP] / mp_space) * 100 <= this.BuyMPPots)
+					need_pots = true;
+			}
+			
+			if (!need_pots)
+				return null;
+		}
+	
+		var buyinfo = new Array();
+		var d = "";
+		// check mana pots, buy only one if none there
+		if (this.BuyMPPots && !total_mp && free[0] > 0) {
+			buyinfo.push({type:"mp", shift:false, amount:1});
+			free[0] -= row_count;
+			total_mp = row_count;
+			have[POT_MP] = 1;
+			free[POT_MP] = row_count - 1;
+			d += "mp:false ";
+		}
+		// check hp pots
+		if (this.BuyHPPots && (free[POT_HP] || free[0])) {
+			a = free[POT_HP] + free[0];
+			free[POT_HP] = 0;
+			free[0] = 0;
+			buyinfo.push({type:"hp", shift:true, amount:a});
+			d += "hp:true ";
+		}
+		
+		if (this.BuyMPPots && free[POT_MP])
+		{
+			a = free[POT_MP] + free[0];
+			buyinfo.push({type:"mp", shift: true, amount:a});
+			d += "mp:true ";
+		}
+		
+		this.DebugPrint("BuyInfo: " + d);
+		
+		if (buyinfo.length)
+			return buyinfo;
+			
+		return null;
+	}
+	
+	this.GetBeltSize = function()
+	{
+		var item = getUnit(4);
+		do {
+			if(item && item.itemloc == 8 && item.getParent() && item.getParent().name == me.name) {
+				if (item.name == "Sash" || item.name == "Light Belt")
+					return 2;
+				if (item.name == "Belt" || item.name == "Heavy Belt")
+					return 3;
+				else
+					return 4;
+			}
+		}while(item && item.getNext());
+		return 1; // no belt found
+	}
+	
+	this.NeedScrolls = function(force)
+	{
+		if (!this.BuyTPScrolls)
+			return 0;
+		
+		var tome = getUnit(4, "tbk", 100);
+		if (!tome) 
+		{
+			this.DebugPrint("Need tome of townportal");
+			return 2;
+		}
+		
+		if (tome.getStat(70) <= this.BuyTPScrolls * 0.2)
+		{
+			this.DebugPrint("Need scrolls");
+			return 1;
+		}
+		
+		if (force && tome.getStat(70) < 20)
+		{
+			this.DebugPrint("Need scrolls by force");
+			return 1;
+		}
+		
+		return 0;
+	}
+	
+	this.NeedRepair = function()
+	{
+		if (!this.RepairPercent)
+			return;
+		
+		var need_repair = false;
+		var item = getUnit(4);
+		do {
+			if (item && item.mode == 1 && item.getParent() && item.getParent().name == me.name && !item.getFlag(0x400000)) {
+				var dur = item.getStat(72);
+				var max_dur = item.getStat(73);
+
+				var p = Math.floor(((dur * 100) / max_dur));
+				
+				if (max_dur && p <= this.RepairPercent)
+					return true;
+			}
+		}while(item && item.getNext());
+		return false;
+	}
+	
+	this.NeedAmmo = function()
+	{
+		if (!this.BuyAmmoPercent)
+			return;
+		
+		var buyinfo = new Array();
+		var w1type = 0;
+		var w1ammo = 0;
+		var w2type = 0;
+		var w2ammo = 0;
+		
+		var item = getUnit(4);
+		do {
+			if (item && item.mode == 1 && item.getParent() && item.getParent().name == me.name) {
+
+				// weaponslot1:  4 5
+				// weaponslot2: 11 12
+				// bow:   27    crossbow: 35
+				// arrows: 5    bolts:     6
+
+				var type = this.GetItemType(item); //getBaseStat(0, item.classid, 70);
+				if (item.itemloc == 4 || item.itemloc == 5) {
+					if (type == 5 || type == 6)
+						w1ammo = item.getStat(70);
+					else if (type == 27 || type == 85)
+						w1type = AMMO_ARROWS;
+					else if (type == 35)
+						w1type = AMMO_BOLTS;
+				}
+				else if (item.itemloc == 11 || item.itemloc == 12) {
+					if (type == 5 || type == 6)
+						w2ammo = item.getStat(70);
+					else if (type == 27 || type == 85)
+						w2type = AMMO_ARROWS;
+					else if (type == 35)
+						w2type = AMMO_BOLTS;
+				}
+			}
+		}while(item && item.getNext());
+		
+		if (w1type) {
+			var max_ammo = w1type == AMMO_BOLTS ? 250 : 350;
+			if ((w1ammo / max_ammo * 100)  <= this.BuyAmmoPercent) {
+				var o = new Object();
+				o.type = w1type == AMMO_BOLTS ? "cqv" : "aqv";
+				o.sel = weaponSwitch(1);
+				buyinfo.push(o);
+			}
+			
+		}
+		if (w2type) {
+			var max_ammo = w1type == AMMO_BOLTS ? 250 : 350;
+			if ((w2ammo / max_ammo * 100)  <= this.BuyAmmoPercent) {
+				var o = new Object();
+				o.type = w2type == AMMO_BOLTS ? "cqv" : "aqv";
+				o.sel = weaponSwitch(1) == 1 ? 0 : 1;
+				buyinfo.push(o);
+			}
+		}
+				
+		if (!buyinfo.length)
+			return null;
+		return buyinfo;
+	}
+	
+	this.GetSelectedAmmo = function()
+	{
+		var item = getUnit(4);
+		do {
+			if (item && item.mode == 1 && item.getParent() && item.getParent().name == me.name) {
+				var type = this.GetItemType(item); //getBaseStat(0, item.classid, 70);
+				if (item.itemloc == 4 || item.itemloc == 5) {
+					if (type == 5 || type == 6)
+						return item;
+				}
+			}
+		}while(item && item.getNext());
+		return null;
+	}
+	
+	// go to town if character has a scroll/tome of townportal, or wp is close
+	this.GotoTown = function()
+	{
+		if (this.InTown())
+			return true;
+		
+		if (this.WaypointAreaID[me.area]) {
+			var wp = getUnit(2, this.WaypointAreaID[me.area]);
+			if (wp) {
+				var pos = new coord(me);
+				if (pos.dist(wp) < 10) {
+					
+					if (this.Version < 0.33) {
+						this._MoveTo(wp.x, wp.y);
+						delay(50);
+						while(me.mode == 2 || me.mode == 3 || me.mode == 6)
+							delay(50);
+						wp.interact();
+					}
+					else {
+						clickMap(CLICKMAP_LEFT_DOWN, 0, wp);
+						delay(rnd(10,50));
+						clickMap(CLICKMAP_LEFT_UP, 0, wp);
+					}
+					
+					delay(50);
+					while(me.mode == 2 || me.mode == 3 || me.mode == 6)
+						delay(50);
+					pos.set(me);
+					if (pos.dist(wp) <= 5) {
+						var code = this.Waypoints[me.act-1][0];		
+						
+						var counter = 0;
+						do {
+							if (counter++ % 20 == 0)
+								wp.interact(code);
+							delay(50);
+						}while(me.area != code && counter < 1000);
+						
+						if (me.area == code) {
+							wp = getUnit(2, this.WaypointAreaID[me.area]);
+							if (!wp) {
+								this.Error("Waypoint not detected after taking it");
+								return false;
+							}
+							wp.cancel(0);
+						
+							if (me.area == code)
+								return true;
+						}
+					}
+				}
+			}
+		}
+		
+		portal = this.CastTP();
+		if (!portal)
+			return false;
+		if (!this.TakeTP(portal))
+			return false;
+		
+		return true;
+	}
+	
+// casts tp and return the portal, or null when failed
+	this.CastTP = function()
+	{
+		var tp = getUnit(4, 'tbk', 100);
+		if (!tp || !tp.getStat(70)) {
+			tp = getUnit(4, 'tbs', 100);
+			if (!tp) {
+				this.Error("Cannot cast TP. No scrolls found");
+				return false;
+			}
+		}
+		
+		var portal = null;
+		var timer = 3000;
+		do {
+			if (timer % 1000 == 0)
+				clickItem(1, tp);
+			delay(100);
+			timer -= 100;
+			portal = this.GetMyPortal();
+		}while(!portal && timer > 0);
+		
+		if (!portal) {
+			this.Error("Failed to cast portal");
+			return null;
+		}
+		
+		//FIXME: RD WARNING -> 1/2 second delay needed to prevent RD?
+		
+		return portal;
+	}
+	
+	this.TakeTP = function(portal)
+	{
+		if (!portal) {
+			this.Error("No portal in TakeTP()");
+			return false;
+		}
+		
+		var area = me.area;
+		var timer = 3000;
+		do {
+			if (timer % 1000 == 0) {
+				if (this.Version < 0.33) {
+					portal.interact();
+				}
+				else {
+					clickMap(CLICKMAP_LEFT_DOWN, 0, portal);
+					delay(rnd(10,50));
+					clickMap(CLICKMAP_LEFT_UP, 0, portal);
+				}
+					
+			}
+			delay(50);
+			timer -= 50;
+		}while(me.area == area && timer > 0);
+		
+		return (me.area != area);
+	}
+	
+	this.GetMyPortal = function()
+	{
+		var portal = getUnit(2, PORTAL_CLASSID);
+		do {
+			if (portal && portal.getParent() == me.name)
+				return portal;
+		}while(portal && portal.getNext(PORTAL_CLASSID));
+		return null;
+	}
+	
+	this.GotoAct = function(act)
+	{
+		if (me.act == act)
+			return true;
+		
+		if (!this.InTown()) {
+			if (!this.GotoTown())
+				return false;
+		}
+		
+		if (me.act == act)
+			return true;
+		
+		var code = this.Waypoints[act-1][0];
+		/*FIXME: enable when getWaypoint is fixed
+		if (!getWaypoint(code)) {
+			this.Error("Can't go to act " + act + ", dont have the waypoint");		
+			return false;
+		}
+		*/
+		return this.TakeWP(act, 1);
+	}
+	
+	// set force to true to take WP anyway
+	this.TakeWP = function(act, loc, force)
+	{
+		var code = 0;
+		if (arguments.length == 1)
+			code = act;
+		else
+			code = this.Waypoints[act-1][loc-1];
+		
+		if (code == me.area && !force)
+			return true;
+		
+		/*FIXME: enable when getWaypoint is fixed
+		if (!getWaypoint(code)) {
+			this.Error("Can't go to act " + act + ", dont have the qaypoint");		
+			return false;
+		}
+		*/
+		
+		var wp = null;
+		if (me.classid == 1 && me.getSkill("Telekinesis")) {
+			//FIXME: Use class id to set the skill
+			this.InitAct();
+			var target = this.GetTownSpot("waypoint", me.act);
+			if (!target) {
+				this.Error("Waypoint not found");
+				return false;
+			}
+			var path = this.Maps[me.act-1].FindPath(me.x, me.y, target.Location.x, target.Location.y, this.PathBuildDist, mlREDUCEWALK, mlASTAR, 4, 1);
+			if (!path) {
+				this.Error("Failed to build path to " + target.x + "," + target.y);
+				return false;
+			}
+			
+			// follow path and check for every point if can cast telekinesis on the wp
+			var pos = new coord(me);
+			var i;
+			for (i = 0; i < path.length; i++) {
+				while(pos.dist(path[i]) > this.PathMoveDist) {
+					this._MoveTo(path[i].x, path[i].y);
+					delay(50);
+					while(me.mode == 2 || me.mode == 3 || me.mode == 6)
+						delay(50);
+					pos.set(me);
+				}
+				
+				if (!wp)
+					wp = getUnit(2, this.WaypointAreaID[me.area]);
+				if (wp) {
+					if (this.CanCastTelekinesis(wp.x, wp.y))
+						break;
+				}
+			}
+			
+			// now cast the telekinesis
+			var counter = 0;
+			while(me.getSkill(0).toLowerCase() != "telekinesis") {
+				if (counter++ % 20 == 0)
+					me.setSkill("Telekinesis", 0);
+				delay(50);
+			}
+			
+			counter = 0;
+			do {
+				if (counter % 20 == 0) {
+					if (this.Version < 0.33) {
+						wp.useSkill(0);
+					}
+					else {
+						clickMap(CLICKMAP_RIGHT_DOWN, 0, wp);
+						delay(rnd(10,50));
+						clickMap(CLICKMAP_RIGHT_UP, 0, wp);
+					}
+					
+					if (counter >= 40) {
+						while(me.mode == 7 || me.mode == 8 || me.mode == 10 || me.mode == 11 || me.mode == 18)
+							delay(50);
+						i++;
+						if (path.length > i) {
+							if (this.Version < 0.33) {
+								if (!this.MoveTo("waypoint"))
+									return false;
+								wp.interact();
+							}
+							else {
+								clickMap(CLICKMAP_LEFT_DOWN, 0, path[i].x, path[i].y);
+								delay(rnd(10,50));
+								clickMap(CLICKMAP_LEFT_UP, 0, path[i].x, path[i].y);
+							}
+							
+							delay(50);
+							while(me.mode == 2 || me.mode == 3 || me.mode == 6) // while moving
+								delay(50);
+						}
+						else if (!this.MoveTo(wp.x, wp.y)) {
+							return false;
+						}
+					}
+				}
+				
+				delay(50);
+				counter++;
+			}while(!getUIFlag(0x14));
+		}
+		else {
+			if (!this.MoveTo("waypoint"))
+				return false;
+			
+			wp = getUnit(2, this.WaypointAreaID[me.area]);
+			if (!wp) {
+				this.Error("Waypoint not detected");
+				return false;
+			}
+			
+			counter = 0;
+			do {
+				if (counter++ % 20 == 0) {
+					if (this.Version < 0.33) {
+						wp.interact();
+					}
+					else {
+						clickMap(CLICKMAP_LEFT_DOWN, 0, wp);
+						delay(rnd(10,50));
+						clickMap(CLICKMAP_LEFT_UP, 0, wp);
+					}
+				}
+					
+				delay(50);
+			}while(!getUIFlag(0x14));
+		}
+		
+		var counter = 0;
+		do {
+			if (counter % 20 == 0) {
+				wp.interact(code);
+				if (counter >= 400) { // sometimes the window closes when trying to take it with casting telekinesis
+					if (!this.MoveTo(wp.x, wp.y)) // move closer if taking wp takes too long
+						return false;
+				}
+			}
+			delay(50);
+			counter++;
+		}while(me.area != code);
+		wp = getUnit(2, this.WaypointAreaID[me.area]);
+		if (!wp) {
+			this.Error("Waypoint not detected after taking it");
+			return false;
+		}
+		wp.cancel(0);
+		
+		if (this.InTown())
+			this.InitAct();
+		
+		return true;
+	}
+	
+	this.CanCastTelekinesis = function(x, y)
+	{
+		var v = new vector(-(x - me.x), y - me.y);
+		v.rotate(135);
+		var w = 400;
+		var h = 300;
+		if (me.screensize == 0) {
+			w = 320; 
+			h = 240; 
+		}	
+		var c = new coord(w + Math.round(v.x * 22), h - Math.round(v.y * 12));
+		
+		if (c.x > 50 && c.x < ((w*2) - 50) && c.y > 50 && c.y < ((h*2) - 100)) // this seems to work 95% of the time
+			return true;
+		
+		return false;
+	}
+	
+	this.PathTo = function(x, y)
+	{
+		this.InitAct();
+		
+		var path = this.Maps[me.act-1].FindPath(me.x, me.y, x, y, this.PathBuildDist, mlREDUCEWALK, mlASTAR, 4, 1);
+		if (!path) {
+			this.Error("Failed to build path to " + x + "," + y);
+			return false;
+		}
+		
+		//for (var i = 0; i < path.length; i++)
+		//	print(path[i].x + "," + path[i].y);
+		
+		var newpath = new Array();
+		var last = null;
+		for (var i = 0; i < path.length; i++) {
+			if (!last) {
+				last = new coord(path[i]);
+				newpath.push(path[i]);
+			}
+			else {
+				if (last.dist(path[i]) > 4) {
+					last.set(path[i]);
+					newpath.push(path[i]);
+				}
+				else if (i+1 == path.length)
+					newpath.push(path[i]);
+			}
+		}
+		
+		// follow the path
+		//this.Maps[me.act-1].PathMove(path);
+		this.FollowPath(newpath);
+		return true;
+	}
+	
+	this.FollowPath = function(path)
+	{
+		var pos = new coord(me);
+		for (var i = 0; i < path.length; i++) {
+			while(pos.dist(path[i]) > this.PathMoveDist) {
+				this._MoveTo(path[i].x, path[i].y);
+				delay(50);
+				while(me.mode == 2 || me.mode == 3 || me.mode == 6)
+					delay(50);
+				pos.set(me);
+			}
+		}
+		
+		pos.set(me);
+		return (pos.dist(path[path.length-1]) <= this.PathMoveDist);
+	}
+	
+	this._MoveTo = function(x, y) 
+	{
+		if (this.Version < 0.33) {
+			me.move(x, y);
+		}
+		else {
+			clickMap(CLICKMAP_LEFT_DOWN, CLICKMAP_NO_SHIFT, x, y);
+		}
+		
+		xoff = parseInt(rnd(0,12)/6) * (x - me.x<0 ? -1 : 1);
+		yoff = parseInt(rnd(0,12)/6) * (y - me.y<0 ? -1 : 1);
+		delay(rnd(10,50));
+		if (this.Version < 0.33) {
+			me.move(x+xoff, y+yoff);
+		}
+		else {
+			clickMap(CLICKMAP_LEFT_UP, CLICKMAP_NO_SHIFT, x+xoff, y+yoff);	
+		}
+	}
+	
+	this.InTown = function() 
+	{
+		return (me.area == 1 || me.area == 40 || me.area == 75 || me.area == 103 || me.area == 109);
+	}
+	
+	this.InitAct = function()
+	{
+		switch(me.act)
+		{
+			case 1:
+				this.InitAct1();
+				break;
+			case 2:
+				this.InitAct2();
+				break;
+			case 3:
+				this.InitAct3();
+				break;
+			case 4:
+				this.InitAct4();
+				break;
+			case 5:
+				this.InitAct5();
+				break;
+		}
+	}
+	
+	this.InitAct1 = function()
+	{
+		if (me.area != 1) {
+			this.DebugPrint("Cannot initialize act1 town when not in act1 town");
+			return false;
+		}
+
+		if (this.Maps[0] && this.Maps[0].AreaInitialized == 1)
+			return true;
+
+		this.Maps[0] = new oMap();
+		this.Maps[0].InitializeMap();
+		
+		var fire = null;
+		var wp = null;
+		for (var i = 0; i < this.Maps[0].PresetUnits.length; i++) {
+			if (this.Maps[0].PresetUnits[i].id == 39)
+				fire = new coord(this.Maps[0].PresetUnits[i]);
+			if (this.Maps[0].PresetUnits[i].id == 119)
+				wp = new coord(this.Maps[0].PresetUnits[i]);
+		}
+		
+		if (!fire) {
+			this.Error("Failed to detect act 1 fire");
+			this.Maps[0] = null;
+			return false;
+		}
+		
+		// set the npcs
+		for (var i = 0; i < this.NPCs[0].length; i++) {
+			this.NPCs[0][i].Location.x += fire.x;
+			this.NPCs[0][i].Location.y += fire.y;
+		}
+		
+		for (var i = 0; i < this.Objects[0].length; i++) {
+			this.Objects[0][i].Location.x += fire.x;
+			this.Objects[0][i].Location.y += fire.y;
+		}
+		
+		if (!wp) {
+			this.Error("Failed to detect waypoint");
+			return false;
+		}
+		
+		this.Objects[0].push(new Obj("waypoint",
+									 119,
+									 1,
+									 wp));
+		
+		this.DebugPrint("'Rogue Encampment' initialized");
+		return true;
+	}
+	
+	this.InitAct2 = function()
+	{
+		if (me.area != 40) {
+			this.DebugPrint("Cannot initialize act2 town when not in act2 town");
+			return false;
+		}
+		
+		if (this.Maps[1] && this.Maps[1].AreaInitialized == 40)
+			return true;
+		
+		this.Maps[1] = new oMap();
+		this.Maps[1].InitializeMap();
+		
+		this.DebugPrint("'Lut Gholein' initialized");
+		
+		return true;
+	}
+	
+	this.InitAct3 = function()
+	{
+		if (me.area != 75) {
+			this.DebugPrint("Cannot initialize act3 town when not in act3 town");
+			return false;
+		}
+		
+		if (this.Maps[2] && this.Maps[2].AreaInitialized == 75)
+			return true;
+		
+		this.Maps[2] = new oMap();
+		this.Maps[2].InitializeMap();
+		
+		this.DebugPrint("'Kurast Docks' initialized");
+	}
+	
+	this.InitAct4 = function()
+	{
+		if (me.area != 103) {
+			this.DebugPrint("Cannot initialize act4 town when not in act4 town");
+			return false;
+		}
+		
+		if (this.Maps[3] && this.Maps[3].AreaInitialized == 103)
+			return true;
+		
+		this.Maps[3] = new oMap();
+		this.Maps[3].InitializeMap();
+		
+		this.DebugPrint("'The Pandemonium Fortress' initialized");
+	}
+	
+	this.InitAct5 = function()
+	{
+		if (me.area != 109) {
+			this.DebugPrint("Cannot initialize act5 town when not in act5 town");
+			return false;
+		}
+		
+		if (this.Maps[4] && this.Maps[4].AreaInitialized == 109)
+			return true;
+		
+		this.Maps[4] = new oMap();
+		this.Maps[4].InitializeMap();
+		
+		this.DebugPrint("'Harrogath' initialized");
+	}
+	
+	this.GetMerc = function()
+	{
+		var npc = getUnit(1);
+		do {
+			if (npc && npc.name && npc.name.length) {
+				if (npc.getParent() && npc.getParent().name == me.name && npc.hp > 0 && npc.mode != 12) {
+					if (npc.classid == 271 || npc.classid == 338 || npc.classid == 359 || npc.classid == 561) {
+						return npc;
+					}
+				}
+			}
+		}while(npc && npc.getNext());
+		return null;
+	}
+
+	this.GetXSize = function(item)
+	{
+		if (item.getBaseStat)
+			return item.getBaseStat(35);
+		
+		return getBaseStat(0, item.classid, 55);
+	}
+	
+	this.GetYSize = function(item)
+	{
+		if (this.Version < 0.33)
+			return item.xsize;
+		
+		if (item.getBaseStat)
+			return item.getBaseStat(36);
+		
+		return getBaseStat(0, item.classid, 56);
+	}
+	
+	this.GetItemType = function(item)
+	{
+		if (this.Version < 0.33)
+			return item.itemtype;
+			
+		if (item.getBaseStat)
+			return item.getBaseStat(50);
+			
+		return getBaseStat(0, item.classid, 70);
+	}
+	
+	this.LocateItem = function(who, code, loc)
+	{
+		if (loc == undefined)
+			loc = -1;
+		
+		var start=getUnit(4);
+		do {
+			if(start) {
+				if(code == start.code && (loc==-1 || loc==start.mode)) {
+					if(who) { 
+						if(start.state<3) {
+							punit=start.getParent();
+							if(punit && punit.name==who.name) 
+								return start;
+						} 
+					} 
+					else 
+						return start;
+				}
+			}
+		}while(start && start.getNext());
+		
+		return null;
+	}
+	
+	this.DebugPrint = function(msg)
+	{
+		print("TownMoveDebug: " + msg);
+	}
+	
+	this.Error = function(msg)
+	{
+		print("ÿc1TownMove Error: " + msg);
+	}
+}
+
+function Obj(name, classID, act, location)
+{
+	this.Type = 2;
+	this.Name = name.toLowerCase();
+	this.ID = classID;
+	this.Act = act;
+	this.Location = location;
+}
+
+function NPC(name, classID, act, location, flags, extra_loc)
+{
+	this.Type = 1;
+	this.Name = name.toLowerCase();
+	this.ID = classID;
+	this.Act = act;
+	this.Location = location;
+	this.ExtraLocation = extra_loc;
+	this.Flags = flags;
+}
+
+const NF_HEAL			= 0x0001;
+const NF_REPAIR			= 0x0002;
+const NF_REVIVE			= 0x0004;
+const NF_GAMBLE			= 0x0008;
+const NF_SHOP			= 0x0010;
+const NF_POTS			= 0x0020;
+const NF_SCROLLS		= 0x0040;
+const NF_AMMO			= 0x0080;
+const NF_IDENTIFY		= 0x0100;
+const NF_SOCKETS		= 0x0200;
+const NF_IMBUE			= 0x0400;
+const NF_PERSONALIZE	= 0x0800;
+
+// clickitem constants
+const CLICKITEM_LEFT = 0;
+const CLICKITEM_RIGHT = 1;
+const CLICKITEM_SHIFT_LEFT = 2;
+
+// clickitem locations
+const CLICKITEM_LOC_INV		= 0;
+const CLICKITEM_LOC_TRADE	= 2;
+const CLICKITEM_LOC_CUBE	= 3;
+const CLICKITEM_LOC_STASH	= 4;
+
+// clickmap constants
+const CLICKMAP_LEFT_DOWN 	= 0;
+const CLICKMAP_LEFT_HOLD 	= 1;
+const CLICKMAP_LEFT_UP		= 2;
+const CLICKMAP_RIGHT_DOWN	= 3;
+const CLICKMAP_RIGHT_HOLD	= 4;
+const CLICKMAP_RIGHT_UP		= 5;
+
+const CLICKMAP_NO_SHIFT		= 0;
+const CLICKMAP_SHIFT		= 1;
+
+// cost constants
+const COST_BUY		= 0;
+const COST_SELL		= 1;
+const COST_REPAIR	= 2;
+
+// portal classid
+const PORTAL_CLASSID = 59;
+const CUBE_CLASSID = 549;
+const STASH_CLASSID = 267;
+
+// pots id's
+const POT_HP		= 1;
+const POT_MP		= 2;
+const POT_OTHER		= 3;
+
+const SHOP_REPAIR	= 0;
+const SHOP_SELL		= 1;
+const SHOP_BUY		= 2;
+const SHOP_SHIFTBUY	= 3;
+
+// ammo
+const AMMO_ARROWS	= 1;
+const AMMO_BOLTS	= 2;

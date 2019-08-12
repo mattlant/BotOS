@@ -1,0 +1,72 @@
+
+//##################################################
+//######   BotOS Framework - Out of Game    ########
+//##################################################
+/*
+----------------------------------------------------*/
+/*----------------------------------------------------
+Copyright (C) 2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as permission is 
+granted by the author, Matt Lanteigne.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG) != 'function') {
+	BotOS.OOG = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+if(typeof(BotOS.OOG.Controls) != 'function') {
+	BotOS.OOG.Controls = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG.Controls Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+include("BotOS/OOG/BotOS.OOG.Screen.d2l");
+
+BotOS.OOG.Controls.ChatScreen = function (init) {
+	//we inherit from Screen since the screen is a control itself 
+	BotOS.OOG.Screen.call(this, null, "Chat Screen");
+
+	var boc = BotOS.OOG.Controls;
+
+	this.Add(new boc.SendButton(), "SendButton");
+	this.Add(new boc.WhisperButton(), "WhisperButton");
+	this.Add(new boc.HelpButton(), "HelpButton");
+	this.Add(new boc.SquelchButton(), "SquelchButton");
+	this.Add(new boc.UnSquelchButton(), "UnSquelchButton");
+	this.Add(new boc.EmoteButton(), "EmoteButton");
+	this.Add(new boc.ChatTextBox(), "ChatTextBox");
+	this.Add(new boc.ChatScrollBar(), "ChatScrollBar");
+
+	this.Add(new boc.CreateButton(), "CreateButton");
+	this.Add(new boc.ChannelButton(), "ChannelButton");
+	this.Add(new boc.JoinButton(), "JoinButton");
+	this.Add(new boc.LadderButton(), "LadderButton");
+	this.Add(new boc.QuitButton(), "QuitButton");
+
+
+	if (init) this.Initialize();
+
+}
+
+BotOS.OOG.Controls.ChatScreen.prototype = new BotOS.OOG.Screen;
+
+
+

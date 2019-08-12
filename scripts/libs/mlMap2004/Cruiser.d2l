@@ -1,0 +1,259 @@
+
+
+function Mover(_ptr_oMap) {
+	
+	this.Path = new Array();
+	this.PathMove = oMap_pathmove;
+
+	var ptr_oMap = _ptr_oMap;
+
+
+	function oMap_pathmove(pathtodest, walkcallflag, pointtostart, recalcmaxdist, recalcalgotype, factor, _notele)
+	{
+		if(!pathtodest) pathtodest = this.Path;
+		if(!pointtostart) pointtostart = 0;
+		if(!recalcmaxdist) recalcmaxdist = 2;
+		if(!recalcalgotype) recalcalgotype = mlASTAR;
+		if(!factor) factor = 1.2;
+		var failedhops = 0;
+		for (var i=pointtostart; i<pathtodest.length; i++)
+		{
+			mlprint("moving to " + pathtodest[i].x + ", " + pathtodest[i].y);
+			if(me.classid == 1 && !mlInTown(me) && me.getSkill("Teleport") > 0 && this.UseTeleport && !_notele) var retval = mlteleportto(pathtodest[i].x, pathtodest[i].y, walkcallflag, i);
+			else var retval = mlwalkto(pathtodest[i].x, pathtodest[i].y, walkcallflag, i);
+			if (!retval)
+			{
+				if(!this.IsInRange(me.x, me.y))
+					this.InitializeMap(me.area);
+
+				print("First destination failed, attempting recalculating a course to the next coordinate");
+				var midpath = this.FindPath(me.x, me.y, pathtodest[i].x, pathtodest[i].y, recalcmaxdist, this.UseTeleport, recalcalgotype, factor);
+				if (!midpath)
+				{
+					mlprint("mlMap:PathMove - Couldn't recalculate a path");
+					this.LastError = "mlMap:PathMove - Couldn't recalculate a path";
+					return false;
+				}
+				for(var k = 0; k<midpath.length; k++) {
+					if(me.classid == 1 && !mlInTown(me) && me.getSkill("Teleport") > 0 && this.UseTeleport && !_notele) var retval = mlteleportto(midpath[k].x, midpath[k].y, walkcallflag, i);
+					else retval = mlwalkto(midpath[k].x, midpath[k].y, walkcallflag, i);
+				}
+			}
+
+			else if (retval > mlSTEPAHEAD && retval < mlSTEPBACK) {		// step ahead
+					i += (retval - mlSTEPAHEAD); continue; }
+			else if (retval > mlSTEPBACK)//step back
+			{
+				print("(retval - mlSTEPBACK):" + (retval - mlSTEPBACK));
+				for (var j = i; j > i - (retval - mlSTEPBACK); j--) {
+					if(me.classid == 1 && !mlInTown(me) && me.getSkill("Teleport") > 0 && this.UseTeleport && !_notele) var retval = mlteleportto(pathtodest[j].x, pathtodest[j].y, walkcallflag, i);
+					else mlwalkto(pathtodest[j].x, pathtodest[j].y, false);
+				}
+				i -= (retval - mlSTEPBACK);
+				continue;
+			}
+			else if (retval == mlSTOP) {					//step back
+					return mlSTOP; }
+			if (!retval)
+			{
+				print("We couldnt find a way to the next path point");
+				if(failedhops == 5)
+				{
+					mlprint("mlMap:PathMove - had five failed destinations along this path");
+					this.LastError = "mlMap:PathMove - had five failed destinations along this path";
+					return false;
+				}
+				failedhops++;
+			}
+			//delay(50);
+		}
+		return true;
+	}
+}
+
+
+
+//////////////////////////////////////////////////////////////////////
+// mlwalkto(x, y, walkcallflag)
+// -------------------------------------------------------------------
+// walks to the given coordinates
+// returns: true on success, false on failure
+// requires mlMapInitializeMap: NO
+//////////////////////////////////////////////////////////////////////
+function mlwalkto(x, y, walkcallflag, currentpoint) //currentpoint is for internal use only
+{
+	var startX = me.x;
+	var startY = me.y;
+	var currDestX = x;
+	var currDestY = y;
+
+	if (Math.abs(me.x - x) <= 1 && Math.abs(me.y - y) <= 1) return 1;
+
+	var trys = 0;
+	var ntrys=12;
+	var thrash = 0;
+	var nthrash=3;
+	var startX = me.x;
+	var startY = me.y;
+	var currDestX = x;
+	var currDestY = y;
+	var door;
+	mlprint("Walking to (lib)[" + x + ", " + y + "]");
+
+	//if (Math.sqrt(Dist2(x, y, mdx[3], mdx[3])) > Math.sqrt(Dist2(me.x, me.y, mdx[3], mdx[3])) && midi != 3)
+	//	continue;
+	var directionalmove=0;
+
+	while ((Math.abs(me.x - x) > 2 || Math.abs(me.y - y) > 2) && trys <= ntrys)
+	{
+		mlmemove(currDestX, currDestY);
+		//call optional function if true
+		if (walkcallflag)
+		{
+			var retvalin = walkcalls(x,y, currentpoint, walkcallflag);
+			if (retvalin == mlSTEPBACK)
+				mlmemove(currDestX, currDestY);
+			if (retvalin > 1 && retvalin != mlSTEPBACK && retvalin != mlSTEPAHEAD)
+				return retvalin;
+			//Now move back where we were so we can so we can continue on
+			//me.move(currDestX, currDestY);
+			if (Math.abs(me.x - x) <= 2 && Math.abs(me.y - y) <= 2)
+				return 1;
+		}
+		delay(walkdel);
+		trys++;
+		if ((Math.abs(me.x - startX) < 3 && Math.abs(me.y - startY) < 3))
+		{
+			if (thrash >= nthrash)
+			{
+				var direction = Math.abs(Math.floor((Math.atan2(x-me.x , y-me.y)) * 180 / 3.1415) - 180);
+				if (direction > 0 && direction < 45){
+					currDestX = me.x+5;
+					currDesty = me.y+1;
+				}
+				else if(direction > 45 && direction < 90) {
+					currDestX = me.x-1;
+					currDestY = me.y-5;
+				}
+				else if (direction > 90 && direction < 135){
+					currDestX = me.x-1;
+					currDestY = me.y+5;
+				}
+				else if(direction > 135 && direction < 180) {
+					currDestX = me.x+5;
+					currDestY = me.y-1;
+				}
+				else if (direction > 180 && direction < 225){
+					currDestX = me.x-5;
+					cuurDestY = me.y-1;
+				}
+				else if(direction > 225 && direction < 270) {
+					currDestX = me.x+1;
+					cuurDestY = me.y+5;
+				}
+				else if (direction > 270 && direction < 315){
+					currDestX = me.x+1;
+					currDestY = me.y-5;
+				}
+				else if(direction > 315 && direction < 360) {
+					currDestX = me.x-5;
+					currDestY = me.y+1;
+				}
+				else
+				{
+					//make a randome move
+					var dx = currDestX - startX;
+					var dy = currDestY - startY;
+					var a = Math.atan2(dx, dy);
+					a = Math.floor(a * 100) + 157;  // + pi/2;
+					var direction = rnd(a, a+314)/100;  // + pi
+					currDestX = Math.floor(Math.sin(direction)*20) + me.x;
+					currDestY = Math.floor(Math.cos(direction)*20) + me.y;
+				}
+				directionalmove = 0;
+
+				//########################################
+				thrash=0;
+				directionalmove++;
+				while (me.mode !=1)
+					delay(50);
+			} else thrash++;
+		}
+		else
+		{
+			startX = me.x;
+			startY = me.y;
+			currDestX = x;
+			currDestY = y;
+		}
+
+	}
+	if (Math.abs(me.x - x) > 4 || Math.abs(me.y - y) > 4)
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// mlteleportto(x, y, walkcallflag)
+// -------------------------------------------------------------------
+// teleports to the given coordinates
+// returns: true on success, false on failure
+// requires mlMapInitializeMap: NO
+//////////////////////////////////////////////////////////////////////
+function mlteleportto(x, y, walkcallflag, currentpoint) //current point is used internally
+{
+	var DestX = x;
+	var DestY = y;
+
+		if (walkcallflag)
+		{
+			var retvalin = walkcalls(x,y, currentpoint, walkcallflag);
+			if(currentpoint)
+			{
+				if (retvalin == mlSTEPBACK)
+					mlCast("Teleport",0,DestX,DestY);
+				if (retvalin > 1 && retvalin != mlSTEPBACK && retvalin != mlSTEPAHEAD)
+					return retvalin;
+			}
+		}
+
+		for (var rv = 0; rv < 3; rv++)
+		{
+			mlCast("Teleport",0,x,y);
+
+			// Check to see see if we have arrived at our destination
+			if ((Math.abs(me.x - x) < 6) && (Math.abs(me.y - y) < 6))
+			{
+				mlprint("Teleported to [" + me.x + ", " + me.y + "]");
+				break;
+			}
+		}
+
+	if ((Math.abs(me.x - DestX) < 6) && (Math.abs(me.y - DestY) < 6))
+		return 1;
+	else
+		return 0;
+
+}
+
+//thanks scav, njag
+function mlmemove(x, y)
+{
+	if(parseFloat(me.version) >= 0.33)
+		clickMap(0, 0, x, y);
+	else
+		me.move(x, y);
+
+	var xoff = parseInt(rnd(0,12)/6) * (x - me.x<0 ? -1 : 1);
+	var yoff = parseInt(rnd(0,12)/6) * (y - me.y<0 ? -1 : 1);
+	delay(rnd(10,50));
+	if(parseFloat(me.version) >= 0.33)
+		clickMap(2, 0, x+xoff, y+yoff);
+	else
+		me.move(x+xoff, y+yoff);
+}

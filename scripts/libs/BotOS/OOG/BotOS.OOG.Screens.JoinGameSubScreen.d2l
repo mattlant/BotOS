@@ -1,0 +1,43 @@
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG) != 'function') {
+	BotOS.OOG = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+if(typeof(BotOS.OOG.Controls) != 'function') {
+	BotOS.OOG.Controls = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG.Controls Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+include("BotOS/OOG/BotOS.OOG.Screen.d2l");
+
+BotOS.OOG.Controls.JoinGameSubScreen = function (init) {
+	//we inherit from Screen since the screen is a control itself 
+	BotOS.OOG.Screen.call(this, null, "Join Game Sub Screen");
+
+	var boc = BotOS.OOG.Controls;
+
+	this.Add(new boc.JoinGameButton(), "JoinGameButton");
+	this.Add(new boc.JoinGameNameTextBox(), "JoinGameNameTextBox");
+	this.Add(new boc.JoinGamePasswordTextBox(), "JoinGamePasswordTextBox");
+	this.Add(new boc.GameListBox(), "GameListBox");
+	this.Add(new boc.GameListBoxScrollBar(), "GameListBoxScrollBar");
+
+	if (init) this.Initialize();
+
+
+
+}
+
+BotOS.OOG.Controls.JoinGameSubScreen.prototype = new BotOS.OOG.Screen;
+
+
+

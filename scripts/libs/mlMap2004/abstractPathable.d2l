@@ -1,0 +1,526 @@
+
+//////////////////////////////////////////////////////////////////////
+// Properties and Methods for abstract Pathable base Class
+// As long as this class is inherited and implemented, you can pass 
+// the object to the Pather
+//////////////////////////////////////////////////////////////////////
+// Properties
+//////////////////////////////////////////////////////////////////////
+// CollisionData[y][x]
+// x - this is the low x coordinate
+// y - this is the low y coordinate
+// MaxX - this is the high x coordinate
+// MaxY - this is the High y coordinate
+// Width - this is the width of the CollisionData
+// Height - this is the Height of the CollisionData
+// Name - A Name given to the object. Used for DUmping Collision Data
+// and other misc tasks
+//////////////////////////////////////////////////////////////////////
+// Methods
+
+function abstractPathable (_info) {
+
+	if(!_info) _info = new Object();
+
+	if(!_info.Name) 
+		this.Name = "NotSet";
+
+	this.CollisionData = null;
+	this.x = Number.MAX_VALUE;
+	this.y = Number.MAX_VALUE;
+	this.MaxX = 0;
+	this.MaxY = 0;
+	this.Width = 0;
+	this.Height = 0;
+	this.IsInitialized = false;
+	this.Name = _info.Name;
+	this.InitializationTime = 0;
+	
+	this.Logger = null;
+
+	this.Rooms = new Array();
+	this.PresetUnits = new Array();
+
+	this.NorthExit = 0;
+	this.EastExit = 0;
+	this.SouthExit = 0;
+	this.WestExit = 0;
+
+	//Override with your own implementation
+	this.Initialize = function () { 
+		throw new NotImplementedException("abstractPathable.Initialize -> This function needs to be overridden and implemented.", 1, "abstractPathable.d2l");
+	} 
+	
+	if(!_info.NoLogger) {
+		if(_info.Logger instanceof oLogSingle)
+			this.Logger = _info.Logger;
+		else
+			this.Logger = new oLogSingle("output/abstractPathable-" + this.Name + ".log", 0, 0);
+	}
+
+}
+
+abstractPathable.prototype.Dump = abstractPathable_Dump;									//Override if you need/want your own functionality
+abstractPathable.prototype.LOS = abstractPathable_LOS;										//Override if you need/want your own functionality
+abstractPathable.prototype.SetExits = abstractPathable_SetExits;							//Override if you need/want your own functionality
+abstractPathable.prototype.SetDoorCollision = abstractPathable_SetDoorCollision;		   	//Override if you need/want your own functionality
+abstractPathable.prototype.SetLogger = abstractPathable_SetLogger;
+abstractPathable.prototype.IsInRange = abstractPathable_IsInRange;							//Override if you need/want your own functionality
+abstractPathable.prototype.IsWalkable = abstractPathable_IsWalkable;						//Override if you need/want your own functionality
+abstractPathable.prototype.FindClosestWalkable = abstractPathable_FindClosestWalkable;		//Override if you need/want your own functionality
+abstractPathable.prototype.TransferCollData = abstractPathable_TransferCollData;			//Override if you need/want your own functionality
+
+//////////////////////////////////////////////////////////////////////
+// abstractPathable.IsInRange(_x, _y)
+// -------------------------------------------------------------------
+// Used to Check if a coord is within the COllisionData's Limits
+// _x and _y define the coords
+//////////////////////////////////////////////////////////////////////
+function abstractPathable_SetLogger (_logger) {
+	if(this.Logger instanceof oLogSingle) {
+		this.Logger = _logger;
+	}
+	else {
+		throw new ArgumentException("abstractPathable.SetLogger -> Invalid Logger passed. Needs an instance of oLogSingle.", 1, "abstractPathable.d2l");
+	}
+}
+//////////////////////////////////////////////////////////////////////
+// abstractPathable.IsInRange(_x, _y)
+// -------------------------------------------------------------------
+// Used to Check if a coord is within the COllisionData's Limits
+// _x and _y define the coords
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+function abstractPathable_IsInRange(_x, _y) 
+{
+	return !(_x > this.MaxX || _x < this.x || _y > this.MaxY || _y < this.y)
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// abstractPathable.IsWalkable(_x, _y)
+// -------------------------------------------------------------------
+// returns: true if walkable else false
+// Acts upon an inplementation of IPathable's CollisionData
+//////////////////////////////////////////////////////////////////////
+function abstractPathable_IsWalkable(_x, _y)
+{
+	if ( !this.IsInRange(_x, _y) )
+		return false;
+
+	return !(this.CollisionData[_y-this.y][_x-this.x] & 1);
+
+}
+
+//////////////////////////////////////////////////////////////////////
+// abstractPathable.FindClosestWalkable(_x, _y)
+// -------------------------------------------------------------------
+// returns: coordinate of closest walkable
+// requires an initialized map
+// TODO: Optimize :D
+//////////////////////////////////////////////////////////////////////
+function abstractPathable_FindClosestWalkable(x, y)
+{
+	if(arguments.length < 2 || isNaN(x) || isNaN(y)) {
+		throw new ArgumentException("abstractPathable.FindClosestWalkable -> Needs at least 2 arguments or invalid args passed", 1, "abstractPathable.d2l");
+	}
+	if ( this.IsWalkable(x,y) )
+	{
+		return {x:x, y:y};
+	}
+	if ( !this.IsInRange(x, y) )
+		throw new ArgumentException("abstractPathable.FindClosestWalkable -> Provided coordinates are not in range", 1, "abstractPathable.d2l");
+
+	var dist = 1;
+	while ( 1 )
+	{
+		for ( var vy = -dist; vy < dist; vy++ )
+		{
+			for ( var vx = -dist; vx < dist; vx++ )
+			{
+				if ( this.IsWalkable(x+vx, y+vy) )
+				{
+					return {x:x+vx, y:y+vy};
+				}
+			}
+		}
+		dist++;
+		if(dist > 100) {
+			throw new ArgumentException("abstractPathable.FindClosestWalkable -> Could not find a closest walkable", 1, "abstractPathable.d2l");
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// abstractPathable.LOS(_x1, _y1, _x2, _y2)
+// -------------------------------------------------------------------
+// returns: true if there is line of sight
+// requires an initialized map
+// THANKS TO BRESENHAM
+//////////////////////////////////////////////////////////////////////
+
+
+function abstractPathable_LOS(Ax, Ay, Bx, By, _cutoff, _coll, _unit)
+{
+	if(arguments.length < 4 || isNaN(Ax) || isNaN(Ay) || isNaN(Bx) || isNaN(By)) {
+		throw new ArgumentException("abstractPathable_LOS -> Needs at least 4 arguments or invalid arguments passed", 1, "abstractPathable.d2l");
+	}
+	if(!this.IsInRange(Ax, Ay))
+		return false;
+	if(!this.IsInRange(Bx, By))
+		return false;
+
+	var _bit = 4;
+	if(_coll) _bit = 1;
+
+	if(_cutoff && this.euclidian(Ax, Ay, Bx, By) > _cutoff) return false;
+
+	var dX = Math.abs(Bx-Ax);
+	var dY = Math.abs(By-Ay);
+
+	var Xincr, Yincr;
+
+	if (Ax > Bx) { Xincr=-1; } else { Xincr=1; }
+	if (Ay > By) { Yincr=-1; } else { Yincr=1; }
+
+	if (dX >= dY){
+		var dPr 	= dY<<1;
+		var dPru 	= dPr - (dX<<1);
+		var P 		= dPr - dX;
+		for (; dX>=0; dX--)	{
+			if (this.CollisionData[Ay-this.y][Ax-this.x] & _bit || this.CollisionData[Ay-this.y][Ax-this.x] & 0x400000)
+				return false;
+			if(_unit) {
+				for(var ux = -1; ux < 2; ux++) {
+					for(var uy = -1; uy < 2; uy++) {
+						if(_unit.x == (Ax+ux) && _unit.y == (Ay+uy))
+						return false;
+					}
+				}
+			}
+
+			if (P > 0){
+				Ax+=Xincr;
+				Ay+=Yincr;
+				P+=dPru;
+			}
+			else{
+				Ax+=Xincr;
+				P+=dPr;
+			}
+		}
+	}
+	else{
+		var dPr 	= dX<<1;
+		var dPru 	= dPr - (dY<<1);
+		var P 		= dPr - dY;
+		for (; dY>=0; dY--)	{
+			if (this.CollisionData[Ay-this.y][Ax-this.x] & _bit || this.CollisionData[Ay-this.y][Ax-this.x] & 0x400000)
+				return false;
+			if(_unit) {
+				for(var ux = -1; ux < 2; ux++) {
+					for(var uy = -1; uy < 2; uy++) {
+						if(_unit.x == (Ax+ux) && _unit.y == (Ay+uy))
+						return false;
+					}
+				}
+			}
+			if (P > 0){
+				Ax+=Xincr;
+				Ay+=Yincr;
+				P+=dPru;
+			}
+			else{
+				Ay+=Yincr;
+				P+=dPr;
+			}
+		}
+	}
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// abstractPathable.Dump(_type, _bit)
+// -------------------------------------------------------------------
+// Used to Dump the map
+// _type = 0 for Hex dump, 1 for visual dump
+// _bit is used during visual to dump a particular bit when in visual
+// mode
+//////////////////////////////////////////////////////////////////////
+function abstractPathable_Dump (_type, _bit) {
+	var line = "";
+	var bit = 0x1 << _bit;
+
+	var tname = this.Name?this.Name:"NoName";
+
+	var hFile = fileOpen("output/CollisionDumps/CollisionDataDump-" + tname + ".txt", 1);
+	if(!_type) {
+		for (var y = 0; y < this.Height; y++) {
+			for (var x = 0; x < this.Width; x++) {
+				if(this.CollisionData[y][x] != undefined)
+					line += "0x" + this.CollisionData[y][x].toString(16) + " ";
+				else line += "0xFFFF ";
+			}
+			hFile.writeLine(line);
+			line = "";
+		}
+	}
+	else if(_type == 1) {
+		for (var y = 0; y < this.Height; y++) {
+			line+=((this.y+y).toString(10));
+			for (var x = 0; x < this.Width; x++) {
+
+				if(this.CollisionData[y][x] & 0x400000)
+					line += "D";
+				else if(this.CollisionData[y][x] & bit)
+					line += "X";
+				else if(this.CollisionData[y][x] & 0x10000)
+					line += "1";
+				else if(this.CollisionData[y][x] & 0x20000)
+					line += "2";
+				else if(this.CollisionData[y][x] & 0x40000)
+					line += "3";
+				else if(this.CollisionData[y][x] & 0x80000)
+					line += "4";
+//					else if(this.CollisionData[y][x] & 0x100000)
+//						line += "+";
+//					else if(this.CollisionData[y][x] & 0x200000)
+//						line += "-";
+				else
+					line += ".";
+
+			}
+			hFile.writeLine(line);
+			line = "";
+		}
+	}
+
+	hFile.close();
+}
+
+//////////////////////////////////////////////////////////////////////
+// abstractPathable_SetExits()
+// -------------------------------------------------------------------
+// returns: path on success, assigns the path to this.Path; false on failure
+// requires an initialized map
+//////////////////////////////////////////////////////////////////////
+function abstractPathable_SetExits() {
+
+	var ec = new Array();
+	var notdoneexit = false;
+	var count = 0;
+	var avgcoord = 0;
+
+	//NORTH 	Scan for white space
+	for (var x = this.x; x < this.MaxX; x++)
+	{
+		this.CollisionData[0][x - this.x] |= 0x400000;
+		if(this.IsWalkable(x, this.y))
+		{
+			ec[ec.length] = {x:x, y:this.y};
+			notdoneexit = true;
+			continue;
+		}
+		else if (notdoneexit) 
+		{
+			if (ec.length < 4)
+			{ //Too small
+				notdoneexit = false;
+				ec.length = 0;
+				continue;
+			}
+			break;
+		}
+	}
+	if (ec.length > 3) 
+	{
+		for(var i = 0; i < ec.length; i++) avgcoord += ec[i].x;
+		this.NorthExit = this.FindClosestWalkable(Math.floor(avgcoord / ec.length), this.y+6);
+	}
+
+	//EAST 	Scan for white space
+	ec = new Array();
+	avgcoord = 0;
+
+	for (var y = this.y; y < this.MaxY; y++){
+		this.CollisionData[y - this.y][this.MaxX - this.x] |= 0x400000;
+		if(this.IsWalkable(this.MaxX, y)){
+			ec[ec.length] = {x:this.MaxX, y:y};
+			notdoneexit = true;
+			continue;
+		}
+		else if (notdoneexit) {
+			if (ec.length < 4){ //Too small
+				notdoneexit = false;
+				ec.length = 0;
+				continue;
+			}
+			break;
+		}
+	}
+	if (ec.length > 3) 
+	{ 
+		for(var i = 0; i < ec.length; i++) avgcoord += ec[i].y;
+		this.EastExit = this.FindClosestWalkable(this.MaxX-6, Math.floor(avgcoord / ec.length));
+	}
+
+	//South	Scan for white space
+	ec = new Array();
+	avgcoord = 0;
+
+	for (var x = this.x; x < this.MaxX; x++){
+		this.CollisionData[this.MaxY - this.y][x - this.x] |= 0x400000;
+		if(this.IsWalkable(x, this.MaxY)){
+			ec[ec.length] = {x:x, y:this.MaxY};
+			notdoneexit = true;
+			continue;
+		}
+		else if (notdoneexit) {
+			if (ec.length < 4){ //Too small
+				notdoneexit = false;
+				ec.length = 0;
+				continue;
+			}
+			break;
+		}
+
+	}
+	if (ec.length > 3) 
+	{
+		for(var i = 0; i < ec.length; i++) avgcoord += ec[i].x;
+		this.SouthExit = this.FindClosestWalkable(Math.floor(avgcoord / ec.length), this.MaxY-6);
+	}
+
+	//West 	Scan for white space
+	ec = new Array();
+	avgcoord = 0;
+
+	for (var y = this.y; y < this.MaxY; y++){
+		this.CollisionData[y - this.y][0] |= 0x400000;
+		if(this.IsWalkable(this.x, y)){
+			ec[ec.length] = {x:this.x, y:y};
+			notdoneexit = true;
+			continue;
+		}
+		else if (notdoneexit) {
+			if (ec.length < 4){ //Too small
+				notdoneexit = false;
+				ec.length = 0;
+				continue;
+			}
+			break;
+		}
+	}
+	if (ec.length > 3) 
+	{
+		for(var i = 0; i < ec.length; i++) avgcoord += ec[i].y;
+		this.WestExit = this.FindClosestWalkable(this.x+6, Math.floor(avgcoord / ec.length));
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// abstractPathable.SetDoorCollision(_door)
+// -------------------------------------------------------------------
+// used to set/unset a doors collision. Pass it the actual door object
+// requires an initialized map
+// Door collision is set at bit h0x400000
+//////////////////////////////////////////////////////////////////////
+function abstractPathable_SetDoorCollision(_door)
+{
+
+	if ( !_door ) {
+		throw new ArgumentException("abstractPathable_SetDoorCollision -> no argument was passed", 1, "abstractPathable.d2l");
+	}
+
+	var dsizex = getBaseStat(4, _door.classid, D2JSP_BASE_OBJECTS_SIZEX);
+	var dsizey = getBaseStat(4, _door.classid, D2JSP_BASE_OBJECTS_SIZEY);
+
+	var obx = Math.floor(dsizex/2);
+	var oby = Math.floor(dsizey/2);
+
+	if ( dsizey == 1 )
+	{
+		for ( var lx = -(obx); lx < obx+1; lx++ )
+		{
+			if ( _door.mode == 0 )
+				this.CollisionData[_door.y-this.y][_door.x-this.x+lx] |= 0x400000;
+			else
+				this.CollisionData[_door.y-this.y][_door.x-this.x+lx] &= 0x3fffff;
+		}
+	}
+	if ( dsizex == 1 )
+	{
+		for ( var ly = -(oby); ly < oby+1; ly++ )
+		{
+			if ( _door.mode == 0 )
+				this.CollisionData[_door.y-this.y+ly][_door.x-this.x] |= 0x400000;
+			else
+				this.CollisionData[_door.y-this.y+ly][_door.x-this.x] &= 0x3fffff;
+		}
+	}
+	return true;
+
+}
+
+//////////////////////////////////////////////////////////////////////
+// abstractPathable.TransferCollData(_rtt)
+// -------------------------------------------------------------------
+// Used to transfer Data from the Rooms array to the CollisionData
+// grid.
+// _rtt is the element number in the Rooms array
+//////////////////////////////////////////////////////////////////////
+function abstractPathable_TransferCollData(_rtt) 
+{
+	var OffsetX = this.Rooms[_rtt].x-this.x;
+	var OffsetY = this.Rooms[_rtt].y-this.y;
+	for(var y = 0; y < this.Rooms[_rtt].Height; y++) 
+	{
+		for(var x = 0; x < this.Rooms[_rtt].Width; x++) 
+		{
+			this.CollisionData[OffsetY+y][OffsetX+x] = this.Rooms[_rtt].CollisionData[y][x];
+		}
+	}
+
+	//this is still somewhat experimental, although it works fine if used properly
+
+	/* DEPRECATED
+	if(this.InitDoors) 
+	{
+//			print("presetlength for door check: " + this.Rooms[_rtt].PresetUnits.length);
+		for(var i = 0; i < this.Rooms[_rtt].PresetUnits.length; i++) 
+		{
+			//mark doors into map 0x400000
+			if(this.Rooms[_rtt].PresetUnits[i].type == 2 && getBaseStat(4, this.Rooms[_rtt].PresetUnits[i].id, D2JSP_BASE_OBJECTS_ISDOOR) ) 
+			{
+//					print("ID: " + this.Rooms[_rtt].PresetUnits[i].id + " is a door");
+//					print("x,y: " + x + ", " + y);
+//				this.Area.CollisionData[this.PresetUnits[i].y-this.Area.y][this.PresetUnits[i].x-this.Area.x] |= 0x400000;
+				var obx = Math.floor(getBaseStat(4, this.Rooms[_rtt].PresetUnits[i].id, D2JSP_BASE_OBJECTS_SIZEX)/2);
+				var oby = Math.floor(getBaseStat(4, this.Rooms[_rtt].PresetUnits[i].id, D2JSP_BASE_OBJECTS_SIZEY)/2);
+
+				if(d2Objects.Units[this.Rooms[_rtt].PresetUnits[i].id].SizeY == 1) 
+				{
+					for(var lx = -(obx); lx < obx+1; lx++) 
+					{
+//							print(this.Rooms[_rtt].PresetUnits[i].y-this.y);
+						this.CollisionData[this.Rooms[_rtt].PresetUnits[i].y-this.y][this.Rooms[_rtt].PresetUnits[i].x-this.x+lx] |= 0x400000;
+					}
+				}
+				if(d2Objects.Units[this.Rooms[_rtt].PresetUnits[i].id].SizeX == 1) 
+				{
+					for(var ly = -(oby); ly < oby+1; ly++) 
+					{
+						this.CollisionData[this.Rooms[_rtt].PresetUnits[i].y-this.y+ly][this.Rooms[_rtt].PresetUnits[i].x-this.x] |= 0x400000;
+					}
+				}
+			}
+		}
+	}
+	*/
+}
+
+
+
+
+

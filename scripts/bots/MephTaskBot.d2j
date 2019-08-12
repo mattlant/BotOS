@@ -1,0 +1,37 @@
+////////////////////////
+//Bot specific include//
+////////////////////////
+
+//misc necessities
+include("taskbot/settings.d2l");
+include("taskbot/coremanager.d2l");
+//include("townmove.d2l");
+
+function main()
+{
+	delay(500);
+	print("MephTaskBot Starting");
+	
+	
+	SystemManager();
+
+	print("MephTaskBot finished");
+	delay(1000);
+	quit();
+}
+
+function LoadQuestData()
+{
+	var gpp = 200;
+
+	//new oGoalTown(gpp--, "TownCheck", {Heal:true, Repair:true, Stash:true}).Insert();
+
+	new oGoalMove(200, "GoToArea", {dx:17561, dy:8070, Area:D2JSP_AREA_DURANCE_OF_HATE_LEVEL_3, p:300}).Insert();
+
+
+
+	//new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskCommon(0, "Delay", {Amount:1000, Reason:"Waiting for meph to approach"}),
+	//	new oTaskAttack(0, "Attack", {Boss:true, Range:60}))).Insert();
+	//new oGoalMove(gpp--, "GoToArea", {Area:D2JSP_AREA_THE_PANDEMONIUM_FORTRESS, p:300}).Insert();
+
+}

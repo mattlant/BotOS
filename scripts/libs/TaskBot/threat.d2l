@@ -1,0 +1,654 @@
+//Threat analysis module
+
+/****************************************
+Threat.d2l revision history
+Revision history is contaioned within each object itself
+
+*/
+
+
+const mlBITRAISES = 			0x1;
+const mlBITUSESMISSLES = 		0x2;
+const mlBITDRAINSMANA = 		0x4;
+const mlBITDRAINSSTAMINA = 		0x8;
+const mlBITSTUNS = 				0x10;
+const mlBITEXPLODES = 			0x20;
+const mlBITTELEPORTS = 			0x40;
+const mlBITRUNSAWAY;
+const mlBITISANNOYING;
+
+const mlBITMETHODANY = 1;
+const mlBITMETHODALL = 2;
+
+const mlSORTASC = 1;
+const mlSORTDESC = 2;
+
+const mlSORTDIST = 1;
+const mlSORTDIR = 2;
+
+
+var mlBITIMMUNITY = new Array(7);
+mlBITIMMUNITY[1]=new Array(36,		"Immune to Physical", 			0x1);
+mlBITIMMUNITY[2]=new Array(37,		"Immune to Magic", 				0x2);
+mlBITIMMUNITY[3]=new Array(39,		"Immune to Fire", 				0x4);
+mlBITIMMUNITY[4]=new Array(41,		"Immune to Lightning", 			0x8);
+mlBITIMMUNITY[5]=new Array(43,		"Immune to Cold", 				0x10);
+mlBITIMMUNITY[6]=new Array(45,		"Immune to Poison", 			0x20);
+
+var mlBITENCHANTMENT = new Array(13);
+mlBITENCHANTMENT[1]=new Array(5,	"Extra Strong", 				0x40);
+mlBITENCHANTMENT[2]=new Array(6,	"Extra Fast", 					0x80);
+mlBITENCHANTMENT[3]=new Array(7,	"Cursed", 						0x100);
+mlBITENCHANTMENT[4]=new Array(8,	"Magic Resistant", 				0x200);
+mlBITENCHANTMENT[5]=new Array(9,	"Fire Enchanted", 				0x400);
+mlBITENCHANTMENT[6]=new Array(17,	"Lightning Enchanted", 			0x800);
+mlBITENCHANTMENT[7]=new Array(18,	"Cold Enchanted", 				0x1000);
+mlBITENCHANTMENT[8]=new Array(25,	"Mana Burn", 					0x2000);
+mlBITENCHANTMENT[9]=new Array(26,	"Teleportation", 				0x4000);
+mlBITENCHANTMENT[10]=new Array(27,	"Spectral Hit", 				0x8000);
+mlBITENCHANTMENT[11]=new Array(28,	"Stone Skin", 					0x10000);
+mlBITENCHANTMENT[12]=new Array(29,	"Multi-Shot", 					0x20000);
+
+var mlBITAURA = new Array(8);
+mlBITAURA[1]=new Array(28,			"Conviction Aura Enchanted", 	0x40000);
+mlBITAURA[2]=new Array(33,			"Might Aura Enchanted", 		0x80000);
+mlBITAURA[3]=new Array(35,			"Holy Fire Aura Enchanted", 	0x100000);
+mlBITAURA[4]=new Array(40,			"Blessed Aim Aura Enchanted", 	0x200000);
+mlBITAURA[5]=new Array(43,			"Holy Freeze Aura Enchanted", 	0x400000);
+mlBITAURA[6]=new Array(46,			"Holy Shock Aura Enchanted", 	0x800000);
+mlBITAURA[7]=new Array(49,			"Fanaticism Aura Enchanted", 	0x1000000);
+
+
+
+var MonsterQueue = new oMonsterList();
+
+
+
+//monsters near you
+//any IEA's
+//num kills
+//direction of closest monster and distance
+//num monsters on mon list
+//On Threat Display TO BE FINISHED
+function plugMLThreatDisplay(instname)
+{
+	this.temp = oPlugin;
+	this.temp("UpdateDisplay", mlPLUGINBYTIME, 100, "Threat Display", "0.0.2", "mattlant", instname);
+	delete this.temp;
+
+	this.shKills = new ScreenHook("Kills: 0", 10, 376);
+	this.shNumMonsters = new ScreenHook("Monsters in range: 0", 10, 390);
+	this.shClosest = new ScreenHook("Closest Monster: None", 10, 404);
+	this.shClosestDist = new ScreenHook("Distance: n/a", 10, 418);
+	this.shClosestDir = new ScreenHook("Direction Travelling: n/a", 10, 432);
+	//this.shiea = new ScreenHook("", 355, 540);
+
+	this.UpdateDisplay = function() {
+		this.shKills.UpdateText("Kills: " + MonsterQueue.Kills);
+		this.shNumMonsters.UpdateText("Monsters in range: " + MonsterQueue.getLength());
+	 	if(mon = MonsterQueue.getClosest()) {
+			this.shClosest.UpdateText("Closest Monster: " + mon.Monster.name);
+			this.shClosestDist.UpdateText("Distance: " + mon.Distance);
+			this.shClosestDir.UpdateText("Direction Travelling: " + mon.Direction);
+		} else{
+			this.shClosest.UpdateText("Closest Monster: None");
+			this.shClosestDist.UpdateText("Distance: n/a");
+			this.shClosestDir.UpdateText("Direction Travelling: n/a");
+		}
+	}
+}
+
+//Monster Class an monster list class
+function oMonsterList(_mons, _data, _range)
+{
+	/*
+	oMonsterList Revision History
+	oMonster is included
+	------------------------------------------------------------------------
+	v0.1.0
+	- changed to teh new copyUnit method for adding a monster into the array
+	
+	oMonsterList Todo's:
+	------------------------------------------------------------------------
+	*/
+	
+	this.List = new Array();
+	this.Data = _data;
+	this._lastdirupdate = new Date();
+	this._mylastarea = me.area;
+	this.Range = _range;
+	this.Kills = 0;
+
+	this.Insert = oMonsterList_insert;
+	this.Remove = oMonsterList_remove;
+	this.Update = oMonsterList_update;
+	this.AutoAdd = oMonsterList_autoadd;
+	this.getClosest = oMonsterList_getclosest;
+	this.getMonsters = oMonsterList_getmonsters;
+	this.getLength = oMonsterList_getlength;
+	this.IsOnList = oMonsterList_isonlist;
+	this.Sort = oMonsterList_sort;
+
+	if(_mons instanceof Array)
+		this.List = _mons;
+
+	if(!this.Range) this.Range = 70;
+
+	function oMonsterList_insert(d)
+	{
+		if(d instanceof oMonster)
+			this.List.push(d);
+	}
+
+	function oMonsterList_remove(by_value_huh)
+	{
+	}
+
+	function oMonsterList_update(type)
+	{
+		if(this._lastdirupdate - new Date() > 200) {
+			var monupdatetype = 0;
+			this._lastdirupdate = new Date();
+		}
+		else
+			var monupdatetype = 3;
+
+		for(var i = 0; i<this.List.length; i++)
+			if(this.List[i].Update(monupdatetype)) this.Kills++;
+
+		if(this._mylastarea != me.area) {
+			this.List.length = 0;
+			this._mylastarea = me.area;
+		}
+
+		if((!type || type == 3))
+			this.AutoAdd();
+
+		if((!type || type == 2))
+		{
+			for(var i = 0; i<this.List.length; i++) {
+				if(this.List[i].Monster.area != me.area || this.List[i].Distance > this.Range) {
+						if(!i) this.List.shift();
+						else if(i == this.List.length-1) this.List.pop();
+						else {
+							this.List = this.List.slice(0, i-1).concat(this.List.slice(i+1));
+							i -= 1;
+						}
+				}
+			}
+		}
+
+	}
+	function oMonsterList_autoadd()
+	{
+			mon = getUnit(1);
+			if(mon) do {
+				monbreak:
+				if(mlIsValidMonster(mon, me.x, me.y, this.Range, true)) {
+					for(var jj = 0; jj<this.List.length; jj++) {
+						if(this.List[jj].Monster.gid == mon.gid) {
+							break monbreak;
+						}
+					}
+					this.List.push(new oMonster(0, mon));
+				}
+			}while(mon && mon.getNext());
+	}
+
+	function oMonsterList_isonlist(_monster)
+	{
+		for(var j = 0; j<this.List.length; j++) {
+			if(this.List[j].Monster.gid == _monster.gid) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	function oMonsterList_getlength()
+	{
+		return this.List.length;
+	}
+
+	function oMonsterList_getclosest(x,y,range)
+	{
+		var dist = 0xFFFF;
+		var monel = null;
+		if(range) {
+			for(var j = 0; j<this.List.length; j++) {
+				if(this.List[j].Dead) continue;
+				var distance = DistEuclidian(this.List[j].Monster.x, this.List[j].Monster.y, x, y)
+				if(distance < dist && distance < range) {
+					dist = this.List[j].Distance;
+					monel = j;
+				}
+			}
+		}
+		else {
+			for(var j = 0; j<this.List.length; j++) {
+				if(this.List[j].Dead) continue;
+				if(this.List[j].Distance < dist) {
+					dist = this.List[j].Distance;
+					monel = j;
+				}
+			}
+		}
+		if(monel != null)
+			return this.List[monel];
+		else
+			return null;
+	}
+
+	function oMonsterList_getmonsters(_data)
+	{
+		//_data.Abilities
+		//_data.NotAbilities
+		//_data.IEA
+		//_data.NotIEA
+		//_data.Boss
+		//_data.NotBoss
+		//_data.Unique
+		//_data.NotUnique
+		//_data.Range
+		//_data.x
+		//_data.y
+		//_Data.Dead
+		//_data.LOS
+		if(!_data) _data = new Object();
+		if(!_data.Range) _data.Range = this.Range;
+		if(!_data.x || !_data.y) _data.x = me.x; _data.y = me.y;
+		if(!_data.SortType) _data.SortType = mlSORTASC;
+		if(!_data.SortBy) _data.SortBy = mlSORTDIST;
+
+		var tlist = new oMonsterList();
+		var dist = 0xFFFF;
+		monloop:
+		for(var m = 0; m<this.List.length; m++) {
+			if(_data.Dead && !this.List[m].Dead) continue monloop;
+			else if(this.List[m].Dead) continue monloop;
+			if(_data.Boss && !this.List[m].Boss) continue monloop;
+			if(_data.NotBoss && this.List[m].Boss) continue monloop;
+			if(_data.Unique && !this.List[m].Unique) continue monloop;
+			if(_data.NotUnique && this.List[m].Unique) continue monloop;
+			if(_data.LOS && !BotOS.Pathing.CheckLOS(me.x, me.y, this.List[m].Monster.x, this.List[m].Monster.y)) continue monloop;
+			if(_data.Abilities) {
+				var bitcheck = 1;
+				for (var b = 0; b<8; b++) {
+					bitcheck = 1;
+					bitcheck <<= b;
+					if(bitcheck & _data.Abilities) {
+						if(!(this.List[m].Abilities & bitcheck)) continue monloop;
+					}
+				}
+			}
+			if(_data.NotAbilities) {
+				var bitcheck = 1;
+				for (var b = 0; b<8; b++) {
+					bitcheck = 1
+					bitcheck <<= b;
+					if(bitcheck & _data.NotAbilities) {
+						if(this.List[m].Abilities & bitcheck) continue monloop;
+					}
+				}
+			}
+			if(_data.IEA) {
+				var bitcheck = 1;
+				for (var b = 0; b<28; b++) {
+					bitcheck = 1;
+					bitcheck <<= b;
+					if(bitcheck & _data.IEA) {
+						if(!(this.List[m].IEA & bitcheck)) continue monloop;
+					}
+				}
+			}
+			if(_data.NotIEA) {
+				var bitcheck = 1;
+				for (var b = 0; b<28; b++) {
+					bitcheck = 1;
+					bitcheck <<= b;
+					if(bitcheck & _data.NotIEA) {
+						if(this.List[m].IEA & bitcheck) continue monloop;
+					}
+				}
+			}
+			if(DistEuclidian(_data.x, _data.y, this.List[m].Monster.x, this.List[m].Monster.y) > _data.Range) continue monloop;
+//			if(_data.Parent && !(this.List[m].Monster.parent && this.List[m].Monster.parent.name == _data.Parent.name)) continue monloop;
+//			print("adding the monster");
+			tlist.Insert(this.List[m]);
+		}
+		return tlist;
+	}
+
+	function oMonsterList_sort(_type, _how) {
+		if(!_how) _how = mlSORTASC;
+		if(!_type) _type = mlSORTDIST;
+
+		switch(_type) {
+			case mlSORTDIST:
+				switch(_how) {
+					case mlSORTASC:
+						this.List.sort(this._sortdistasc);
+					case mlSORTDESC:
+						this.List.sort(this._sortdistdesc);
+				}
+			case mlSORTDIR:
+		}
+	}
+
+	this._sortdistasc = function(a,b) {
+		return b.Distance - a.Distance;
+	}
+	this._sortdistdesc = function(a,b) {
+		return a.Distance - b.Distance;
+	}
+}
+
+function oMonster(_p, _mon)
+{
+	//member properties
+	this.Monster = null;
+	this._remove = false;
+	this.Monster = copyUnit(_mon);
+	this.p = _p;
+	this.Dead = false;
+	this.Abilities = 0;
+	this.IEA = 0; //d
+	this.Unique = false;
+	this.Boss = false;
+	this.Direction = -1;
+	this.Distance = 0; //d
+	this.gid = _mon.gid;
+	this.Lastx = _mon.x;
+	this.Lasty = _mon.y;
+	this._lastdirupdate = new Date();
+	//member functions
+	this.Update = oMonster_update;
+	this.UpdateIEA = oMonster_updateiea;
+	this.UpdateAbilities = oMonster_updateabilities;
+	this.UpdateBossUnique = oMonster_updatebossunique;
+
+	this.Update();
+	this.UpdateAbilities();
+	this.UpdateBossUnique();
+
+
+
+	function oMonster_update(type)
+	{
+		var kill = false;
+		if(!type || type == 1) {
+			if(new Date() - this._lastdirupdate > 200){
+				if(this.Lastx == this.Monster.x && this.Lasty == this.Monster.y)
+					this.Direction = -1;
+				else{
+					this.Direction = Math.abs(Math.floor((Math.atan2(
+						this.Monster.x-this.Lastx , this.Monster.y-this.Lasty)) * 180 / 3.1415) - 180);
+				}
+				this._lastdirupdate = new Date();
+				this.Lastx = this.Monster.x;
+				this.Lasty = this.Monster.y;
+			}
+		}
+		if(!type || type == 2) {
+			this.UpdateIEA();
+		}
+
+		if((this.Monster.mode == 12 || this.Monster.mode == 0) && !this.Dead) {
+			kill = true;
+			this.Dead = true;
+		}
+		else if (this.Monster.mode != 12 && this.Monster.mode !=0)
+			this.Dead = false;
+
+		this.Distance = DistEuclidian(me.x, me.y, this.Monster.x, this.Monster.y); //d
+		return kill;
+	}
+
+	function oMonster_updateiea()
+	{
+		for (var i = 1; i <= 6; i++)
+			if (this.Monster.getStat(mlBITIMMUNITY[i][0]) > 99)
+				this.IEA |= mlBITIMMUNITY[i][2];
+
+		for (var i = 1; i <= 12; i++)
+			if (this.Monster.getStat(mlBITENCHANTMENT[i][0]) > 99)
+				this.IEA |= mlBITENCHANTMENT[i][2];
+
+		for (var i = 1; i <= 7; i++)
+			if (this.Monster.getStat(mlBITAURA[i][0]) > 99)
+				this.IEA |= mlBITAURA[i][2];
+	}
+
+	function oMonster_updateabilities()
+	{
+		var mcid = this.Monster.classid;
+		//Check for raising ability
+		if((mcid > 57 && mcid < 63) || (mcid > 100 && mcid < 106) || (mcid > 277 && mcid < 283))
+			this.Abilities |= mlBITRAISES;
+		//check for stun ability
+		if((mcid > 185 && mcid < 190) || (mcid > 126 && mcid < 131))
+			this.Abilities |= mlBITSTUNS;
+		//check for drain mana
+		if((mcid > 37 && mcid < 43) || (mcid > 113 && mcid < 122) || (mcid > 277 && mcid < 283))
+			this.Abilities |= mlBITDRAINSMANA;
+		//check for drain stam
+		if((mcid > 86 && mcid < 91) || (mcid > 113 && mcid < 118))
+			this.Abilities |= mlBITDRAINSSTAMINA;
+		//check for suicide minion
+		if(mcid > 460 && mcid < 469)
+			this.Abilities |= mlBITEXPLODES;
+	}
+
+	function oMonster_updatebossunique()
+	{
+		switch(this.Monster.name) {
+			case "Andariel":
+			case "Duriel":
+			case "Mephisto":
+			case "Diablo":
+			case "Baal":
+				this.Boss = true;
+				break;
+			case "Bishibosh":
+			case "Bonebreak":
+			case "Coldcrow":
+			case "Rakanishu":
+			case "Threehead Woodfist":
+			case "Griswold":
+			case "The Countess":
+			case "Pitspawn Fouldog":
+			case "Flamespike the Crawler":
+			case "Boneash":
+			case "Radament":
+			case "Bloodwitch the Wild":
+			case "Fangskin":
+			case "Beetleburst":
+			case "Leatherarm":
+			case "Coldworm the Burrower":
+			case "Fire Eye":
+			case "Dark Elder":
+			case "The Summoner":
+			case "Ancient Kaa the Soulless":
+			case "The Smith":
+			case "Web Mage the Burning":
+			case "Witch Doctor Endugu":
+			case "Stormtree":
+			case "Sarina the Battlemaid":
+			case "Icehawk Riftwing":
+			case "Ismail Vilehand":
+			case "Geleb Flamefinger":
+			case "Bremm Sparkfist":
+			case "Toorc Icefist":
+			case "Wyand Voidfinger":
+			case "Maffer Dragonhand":
+			case "Winged Death":
+			case "The Tormentor":
+			case "Taintbreeder":
+			case "Riftwraith the Cannibal":
+			case "Infector of Souls":
+			case "Lord de Seis":
+			case "Grand Vizier of Chaos":
+			case "The Cow King":
+			case "Corpsefire":
+			case "The Feature Creep":
+			case "SiegeBoss":
+//			case "Ancient Barbarian 1":
+//			case "Ancient Barbarian 2":
+//			case "Ancient Barbarian 3":
+			case "Axe Dweller":
+			case "Bonesaw Breaker":
+			case "Dac Farren":
+			case "Megaflow Rectifier":
+			case "Eyeback Unleashed":
+			case "Threash Socket":
+			case "Pindleskin":
+			case "Snapchip Shatter":
+			case "Anodized Elite":
+			case "Vinvear Molech":
+			case "Sharp Tooth Sayer":
+			case "Magma Torquer":
+			case "Blazer Ripper":
+			case "Frozenstein":
+			case "Nihlathak":
+				this.Unique = true;
+				break;
+		}
+	}
+}
+
+function GetClosestMonster(x, y, r, n) {
+	// replaced with logic from scavenger's bloodybarb.d2j
+
+	var closest_dist = r;
+	var monster_id = 0;
+	var mon = getUnit(1, n);
+	if (mon) do {
+		// - allow searching for specific monster type
+		if (!mlIsValidMonster(mon)) continue;
+		dist = DistEuclidian(mon.x, mon.y, x, y);
+		if (dist <= closest_dist) {
+			closest_dist = dist;
+			monster_id = mon.id
+		}
+	}while(mon && mon.getNext(n));
+	// - skip this if no monsters found
+	if (monster_id)
+	{
+		mon = getUnit(1);
+		if (mon) do {
+			if (!mlIsValidMonster(mon)) continue;
+			if (mon.id == monster_id)
+				return mon;
+		}while(mon && mon.getNext());
+	}
+	return false;
+}
+function mlCountMonsters(x, y, r, n) {
+	var monstercount = 0;
+	var monster_id = 0;
+	var mon = getUnit(1, n);
+	if (mon) do {
+		if (!mlIsValidMonster(mon)) continue;
+		dist = DistEuclidian(mon.x, mon.y, x, y);
+		if (dist <= r)
+			monstercount++;
+	}while(mon && mon.getNext(n));
+	return monstercount;
+}
+
+function mlGetMonsters(x, y, r, n)
+{
+	var tmpheap = new BotOS.Arrays.Heap("p", mlLOW);
+	var mon = getUnit(1, n);
+	if (mon) do {
+		if (mlIsValidMonster(mon)) continue;
+		var dist = DistEuclidian(mon.x, mon.y, x, y);
+		if (dist <= r) {
+			tmpheap.Insert(new oMonster(dist, mon));
+		}
+	}while(mon && mon.getNext(n));
+	return tmpheap;
+}
+
+
+function mlIsValidMonster(mon, x, y, range, _dead)
+{
+	//TODO:expand further
+	if(!mon) return false;
+	if(range){
+		if(DistEuclidian(x, y, mon.x, mon.y) > range) return false;
+	}
+	if (!_dead && mon.hp <= 0) return false;
+	//if(!mon.getStat(172)) return false;
+	if (InTown(mon)) return false;
+	if (mon && mon.getParent() && mon.getParent().name == me.name) return false;
+	//var monclassid = mon.classid;
+	switch(mon.name) {
+		case "Combatant":	// a5 bloodyhills barb
+		case "an evil force":
+		case "Dummy":
+		case "Hadriel":		// a4 near river of flame
+		case "Flavie":		// a1 nead cold plains
+		case "Catapult":	// a5 invisible catapults?
+		case "Hydra":
+		case "a trap":
+		case "Kasim":
+		case "Flux":
+			return false;
+	}
+	//if(monclassid < 432 && monclassid > 409) return false; //druid and assn spells
+	if(mon && mon.getParent() && mon.getParent().name == me.name) // My merc
+		return false;
+	switch(mon.classid) {
+		case 108: //act1 merc
+		case 161: //act2 merc
+		case 297:
+		case 359: //act3 merc - Iron Wolf
+		case 560: //act5 merc
+		case 561: //act5 merc
+		case 534: //act5 POW
+		case 543: //baal throne
+		case 545: //baal taunt
+		case 559: //baal stairs
+		case 597: //ws effect
+			return false;
+	}
+	
+	
+	return true;
+}
+
+function isPlayerHostile (player) {
+	if(!player) var player = getUnit(0);
+        if (player) do {
+             	if (player.name != me.name && 
+             		getPlayerFlag(me.gid, player.gid, 8) &&
+             		player.mode != 0 && player.mode != 17) return (player);
+        } while (player.getNext());
+        return (false);
+}
+
+function DistManhattan(x1, y1, x2, y2)
+{
+	return Math.floor((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+}
+
+function DistEuclidian(x1, y1, x2, y2)
+{
+	return Math.floor(Math.sqrt(DistManhattan(x1, y1, x2, y2)));
+}
+
+function InTown(e)
+{
+	if (e.area == 1 || e.area == 40 || e.area == 75 || e.area == 103 || e.area == 109)
+		return true;
+
+	return false;
+}
+
+function IsValidMissle(_m) {
+	if(_m && _m.getParent() && _m.getParent().getStat(172) == 2) return true;
+}
+
+
+

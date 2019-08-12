@@ -1,0 +1,24 @@
+	
+myClass = 5;
+
+function main() {
+	export publicFunction;
+	while(1) {
+		myClass++;
+		print("in exporter");
+		delay(1000);
+	}
+
+
+
+
+}
+
+
+
+function publicFunction () {
+	return myClass;
+
+}
+export publicFunction;
+

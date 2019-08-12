@@ -1,0 +1,65 @@
+////////////////////////
+//Bot specific include//
+////////////////////////
+
+//misc necessities
+include("taskbot/settings.d2l");
+include("taskbot/coremanager.d2l");
+include("townmove.d2l");
+
+//Bot specific Variables
+var doColdPlains = true;
+var doStonyField = true;
+var doUnderground = true;
+
+function main()
+{
+	credits();
+	mlinitdebuglog();
+	mldebuglevel = 0;
+	mldebuglog="output/BloodTaskBot.log";
+	delay(500);
+
+	//mlSettings(mlDOLOGGING, mlYES);
+	//mlSettings(mlPRINTMSG, mlYES);
+
+	Sc_TownMoveSetting("buy_pots", true);
+	Sc_TownMoveSetting("buy_scrolls", true);
+
+	if (begingamedelay > 0)
+	{
+		mlprint("Waiting " + (parseInt(begingamedelay / 1000)) + " seconds for initialization...");
+		delay(begingamedelay);
+	}
+
+	//common begin game stuff
+
+	//START SYSTEM MANAGER
+	mlprint("Starting System Manager");
+	SystemManager();
+
+	mlprint("We're done!!! YAYAYAYA!!!");
+	mlprint("pwned");
+	delay(1000);
+	delay(1000);
+	quit();
+}
+
+function credits()
+{
+	//delay(500);
+	print("ÿc8D2JSP Blood Moore Task Bot by mattlant v0.1");
+}
+
+function LoadQuestData()
+{
+		//new oTaskCommon(10, "RepeatDelay", null).Insert();
+
+}
+
+
+function QuestTrigger()
+{
+
+}
+

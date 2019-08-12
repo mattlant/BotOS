@@ -1,0 +1,151 @@
+//##################################################
+//####     IProto's WindowAPI Library 0.1      #####
+//####       Part of the BotOS framework       #####
+//##################################################
+/*
+
+Copyright (C) 2004 Evan "IProto" Weatherhead
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+----------------------------------------------------
+History
+Version 0.1.0
+- Beta Release
+
+----------------------------------------------------
+
+*/
+
+//General BotOS Includes
+include("BotOS/BotOS.Exceptions.d2l");
+include("BotOS/BotOS.Variable.d2l");
+
+//Other dependancies
+include("BotOS/Console/Coord.d2l");
+include("BotOS/Console/Line.d2l");
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1);
+	}
+}
+
+if(typeof(BotOS.Console) != 'function'){
+	BotOS.Console = function () {
+		throw new BotOS.NamespaceException("BotOS.Console Cannot be instantiated", 1);
+	}
+}
+
+BotOS.Console.Border = function (x, y, x2, y2, type, c) {
+
+	//Inherit from Coord 
+	if(!(BotOS.Variable.IsNumber(x) && BotOS.Variable.IsNumber(y)))
+		BotOS.Console.Coord.call(this, x, y);
+
+	//Initialize private variables
+	
+	//Acceptable border types
+	// 0 - FLAT
+	// 1 - TOP
+	// 2 - BOTTOM
+	// 3 - MIDDLE
+	
+	var Type = 0;
+	if(BotOS.Variable.IsNumber(type) && type > 0 && type <= 3)
+		Type = type;
+	
+	var Lines = new Array();
+	
+	//Fill Lines array
+	for(var i = 0; i < 3; i++)
+	{
+		if(Math.abs(x2-x) > Math.abs(y2-y))
+		{
+			switch(Type)
+			{
+				case 1: //Create top style border
+					Lines.push(new BotOS.Console.Line(x+i, y+i, x2-i, y2+i, (c[i])?c[i]:0));
+					break;
+
+				case 2: //Create bottom style border
+					Lines.push(new BotOS.Console.Line(x+2-i, y+i, x2-2+i, y2+i, (c[i])?c[i]:0));
+					break;
+
+				case 3: //Create middle style border
+					Lines.push(new BotOS.Console.Line(x+((i-1)*(i-1)), y+i, x2-((i-1)*(i-1)), y2+i, (c[i])?c[i]:0));
+					break;
+
+				default://Create a flat ended border
+					Lines.push(new BotOS.Console.Line(x, y+i, x2, y2+i, (c[i])?c[i]:0));
+			}
+		}
+		else
+		{
+			switch(Type)
+			{
+				case 1: //Create top style border
+					Lines.push(new BotOS.Console.Line(x+i, y+i, x2+i, y2-i, (c[i])?c[i]:0));
+					print((y+i)+ " " +(y2-i));
+					break;
+
+				case 2: //Create bottom style border
+					Lines.push(new BotOS.Console.Line(x+i, y+2-i, x2+i, y2-2+i, (c[i])?c[i]:0));
+					break;
+
+				case 3: //Create middle style border
+					Lines.push(new BotOS.Console.Line(x+i, y+((i-1)*(i-1)), x2+i, y2-((i-1)*(i-1)), (c[i])?c[i]:0));
+					break;
+
+				default://Create a flat ended border
+					Lines.push(new BotOS.Console.Line(x+i, y, x2+i, y2, (c[i])?c[i]:0));
+			}
+		}
+		
+	}
+	
+	//Move the border
+	this.Move = function(x, y) {
+		
+		var xoffset = x - this.X;
+		var yoffset = y - this.Y;
+		
+		for(i = 0; i < 3; i++)
+		{
+			Lines[i].Move(Lines[i].X+xoffset, Lines[i].Y+yoffset, Lines[i].X2+xoffset, Lines[i].Y2+yoffset);
+		}
+		
+		this.X = x;
+		this.Y = y;
+
+	}
+	
+	//Show the border
+	this.Show = function() {
+		for(i = 0; i < 3; i++)
+		{
+			Lines[i].Show();
+		}
+	}
+	
+	//Hide the line
+	this.Hide = function() {
+		for(i = 0; i < 3; i++)
+		{
+			Lines[i].Hide();
+		}		
+	}
+}

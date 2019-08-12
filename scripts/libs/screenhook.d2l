@@ -1,0 +1,145 @@
+//
+// ScreenHook object library by HPB_Forever
+//
+// Version: 0.2 - see below for change log
+//
+// Requirements:
+//  This library will work with any core version.  However, 0.26 or newer
+//  is required for the text display to function properly.  Older core
+//  releases will simply manipulate a generic object.
+//
+// Arguments:
+//  text : optional : text to display : use 'null' to skip
+//  x    : optional : x location for text : use '-1' to skip : 0-799
+//  y    : optional : y location for text : use '-1' to skip : 12-599
+//  color: optional : color for text : use -1 to skip : 0-15
+//  font : optional : font  for text : use -1 to skip : 0-13
+//
+//  NOTE: y values start at 12 because any lower will prevent text from showing
+//  NOTE: screen coordinates start with (0,0) at the upper left corner
+//  NOTE: the (x,y) specifies the lower left corner of the text
+//  NOTE: argument values that are out of range are ignored
+//
+// Methods:
+//  Init()                    : sets all properties to defaults
+//  Update(text, x, y, color) : arguments same as above
+//	UpdateText(text)          : updates text only
+//	UpdateX(x)                : updates x position only
+//	UpdateY(y)                : updates y position only
+//	UpdateColor(color)        : updates color only
+//	UpdateFont(font)          : updates the font only
+//	Move(x, y)                : move text to (x, y)
+//  Remove()                  : removes/deletes the ScreenHook
+//  GetHookProps()            : returns an object with text,x,y,color of hook
+//
+//  NOTE: GetHookProps() returns a generic object, NOT the ScreenHook
+//  NOTE: When using Remove(), DO NOT apply it to hooks randomly.  If you 
+//        Remove() the hooks out of order, things will get ugly.  Hopefully,
+//        njaguar can find a solution for this limitation.
+//
+////////////////////////////////////////////////////////////////////////////
+//
+//  Create a new ScreenHook with all default values:
+//    var sh = new ScreenHook();
+//    var sh = new ScreenHook(null,-1,-1,-1,-1);
+//
+//  Create a new ScreenHook with just text and color specified:
+//    var sh = new ScreenHook("test",-1,-1,1);
+//
+//  Move an existing ScreenHook to a different location:
+//    sh.Move(100, 100);
+//
+//  Remove ScreenHook text from display:
+//    sh.Init(); // reset all to default values
+//    sh.UpdateText(" "); // that's a space. "" == null, and is ignored
+//
+////////////////////////////////////////////////////////////////////////////
+//
+// CHANGES:
+//
+// 0.2 - Added Remove() method.
+//     - Changed minimum 'y' value to '0'.  If 'y' is set to < 10, it will 
+//       only be partially displayed.  If you depend on the minimum value
+//       to be '12', change the value of '_SH_MIN_Y' appropriately.
+//     - Added support for the 'font' property
+//
+////////////////////////////////////////////////////////////////////////////
+const _SH_MIN_Y = 0;
+
+function ScreenHook(text, x, y, color, font) {
+	var hook = null;
+	if (me.version < "0.26") { 
+		hook = new Object();
+	} else if (!hook) {
+		hook = getScreenHook();
+	}
+
+	this.Init         = ScreenHook_Init;
+	this.Update       = ScreenHook_Update;
+	this.UpdateText   = ScreenHook_UpdateText;
+	this.UpdateX      = ScreenHook_UpdateX;
+	this.UpdateY      = ScreenHook_UpdateY;
+	this.UpdateColor  = ScreenHook_UpdateColor;
+	this.UpdateFont   = ScreenHook_UpdateFont;
+	this.Move         = ScreenHook_Move;
+	this.Remove       = ScreenHook_Remove;
+	this.GetHookProps = ScreenHook_GetHookProps;
+
+	this.Init();
+	this.Update(text, x, y, color, font);
+
+	function ScreenHook_Init() {
+		this.Update(" ", 0, _SH_MIN_Y, 0, 0);
+	}
+
+	function ScreenHook_Update(text, x, y, color, font) {
+		this.UpdateText(text);
+		this.UpdateX(x);
+		this.UpdateY(y);
+		this.UpdateColor(color);
+		this.UpdateFont(font);
+	}
+
+	function ScreenHook_UpdateText(text) {
+		if (hook && text && text.length > 0)  { hook.text = text; }
+	}
+
+	function ScreenHook_UpdateX(x) {
+		if (hook && x >= 0 && x < 800)        { hook.x = x; }
+	}
+
+	function ScreenHook_UpdateY(y) {
+		if (hook && y >= _SH_MIN_Y && y < 600){ hook.y = y; }
+	}
+
+	function ScreenHook_UpdateColor(color) {
+		if (hook && color >= 0 && color <= 15) { hook.color = color; }
+	}
+
+	function ScreenHook_UpdateFont(font) {
+		if (hook && font >= 0 && font <= 13) { hook.font = font; }
+	}
+
+	function ScreenHook_Move(x, y) {
+		this.UpdateX(x);
+		this.UpdateY(y);
+	}
+
+	function ScreenHook_Remove() {
+		if (!hook) { return; }
+		hook.text = "";
+		hook = null;
+	}
+
+	function ScreenHook_GetHookProps() {
+		if (!hook) { return; }
+		o = new Object;
+		o.text  = hook.text;
+		o.x     = hook.x;
+		o.y     = hook.y; // if 'y' is < 12 the text won't print
+		o.color = hook.color;
+		o.font  = hook.font;
+		return o;
+	}
+}
+

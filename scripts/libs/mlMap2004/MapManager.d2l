@@ -1,0 +1,159 @@
+//##################################################
+//######   Matts Map and Pathing Library    ########
+//##################################################
+/*
+----------------------------------------------------*/
+var mlMapVersion = 3.0;
+/*----------------------------------------------------
+Copyright (C) 2003 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as original header
+and credits stay.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+
+
+
+function MapManager() {
+
+
+	this.PathableObjects = null;
+
+	this.Path = null;
+
+	this.PathToMap = _pathtomap;
+	this.LastPathScore = 0;
+	this.LastError = "";
+	this.LastErrorCode = 0;
+	this.LastOpenNodes = 0;
+	this.LastClosedNodes = 0;
+
+	this.UseTeleport = 0;
+	this.InitDoors = true;
+	this.CurrentArea = null;
+	this.PrefetchArea = null;
+	this.MyCurrentArea = 0;
+
+	this.Mover = new oMover();
+	this.Pather = new oPather();
+	
+
+	if(!_mode)
+		this.Mode = mlMAPMULTI;
+	else
+		this.Mode = _mode;
+
+	this.Areas = new Array();
+
+	this.InitializeMap = oMap_initmap;
+	this.FindPath = oMap_findpath;
+//	this.GoToArea = oMap_gotoarea;  		//all encompassing function, does everything for you
+//	this.FindAreaPath = oMap_findareapath;  	//used to find a LinkPath
+//	this.NextAreaLinkAction = oMap_nextaction;  	//used to process the next action for an AreaLink array
+	this.FindPathToLevel = oMap_FindPathToLevel;
+	this.FindExplorePath = oMap_findexplorepath;
+	this.IsWalkable = oMap_iswalkable;
+	this.LOS = oMap_los;
+	this.FindClosestWalkable = oMap_findclosestwalkable;
+	this.getMapExit = oMap_getmapexit;
+	this.DumpMap = oMap_dumpmap;
+	this.getLevelWarpXY = oMap_getlevelwarpxy;
+	this.FindScore = oMap_findscore;
+	this.getSafeOffScreenXY = oMap_getSafeOffScreenXY;
+	this.IsInRange = oMap_isinrange;
+	this.getRoomExits = oMap_getroomexits;
+	this.SetDoorCollision = oMap_setdoorcollision
+
+
+	this.MyCurrentArea = 0;
+
+	var incr = false;
+	if(_initarea)
+		this.InitializeMap(_initarea);
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.Initializemap()
+	// -------------------------------------------------------------------
+	// Used to initialize the current areas map
+	//////////////////////////////////////////////////////////////////////
+
+	this.PreFetchArea = function(_area)
+	{
+		this.Area = new oArea(_area, this.InitDoors);
+		//this.Area.InitializeRooms();
+		this.Area.BuildCollisionMap();
+		this.AreaInitialized = this.Area.Number;
+
+		//temporary fix
+		this.PresetUnits = this.Area.PresetUnits;
+
+		runGC();
+	}
+
+
+	this.Maint = function(_intern)
+	{
+		//this is where we auto increment, do any pathing, etc in smal increments
+	}
+
+
+
+
+
+	// updateterminal
+	function updateterminal(area, nx, ny) 
+	{
+		var mx = nx - Math.floor(pdis.Columns/2);
+		var my = ny - Math.floor(pdis.Rows/2);
+		for(var yy = 0; yy<pdis.Rows; yy++)
+		{
+			for(var xx = 0; xx<pdis.Columns; xx++)
+			{
+				if(!area[my+yy] && !area[my+yy][mx+xx]) 
+				{
+					pdis.Poke(yy, xx, " ");
+					continue;
+				}
+				if(area[my+yy][mx+xx] & 1)
+					pdis.Poke(yy, xx, "X");
+				else if(area[my+yy][mx+xx] & 0x10000)
+					pdis.Poke(yy, xx, "1");
+				else if(area[my+yy][mx+xx] & 0x20000)
+					pdis.Poke(yy, xx, "2");
+				else if(area[my+yy][mx+xx] & 0x40000)
+					pdis.Poke(yy, xx, "3");
+				else if(area[my+yy][mx+xx] & 0x80000)
+					pdis.Poke(yy, xx, "4");
+				else if(area[my+yy][mx+xx] & 0x100000)
+					pdis.Poke(yy, xx, "+");
+				else if(area[my+yy][mx+xx] & 0x200000)
+					pdis.Poke(yy, xx, "-");
+				else
+					pdis.Poke(yy, xx, " ");
+			}
+		}
+	}
+
+
+
+
+
+}
+

@@ -1,0 +1,124 @@
+//##################################################
+//####     IProto's WindowAPI Library 0.1      #####
+//####       Part of the BotOS framework       #####
+//##################################################
+/*
+
+Copyright (C) 2004 Evan "IProto" Weatherhead
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+----------------------------------------------------
+History
+Version 0.1.0
+- Beta Release
+
+----------------------------------------------------
+
+*/
+
+//General BotOS Includes
+include("BotOS/BotOS.Exceptions.d2l");
+include("BotOS/BotOS.Variable.d2l");
+
+//Other dependancies
+include("BotOS/Console/Coord.d2l");
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1);
+	}
+}
+
+if(typeof(BotOS.Console) != 'function'){
+	BotOS.Console = function () {
+		throw new BotOS.NamespaceException("BotOS.Console Cannot be instantiated", 1);
+	}
+}
+
+BotOS.Console.Line = function (x, y, x2, y2, c) {
+
+	//Inherrit from Coord 
+	if(!(BotOS.Variable.IsNumber(x) && BotOS.Variable.IsNumber(y)))
+		BotOS.Console.Coord.call(this, x, y);
+	
+	//Initialize private variables
+	var X2 = 0;
+	var Y2 = 0;
+	var C = 0;
+	var sh = getScreenHook();
+		
+	//X2 property
+	this.X2 setter = function (value) {
+		if(!(BotOS.Variable.IsNumber(value) && value >= -1 && value <= 800))
+			throw new BotOS.ArgumentException("BotOS.Console.Line.X2 requires a valid number to be passed", 1, "Line.d2l");
+		X2 = value;
+	}
+	this.X2 getter = function() { return X2; }
+
+	//Y2 property
+	this.Y2 setter = function (value) {
+		if(!(BotOS.Variable.IsNumber(value) && value >= -1 && value <= 600)) 
+			throw new BotOS.ArgumentException("BotOS.Console.Line.Y2 requires a valid number to be passed", 1, "Line.d2l");
+		Y2 = value;
+	}
+	this.Y2 getter = function() { return Y2; }
+	
+	//C property
+		this.C setter = function (value) {
+			if(!(BotOS.Variable.IsNumber(value) && value >= 0 && value <= 255)) 
+				throw new BotOS.ArgumentException("BotOS.Console.Line.C requires a valid number to be passed", 1, "Line.d2l");
+			C = value;
+		}
+	this.C getter = function() { return C; }
+	
+	//Set misc vars
+	this.X = x;
+	this.Y = y;
+	this.X2 = x2;
+	this.Y2 = y2;
+	this.C = c;
+	
+	sh.text = "";
+	sh.x = this.X;
+	sh.y = this.Y;
+	sh.x2 = this.X2;
+	sh.y2 = this.Y2;
+	sh.color = this.C;
+	
+	//Move the line
+	this.Move = function(x, y, x2, y2) {
+		this.X = x;
+		this.Y = y;
+		this.X2 = x2;
+		this.Y2 = y2;
+		
+		sh.x = this.X;
+		sh.y = this.Y;
+		sh.x2 = this.X2;
+		sh.y2 = this.Y2;
+	}
+	
+	//Show the line
+	this.Show = function() {
+		sh.y2 = X2;
+	}
+	
+	//Hide the line
+	this.Hide = function() {
+		sh.y2 = -1;
+	}
+}

@@ -1,0 +1,78 @@
+////////////////////////
+//Bot specific include//
+////////////////////////
+
+//misc necessities
+include("taskbot/settings.d2l");
+include("taskbot/coremanager.d2l");
+include("townmove.d2l");
+include("mlmap.d2l");
+
+
+function main()
+{
+	credits();
+	mlinitdebuglog();
+	mldebuglevel = 0;
+	mldebuglog="output/TaskBot.log";
+	delay(500);
+	delay(500);
+
+	//mlSettings(mlDOLOGGING, mlYES);
+	//mlSettings(mlPRINTMSG, mlYES);
+
+	Sc_TownMoveSetting("buy_pots", true);
+	Sc_TownMoveSetting("buy_scrolls", true);
+
+	if (begingamedelay > 0)
+	{
+		mlprint("Waiting " + (parseInt(begingamedelay / 1000)) + " seconds for initialization...");
+		delay(begingamedelay);
+	}
+
+	//common begin game stuff
+
+	//START SYSTEM MANAGER
+	mlprint("Starting System Manager");
+	SystemManager();
+
+	mlprint("We're done!!! YAYAYAYA!!!");
+	mlprint("pwned");
+	delay(1000);
+	delay(1000);
+	quit();
+}
+
+function credits()
+{
+	//delay(500);
+	print("ÿc@-------------------------------------------------------------");
+	print("ÿc8D2JSP Pindle Task Based Script!!!  Version 0.0.1");
+	print("ÿc9Script by mattlant");
+	print("ÿc@-------------------------------------------------------------");
+	delay(250);
+}
+
+function QuestTrigger()
+{
+
+}
+
+function LoadQuestData()
+{
+	var gpp = 200;
+
+	new oGoalTown(gpp--, "TownCheck", {Heal:true, Repair:true, Stash:true}).Insert();
+
+	if(me.area != 109)
+		new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskCommon(0, "DoCommand", {Command:"Sc_TownWP(5,1);"}),
+			new oTaskCommon(0, "DoCommand", {Command:"me.cancel(0);"}))).Insert();
+
+	new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskCommon(0, "SetVariable", {Var:"moveattack", Val:"false"}),
+		new oTaskCommon(0, "DoCommand", {Command:"Sc_TownMove(\"portal\");"}), new oTaskInteract(0, "InteractPortal"))).Insert();
+
+	new oGoalMove(gpp--, "PathToXY", {dx:10060, dy:13229, p:300}).Insert();
+	new oGoal(gpp--, "AddItems", {p:500}, new Array(new oTaskAttack(0, "Attack", {Unique:true}),
+		new oTaskCommon(0, "Delay", {Amount:200}),
+		new oTaskCommon(0, "SetVariable", {Var:"done", Val:"true"}))).Insert();
+}

@@ -1,0 +1,297 @@
+//##################################################
+//######    Spam Manager for trickdaddy     ########
+//##################################################
+/*
+----------------------------------------------------*/
+/*----------------------------------------------------
+Copyright (C) 2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+*/
+
+
+
+include("BotOS/BotOS.Logging.d2l");
+include("BotOS/Arrays/BotOS.Arrays.FIFO.d2l");
+include("BotOS/Arrays/BotOS.Arrays.Heap.d2l");
+include("BotOS/OOG/BotOS.OOG.d2l");
+
+var Accounts = new Array();
+
+// Account name, Account Password, number of characters on the account
+// you can push as many accounts as you want using thios method
+
+Accounts.push(["mattlant", "l0483", 8]);
+Accounts.push(["mattlant2", "l0483", 8]);
+Accounts.push(["mattlant3", "l0483", 8]);
+
+//time in minutes before you switch to the next account character
+var charswitchtime = 5;
+
+//dont touch these
+var spam = new Array();
+var channels = new Array();
+
+
+var chandelay = 1000;
+
+//randomize some delays, should need to be edited
+var randomizedelays = true;
+var rndlow = 1000;
+var rndhigh = 2000;
+
+//This is the delay till it makes a new game. It is in milliseconds.
+var nextgame = 10000;
+
+
+//dont touch these unless you want to specify many different files
+var spamfile = "messages.spm"
+var channelfile = "channels.spm"
+
+//dont touch these
+var acctcounter = 0;
+var charcounter = 1;
+var chancounter = 0;
+
+//if teh bot crashes with an exception, details will be in here. Send these to mattlant :D
+var Logger = new BotOS.Logging.Log("output/spambotException.log", 0, 0);
+Logger.Initialize();
+
+
+var gamequeue = new BotOS.Arrays.FIFO(10);
+var pgamequeue = new BotOS.Arrays.Heap("Players", mlHEAPHIGH);
+
+function Game (gamename, players) {
+	this.GameName = gamename;
+	this.Players = players;
+}
+
+function main() {
+
+	try {
+
+		//load the spam messages
+
+		spam = readspam();
+		channels = readchannels();
+
+
+		var main = new BotOS.OOG.Controls.MainScreen();
+		var login = new BotOS.OOG.Controls.LoginScreen();
+		var character = new BotOS.OOG.Controls.CharacterScreen();
+		var lobby = new BotOS.OOG.Controls.LobbyScreen();
+		var chat = new BotOS.OOG.Controls.ChatScreen();
+		var chan = new BotOS.OOG.Controls.ChannelSubScreen();
+		var jgame = new BotOS.OOG.Controls.JoinGameSubScreen();
+
+
+		//Steps for SPam Manager
+		// 1 - Figure out where we are -> todo
+		// 2 - Jump tp right spot based upon where we are -> todo
+		// 3 - Log onto battle net
+		// 4 - enter chat
+		// 5 - change channel
+		// 6 - spam messages
+		// 7 - goto step 5
+		// 8 - if game spamming, then enter game every x number of channel changes
+
+		////////////////////////////////////////
+		//Log onto Battlenet
+		////////////////////////////////////////
+		acctcounter = 0;
+		var dcounter = 0;
+mainloop:while(1) {
+			try {
+	
+				delay(5000);
+	
+				if(BotOS.OOG.IsMainScreenShowing()) {
+					main.Initialize();
+					main.Controls["BattleNetButton"].Click();
+					delay(2000);
+					dcounter = 0;
+					while(!BotOS.OOG.IsLoginScreenShowing()) {
+						delay(200);
+						dcounter++;
+						if(dcounter > 50) continue mainloop;
+					}
+				}
+				if(BotOS.OOG.IsLoginScreenShowing()) {
+					login.Initialize();
+					if(acctcounter > Accounts.length-1) acctcounter = 0;
+					login.Controls["AccountTextBox"].Text = Accounts[acctcounter][0];
+					delay(1000);
+					login.Controls["PasswordTextBox"].Text = Accounts[acctcounter][1];
+					delay(1000);
+					login.Controls["LoginButton"].Click();
+					charcounter = 1;
+					delay(2000);
+					dcounter = 0;
+					while(!BotOS.OOG.IsCharacterScreenShowing()) {
+						delay(200);
+						dcounter++;
+						if(dcounter > 50) continue mainloop;
+					}
+				}
+	
+		
+	choosecharloop:while(1) {
+					if(BotOS.OOG.IsCharacterScreenShowing()) {
+						character.Initialize();
+						character.Slots[charcounter].Click();
+						character.Controls["OKButton"].Click();
+						dcounter = 0;
+						delay(2000);
+						dcounter = 0;
+						while(!BotOS.OOG.IsLobbyScreenShowing()) {
+							delay(200);
+							dcounter++;
+							if(dcounter > 50) continue mainloop;
+						}
+					}
+	
+		
+					var cswitchtimer = new Date();
+			
+	mainspamloop:	while(1) {
+						if(BotOS.OOG.IsLobbyScreenShowing()) {
+							lobby.Initialize();
+							lobby.Controls["JoinButton"].Click();
+							delay(2000);
+							dcounter = 0;
+							while(!BotOS.OOG.IsJoinGameSubScreenShowing()) {
+								delay(200);
+								dcounter++;
+								if(dcounter > 50) continue mainloop;
+							}
+						}
+							
+						if(BotOS.OOG.IsJoinGameSubScreenShowing()) {
+							jgame.Initialize();
+							var titems = jgame.Controls["GameListBox"].Items;
+							
+							//CLear the queue for a new set of games
+							pgamequeue.Clear();
+							//Add all games to the PQueue
+							for(var i = 0; i < titems.length; i++) {
+								if(parseInt(titems[i][1]) < 8) //add only 7 player or less
+									pgamequeue.Insert(new Game(titems[i][0], titems[i][1]));
+							}
+							
+							//Now we have a PQueue with games, lets start popping them off and coomparing to our FIFO game queue
+ploop:   					for(var o = 0; o < pgamequeue.getLength(); o++) {
+								var g = pgamequeue.Remove();
+								var q = gamequeue.GetQueue();
+gloop:   						for(var i = 0; i < q.length; i++) {
+									if(q[i].GameName == g.GameName) continue ploop;
+								}
+								//we got a high count game, lets add to fifo and continue
+								gamequeue.Insert(g);
+								break;
+							}
+
+							pgamequeue.Clear();
+							print(g.GameName);
+							print(g.Players);
+							delay(1500);
+							jgame.Controls["JoinGameNameTextBox"].Text = g.GameName;
+							delay(1500);
+							jgame.Controls["JoinGameButton"].Click();
+							delay(10000);
+						}
+						else continue mainloop;
+	
+						if(BotOS.OOG.IsInGame()) {
+							BotOS.OOG.WaitForGameEnd();
+	
+						}
+		
+						if((new Date() - cswitchtimer) > charswitchtime*1000*60) {
+							//This is where we get back to the Opening screen
+	
+							if(!BotOS.OOG.IsLobbyScreenShowing()) {
+								chat.Controls["QuitButton"].Click();
+							}
+							else {
+								lobby.Controls["QuitButton"].Click();
+							}
+							delay(3000);
+							charcounter++;
+							break mainspamloop;
+	
+						}
+						delay(nextgame);
+	
+	
+					}
+					if(charcounter > Accounts[acctcounter][2]) {
+						character.Controls["ExitButton"].Click();
+						delay(3000);
+						break;
+	
+					}
+	
+			
+				}
+				if(acctcounter >= Accounts.length) 
+					acctcounter = 0;
+				else acctcounter++;
+			}
+			catch(e) {
+				Logger.WriteException(e);
+				continue mainloop;
+			}
+
+		}
+	
+	
+			
+
+	}
+	catch(e) {
+		//Log the exception
+		Logger.WriteException(e);
+		//load a new Spam Manager
+		//load("spammanager.d2j");
+		//Stop this spam manager
+		stop();
+
+	}
+	stop();
+	
+
+}
+
+function getrnd() {
+
+	return rnd(rndlow, rndhigh);
+
+}
+
+function readspam () {
+	var tspam = new Array();
+	var file = fileOpen("settings/" + spamfile, 0);
+	while(!file.eof) {
+		var line = file.readLine();
+		if(!line.length) continue;
+		if(line == "/END") break;
+		var delay = parseInt(file.readLine());
+		tspam.push([line, delay]);
+	}
+	file.close();
+	return tspam;
+}
+
+function readchannels() {
+	var tchan = new Array();
+	var file = fileOpen("settings/" + channelfile, 0);
+	while(!file.eof) {
+		var line = file.readLine();
+		if(!line.length) continue;
+		if(line == "/END") break;
+		tchan.push(line);
+	}
+	file.close();
+	return tchan;
+}
+

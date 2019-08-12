@@ -1,0 +1,240 @@
+//##################################################
+//####  Matts Exception Framework Library 0.1  #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+This is the Exception framework used in BotOS.
+
+If you dont know what an exception is, go read a book. Alos read up on
+try/catch/finally statements while you are at it. Exceptions are a common
+programming them,e, so I WILL NOT DESCRIBE HOW TO USE THIS LIBRARY.
+
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+*/
+
+include("BotOS/BotOS.Logging.d2l");
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "BotOS.Exceptions.d2l");
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.Exception(_msg, _num, _name, _filename)
+// -------------------------------------------------------------------
+// This is the Base Exception class sort of. It still inherits from
+// Error, but it is much more functional than Error.
+// We fake out the stack trace so we get a very informative trace.
+// This is the only way we can get a trace working in an inherited
+// object
+//////////////////////////////////////////////////////////////////////
+BotOS.Exception = function (_msg, _num, _name, _filename, _inner) {
+	
+	this.CheckStaticValues = Exception_CheckStaticValues;
+	
+	if(_num)
+		this.number = _num;
+	if(_msg)
+		this.message = _msg;
+	if(_filename)
+		this.fileName = _filename;
+	if(_name)
+		this.name = _name;
+
+	this.inner = _inner;
+
+	//Lets fake a way to get our inherited object a PROPER stack
+	try{
+		throw new Error()
+	}
+	catch(e) {
+		this.stack = e.stack;
+	}
+	this.stack = this.stack.split("\n").slice(3);
+	this.stack.pop();
+	this.stack.pop();
+	this.stack.reverse();
+
+	this.CheckStaticValues();
+}
+BotOS.Exception.prototype = new Error;
+
+//Does some extra functionality stuff if you so desire :P
+function Exception_CheckStaticValues() {
+	if(BotOS.Exception.Print) {
+		print(this.name + " Occured");
+		print("Error (code): " + this.message + " (" + this.number + ")");
+		print("fileName: " + this.fileName);
+		if(BotOS.Exception.PrintStack) 
+		{
+			for(var i = 0; i < this.stack.length; i++) {
+				print("Stack Trace -> function[" + i + "]: " + this.stack[i]);
+			}
+
+		}
+	}
+	if(BotOS.Exception.Log) {
+		BotOS.Exception.Logger.WriteException(this);
+	}
+	if(BotOS.Exception.Quit) {
+		quit();
+	}
+	if(BotOS.Exception.Stop) {
+		stop();
+	}
+}
+
+// Static Members of Exception
+BotOS.Exception.GetStack = mlGetStack;
+BotOS.Exception.Last = null;
+BotOS.Exception.Print = false;
+BotOS.Exception.PrintStack = false;
+BotOS.Exception.Log = false;
+BotOS.Exception.Quit = false;
+BotOS.Exception.Stop = false;
+BotOS.Exception.LogName = "BotOS.Exceptions.log";
+BotOS.Exception.Logger = new BotOS.Logging.Log("output\\" + BotOS.Exception.LogName, 5, 0);
+BotOS.Exception.Logger.InitializeLog();
+
+//////////////////////////////////////////////////////////////////////
+// mlGetStack - returns a string with a stack trace
+/////////////////////////////////////////////////////////////////////
+
+function mlGetStack() {
+	var stack;
+	try{
+		throw new Error()
+	}
+	catch(e) {
+		stack = e.stack;
+	}
+	stack = stack.split("\n").slice(2);
+	stack.pop();
+	stack.pop();
+	stack.reverse();
+	return stack;
+}
+
+//////////////////////////////////////////////////////////////////////
+// mlGetStackOLD - rthe old method for getting the stack trace
+/////////////////////////////////////////////////////////////////////
+function mlGetStackOLD () {
+
+
+	var thecaller = arguments.callee.caller.caller;
+	var retstr = "";
+	retstr += (arguments.callee.caller.name + "()");
+	while(thecaller) {
+		retstr += (", " + thecaller.name + "()");
+		thecaller = thecaller.caller;
+	}
+	return retstr;
+}
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.PathingException(_msg, _num, _filename) -> Move to Pather.d2l
+// -------------------------------------------------------------------
+// Use this exception for Pathing Problems
+//////////////////////////////////////////////////////////////////////
+BotOS.PathingException  = function (_msg, _num, _filename, _inner) {
+	BotOS.Exception.call(this, _msg, _num, "PathingException", _filename, _inner);
+}
+BotOS.PathingException.prototype = new BotOS.Exception;
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.ArgumentException(_msg, _num, _filename)
+// -------------------------------------------------------------------
+// Use this exception for problems with function arguments
+//////////////////////////////////////////////////////////////////////
+BotOS.ArgumentException  = function (_msg, _num, _filename, _inner) {
+	BotOS.Exception.call(this, _msg, _num, "ArgumentException", _filename, _inner);
+}
+BotOS.ArgumentException.prototype = new BotOS.Exception;
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.NotImplementedException(_msg, _num, _filename)
+// -------------------------------------------------------------------
+// Use this exception if you have a function not yet implemented and
+// you want an error if it is called
+//////////////////////////////////////////////////////////////////////
+BotOS.NotImplementedException  = function (_msg, _num, _filename, _inner) {
+	BotOS.Exception.call(this, _msg, _num, "NotImplementedException", _filename, _inner);
+}
+BotOS.NotImplementedException.prototype = new BotOS.Exception;
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.MappingException(_msg, _num, _filename) -> Move to Pathable.d2l
+// -------------------------------------------------------------------
+// Use this exception if for Map related problems
+//////////////////////////////////////////////////////////////////////
+BotOS.MappingException  = function (_msg, _num, _filename, _inner) {
+	BotOS.Exception.call(this, _msg, _num, "MappingException", _filename, _inner);
+}
+BotOS.MappingException.prototype = new BotOS.Exception;
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.InstanceException(_msg, _num, _filename)
+// -------------------------------------------------------------------
+// Use this exception if someone instantiates a Static only Object
+//////////////////////////////////////////////////////////////////////
+BotOS.InstanceException  = function (_msg, _num, _filename, _inner) {
+	BotOS.Exception.call(this, _msg, _num, "InstanceException", _filename, _inner);
+}
+BotOS.InstanceException.prototype = new BotOS.Exception;
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.NamespaceException(_msg, _num, _filename)
+// -------------------------------------------------------------------
+// Use this exception if someone instantiates a Namespace
+//////////////////////////////////////////////////////////////////////
+BotOS.NamespaceException  = function (_msg, _num, _filename, _inner) {
+	BotOS.Exception.call(this, _msg, _num, "NamespaceException", _filename, _inner);
+}
+BotOS.InstanceException.prototype = new BotOS.Exception;
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.OOGException(_msg, _num, _filename)
+// -------------------------------------------------------------------
+// Use this exception for OOG related stuff
+//////////////////////////////////////////////////////////////////////
+BotOS.OOGException  = function (_msg, _num, _filename, _inner) {
+	BotOS.Exception.call(this, _msg, _num, "OOGException", _filename, _inner);
+}
+BotOS.OOGException.prototype = new BotOS.Exception;
+
+//////////////////////////////////////////////////////////////////////
+// BotOS.MoverException(_msg, _num, _filename)
+// -------------------------------------------------------------------
+// Use this exception BotOS.Pathing.Mover related Exceptions
+//////////////////////////////////////////////////////////////////////
+BotOS.MoverException  = function (_msg, _num, _filename, _inner) {
+	BotOS.Exception.call(this, _msg, _num, "MoverException", _filename, _inner);
+}
+BotOS.MoverException.prototype = new BotOS.Exception;
+
+
+
+

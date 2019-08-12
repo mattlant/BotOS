@@ -1,0 +1,193 @@
+//Amazon
+charplugin[0] = true;
+
+
+include("Gshock/AutoSkills.d2l");
+var necro = new oSkill();
+
+var timebetweencasts = 2000; //in milliseconds
+var lastcasttime = new Date();
+
+
+function plugIKplayer(instname)
+{
+	this.temp = oPlugin;
+	this.temp("NecroPlugin", mlPLUGINBYTIME, 1000, "Necromancer Char Plugin", "0.0.1", "mattlant", instname);
+	delete this.temp;
+	this.NecroPlugin = function()
+	{
+		/*
+		if (new Date() - lastcasttime > timebetweencasts)
+		{
+			if(energyshield && !me.getState(30) && me.getSkill("Energy Shield"))
+				new oTaskCommon(980, "Cast", {Skill:"Energy Shield"}).Insert();
+			if(!InTown(me) && thunderstorm && !me.getState(38) && me.getSkill("Thunder Storm"))
+				new oTaskCommon(980, "Cast", {Skill:"Thunder Storm"}).Insert();
+			if(frozenarmour && !me.getState(10) && me.getSkill("Frozen Armor"))
+				new oTaskCommon(980, "Cast", {Skill:"Frozen Armor"}).Insert();
+			else if(chillingarmour && !me.getState(20) && me.getSkill("Chilling Armor"))
+				new oTaskCommon(980, "Cast", {Skill:"Chilling Armor"}).Insert();
+			else if(shiverarmour && !me.getState(88) && me.getSkill("Shiver Armor"))
+				new oTaskCommon(980, "Cast", {Skill:"Shiver Armor"}).Insert();
+			lastcasttime = new Date();
+		}
+		*/
+		
+		
+	}
+}
+
+
+function oTaskAttack(_p, _function, _data, _object, _tag)
+{
+	//inherit oTask
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+	
+	var _range = 0;
+	var _specific = false;
+	var _bossunique = false;
+	var _started = false;
+
+	//**********************************
+	// Now using one attack function :D
+	//**********************************
+
+	this.Kill = oTaskAttack_kill;
+	this.Attack = oTaskAttack_attack;
+	this.CharAttack = oTaskAttack_charattack;
+
+	//this.walkattack = oTaskAttack_walkattack;
+
+	function oTaskAttack_kill()
+	{
+		if(!playerkill(this.Data))
+			TaskQueue.Insert(this);
+		return;
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ASSESMENT PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_attack()
+	{
+		if(!_started) {
+			_started = true;
+			if(this.Data.Target) {
+				_specific = true;
+			}
+			else if(this.Data.Boss) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Boss:_data.Boss}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.Unique) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Unique:_data.Unique}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.ByName) {
+				_specific = true;
+				//add in a get for name
+			}
+			else if(this.Data.Range) {
+				_range = true;
+			}
+			else {
+				//raise error and return
+				return;
+			}
+				
+				
+		}
+		
+		
+		if(_range) {
+			//Check for raising first
+			this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS, Abilities:mlBITRAISES}).getClosest();
+			if(!this.Data.Target) //now check for other types
+				this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS}).getClosest();
+			if(!this.Data.Target) return;
+		}
+		
+		if(_specific && (!this.Data.Target || this.Data.Target.Monster.hp <= 0)) return;
+		
+		sctarget.UpdateText("Last target: " + this.Data.Target.Monster.name + " (" + this.Data.Target.Monster.hp/1.28 + "% hp)");
+	
+		//if(!this.charattack(mon)) {}
+		this.CharAttack(this.Data.Target);
+
+		this.Insert();
+
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ACTUAL ATTACKING PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_charattack(mon) {
+		print(mon.Monster.name);
+		me.overhead("Attacking!");
+		var pp = 825;
+		var hp_pcnt = AI.HPPcnt;
+		var attack = necro.FindSkill(null, mon.Monster);
+		//var cold = zon.FindSkill({Element: gCold}, mon.Monster);
+		//var char_skill= null;
+		var move_reason = "Position good: Holding";
+
+		// find the spell you want to use here
+
+		//cold?
+
+		//if(me.getState(121)	|| untimed.Weight > timed.Weight)
+		//	char_skill = untimed;
+		//else
+		//	char_skill = timed;
+
+
+		// describe why you want to move here
+
+		if(hp_pcnt < 25)
+			move_reason = "Ruh roh....";
+
+		if(me.mode == 4 && hp_pcnt < 50)
+			move_reason = "Bieng hit and low health!";
+
+		if(hp_pcnt < 80 && MonsterQueue.getMonsters({Range:5}).getLength() > 3)
+			move_reason = "Hurt and Surrounded!";
+
+		if(MonsterQueue.getMonsters({Range:5}).getLength() > 5)
+			move_reason = "Getting Surrounded!";
+
+		if(attack.Range < mon.Distance)
+			move_reason = "Out of Range!";
+
+		// cue up the use of the skill here & cue up not attacking after
+
+		if(move_reason != "Position good: Holding")
+		{
+			//print("Range: " + char_skill.Range);
+			PluginManager.ExecuteFunction("AIInfo", "UpdatePosition", move_reason + "Range: " + attack.Range);
+			new oTaskSkill(this.p+1, "UseSkill", {Skill:attack.Skill, Target:mon, Position:attack.Range}).Insert();
+		}
+		else
+			new oTaskSkill(this.p+1, "UseSkill", {Skill:attack.Skill, Target:mon}).Insert();
+
+		PluginManager.ExecuteFunction("AIInfo", "UpdateSkill", attack.Skill);
+		
+
+
+	}
+	
+	
+}
+
+
+
+

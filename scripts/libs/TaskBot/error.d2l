@@ -1,0 +1,22 @@
+var boERRORPATHING = [0, "Pathing error"];
+var boERRORMOVEMENT = [1, "Movement Error"];
+var boERRORCASTING = [2, "Could not cast"];
+var boERRORATTACK = [3, "Error while attacking"];
+var boERRORPICKUP = [4, "Snagit error"];
+var boERRORPOTION = [5, "Problem using a potion"];
+var boERRORPORTAL = [6, "Could not use a portal"];
+
+
+
+
+function oError(_p, _function, _data, _object, _tag)
+{
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.CastError;
+	
+}
+
+

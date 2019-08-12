@@ -1,0 +1,417 @@
+
+var csFrames = 3 //number of frames before update oMe.
+var lastupdated = new Date();
+var lastswitch;
+var oMe;
+
+var _skillstat = new Array();
+	_skillstat[0] = 83;
+	_skillstat[1] = 86;
+	_skillstat[2] = 85;
+	_skillstat[3] = 84;
+	_skillstat[4] = 85;
+	_skillstat[5] = 179;
+	_skillstat[6] = 180;
+
+var _blockstat = new Array();
+	_blockstat[0] = 25;
+	_blockstat[1] = 20;
+	_blockstat[2] = 20;
+	_blockstat[3] = 30;
+	_blockstat[4] = 25;
+	_blockstat[5] = 20;
+	_blockstat[6] = 25;
+
+var _mfswitch = new Array();
+	_mfswitch[0] = 0;
+	_mfswitch[1] = 0;
+var _dmgswitch = new Array();
+	_dmgswitch[0] = 0;
+	_dmgswitch[1] = 0;
+var _skillswitch = new Array();
+	_skillswitch[0] = 0;
+	_skillswitch[1] = 0;
+var _resswitch = new Array();
+	_resswitch[0] = 0;
+	_resswitch[1] = 0;
+var _combatswitch = new Array();
+	_combatswitch[0] = 0;
+	_combatswitch[1] = 0;
+
+function plugIKplayersetup(instname)
+{
+	this.temp = oPlugin;
+	this.temp("GetCharInfo", mlPLUGINBYTIME, 1000, "Auto Bot Setup", "0.0.1a", "Arathorn", instname);
+	delete this.temp;
+	this.GetCharInfo = function(){
+		var now = new Date();
+		if((now - lastupdated) > (csFrames * 40))
+			oMe = new oPlayer(0,me);
+	}
+	this.OnLoad = function()
+	{
+		oMe = new oPlayer(0,me)
+		lastupdated = new Date();
+		txtdumpfile = oMe.player.name + "-stats.txt";
+
+		file = fileOpen(txtdumpfile, 1); file.writeLine(); file.close();
+		oPlayerDisplay(oMe);
+
+		oMe.CheckSkills();
+		oMe.CheckWeapons();
+		TaskQueue.Insert(new oTaskCommon(901, "DoCommand", {Command:"print('Current MF: ' + oMe.magicfind);"}));
+	}
+	this.OnAreaChange = function(){
+	}
+}
+
+function oPlayer(_p, player)
+{
+	//member properties
+	this._remove = false;
+	this.player = player;
+
+	this.name = player.name
+	this.level = player.getStat(12);
+	this.classid = player.classid;
+	this.str = player.getStat(0);
+	this.dex = player.getStat(2);
+	this.vit = player.getStat(3);
+	this.enr = player.getStat(1);
+	this.hp = player.getStat(6)/256;
+	this.maxhp = player.getStat(7)/256;
+	this.mp = player.getStat(8)/256;
+	this.maxmp = player.getStat(9)/256;
+	this.sparestats = player.getStat(4);
+	this.spareskills = player.getStat(5);
+
+	this.mindamage = player.getStat(21);
+	this.maxdamage = player.getStat(22);
+	this.ac = player.getStat(31);
+	this.block = ((player.getStat(20) + _blockstat[me.classid]) * (this.dex - 15)) / (this.level * 2);
+
+	this.lifeleech = player.getStat(60);
+	this.manaleech = player.getStat(62);
+
+	this.dmgdemon = player.getStat(121);
+	this.dmgundead = player.getStat(122);
+	this.crushingblow = player.getStat(136);
+	this.deadlystrike = player.getStat(141);
+	this.slow = player.getStat(150);
+	this.cbf = player.getStat(153);
+	this.pierce = player.getStat(156);
+
+	this.ias = player.getStat(92) + player.getStat(93) + player.getStat(94);
+	this.move = player.getStat(95) + player.getStat(96) + player.getStat(97);
+	this.fhr = player.getStat(98) + player.getStat(99) + player.getStat(100);
+	this.fbr = player.getStat(101) + player.getStat(102) + player.getStat(103);
+	this.fcr = player.getStat(104) + player.getStat(105) + player.getStat(106);
+
+	this.physres = player.getStat(36);
+	this.fireres = player.getStat(39);
+	this.lightres = player.getStat(41);
+	this.coldres = player.getStat(43);
+	this.poisonres = player.getStat(45);
+
+	this.fireabsorb = player.getStat(143);
+	this.lightabsorb = player.getStat(145);
+	this.coldabsorb = player.getStat(149);
+
+	this.firedmg = (player.getStat(48)+player.getStat(49))/2;
+	this.colddmg = (player.getStat(54)+player.getStat(55))/2;
+	this.lightdmg = (player.getStat(50)+player.getStat(51))/2;
+	this.poisondmg = (player.getStat(57)+player.getStat(58))/2;
+	this.elementaldmg = this.firedmg + this.colddmg + this.lightdmg;
+
+	this.plusskills = player.getStat(_skillstat[player.classid]);
+
+	this.goldfind = player.getStat(79);
+	this.magicfind = player.getStat(80);
+
+	this.skills = function() {
+		this.attack = "Attack";
+		this.dualattack = "Attack";
+		this.elementalattack = "Attack";
+		this.vigor = false;
+	}
+
+	this.MFslot = 0;
+	this.DMGslot = 0;
+	this.SKILLslot = 0;
+	this.RESslot = 0;
+	this.COMBATslot = 0;
+
+	this.switchTo = function(which)
+	{
+		var _tempswitch = weaponSwitch(1);
+
+		//*** Wait a second before trying switch again
+		if(new Date() - lastswitch < 1000)
+			return true;
+
+		switch(which)
+		{
+			case "dmg":
+				if(this.DMGslot != weaponSwitch(1) && this.DMGslot != 2)
+					{_tempswitch = this.DMGslot;break;}
+				else if(this.DMGslot == 2)
+					{which = "combat";break;}
+			case "skill":
+				if(this.SKILLslot != weaponSwitch(1) && this.SKILLslot != 2)
+					{_tempswitch = this.SKILLslot;break;}
+				else if(this.SKILLslot == 2)
+					{which = "combat";break;}
+			case "res":
+				if(this.RESslot != weaponSwitch(1) && this.RESslot != 2)
+					{_tempswitch = this.RESslot;break;}
+				else if(this.SKILLslot == 2)
+					{which = "combat";break;}
+			case "mf":
+				if(this.MFslot != weaponSwitch(1) && this.MFslot != 2)
+					{_tempswitch = this.MFslot;break;}
+				else if(this.MFslot == 2)
+					{which = "combat";break;}
+		}
+
+		if(this.COMBATslot != weaponSwitch(1) && this.COMBATslot != 2 && which == "combat")
+			_tempswitch = this.COMBATslot
+		else if(this.COMBATslot == 2)
+			return false;
+
+		if(weaponSwitch(1) != _tempswitch)
+		{
+				print("Trying to switch weapons to " + which);
+				weaponSwitch();
+				lastswitch = new Date();
+				return true;
+		}
+	}
+
+	this.CheckWeapons = function()
+	{
+		var leftw = new Array();
+		var rightw = new Array();
+
+		check = getUnit(4);
+		if (check) do
+		{
+			owner = check.getParent();
+			if(owner && owner.name==player.name)
+			{
+				if((check.itemloc == 4 || check.itemloc == 5 || check.itemloc == 11 || check.itemloc == 12) && check.mode == 1)
+				{
+					if(check.itemloc == 4 || check.itemloc == 5)
+						i = weaponSwitch(1);
+					else
+						i = 1 - weaponSwitch(1);
+					_mfswitch[i] += check.getStat(80) + (check.getStat(240)/8*oMe.level);
+					_dmgswitch[i] += check.getStat(21) + check.getStat(22);
+					_skillswitch[i] += check.getStat(_skillstat[me.classid]);
+					_resswitch[i] += (check.getStat(36) + check.getStat(39) + check.getStat(41) + check.getStat(43))/4;
+
+					if((check.itemloc == 4 || check.itemloc == 11) && check.itemtype > 23 && check.itemtype < 37)
+						leftw[i] = true;
+					if((check.itemloc == 5 || check.itemloc == 12) && check.itemtype > 23 && check.itemtype < 37)
+						rightw[i] = true;
+				}
+			}
+		} while (check.getNext());
+
+		if(leftw[0] && rightw[0])
+			_dmgswitch[0] = Math.floor(_dmgswitch[0]*2/3);
+		if(leftw[1] && rightw[1])
+			_dmgswitch[1] = Math.floor(_dmgswitch[1]*2/3);
+
+		_combatswitch[0] = Math.floor(((_dmgswitch[0]/549) + (_skillswitch[0]/11) + (_resswitch[0]/75))/3*100);
+		_combatswitch[1] = Math.floor(((_dmgswitch[1]/549) + (_skillswitch[1]/11) + (_resswitch[1]/75))/3*100);
+
+		if(_mfswitch[1] > _mfswitch[0])
+			this.MFslot = 1;
+		if(_dmgswitch[1] > _dmgswitch[0])
+			this.DMGslot = 1;
+		if(_skillswitch[1] > _skillswitch[0])
+			this.SKILLslot = 1;
+		if(_resswitch[1] > _resswitch[0])
+			this.RESslot = 1;
+		if(_combatswitch[1] > _combatswitch[0])
+			this.COMBATslot = 1;
+
+		if(_mfswitch[1] == _mfswitch[0])
+			this.MFslot = 2;
+		if(_dmgswitch[1] == _dmgswitch[0])
+			this.DMGslot = 2;
+		if(_skillswitch[1] == _skillswitch[0])
+			this.SKILLslot = 2;
+		if(_resswitch[1] == _resswitch[0])
+			this.RESslot = 2;
+		if(_combatswitch[1] == _combatswitch[0])
+			this.COMBATslot = 2;
+
+		print(_mfswitch[0] + " / " + _mfswitch[1] + " mf");
+		print(_dmgswitch[0] + " / " + _dmgswitch[1] + " dmg index");
+		print(_skillswitch[0] + " / " + _skillswitch[1] + " + skills");
+		print(_resswitch[0] + " / " + _resswitch[1] + " res index");
+		print(_combatswitch[0] + " / " + _combatswitch[1] + " combat index");
+	}
+
+	this.CheckSkills = function() {
+		switch(me.classid) {
+			case 3: { //Pally
+				var listas = new Array();
+				var listaa = new Array();
+				var listfa = new Array();
+				var listpia = new Array();
+				var listpis = new Array();
+
+				listas[1] = "Attack";
+				listas[2] = "Charge";
+				listas[3] = "Sacrifice";
+				listas[4] = "Zeal";
+
+				listaa[1] = "Might";
+				listaa[2] = "Conviction";
+				listaa[3] = "Concentration";
+				listaa[4] = "Holy Shock";
+				listaa[5] = "Fanaticism";
+
+				listfa[1] = "Holy Freeze";
+				listfa[2] = "Conviction";
+
+				listpia[1] = "Holy Shock";
+
+				listpis[1] = "Attack";
+				listpis[2] = "Charge";
+				listpis[3] = "Sacrifice";
+				listpis[4] = "Zeal";
+				listpis[5] = "Vengeance";
+
+				for(i = 0; i < 5; i++) if(me.getSkill(listas[i])) this.skills.attack = listas[i];
+				for(i = 0; i < 6; i++) if(me.getSkill(listaa[i])) this.skills.attackaura = listaa[i];
+				for(i = 0; i < 3; i++) if(me.getSkill(listfa[i])) this.skills.flashaura = listfa[i];
+				for(i = 0; i < 6; i++) if(me.getSkill(listpis[i])) this.skills.elementalattack = listpis[i];
+				if(me.getSkill("Holy Shock")) this.skills.hshock = true;
+				if(me.getSkill("Holy Shield")) this.skills.hshield = true
+				if(me.getSkill("Vigor")) this.skills.vigor = true;
+
+				print("Using " + this.skills.attack + " w/ " + this.skills.attackaura + " to attack.");
+				if(this.skills.hshock) print("Using " + this.skills.elementalattack + " w/ Holy Shock against physical immune.");
+
+				break;
+			}
+
+			case 4: { //Barb
+				var list1w = new Array();
+				var list2w = new Array();
+				var listpi = new Array();
+
+				list1w[1] = "Attack";
+				list1w[2] = "Bash";
+				list1w[3] = "Stun";
+				list1w[4] = "Leap Attack";
+				list1w[5] = "Concentrate";
+				list1w[6] = "Beserk";
+				list1w[7] = "Whirlwind";
+
+				list2w[1] = "Attack";
+				list2w[2] = "Double Swing";
+				list2w[3] = "Whirlwind";
+				list2w[4] = "Frenzy";
+
+				listpi[1] = "Attack";
+				listpi[2] = "Berserk";
+
+				for(i = 0; i < 8; i++) if(me.getSkill(list1w[i], 0)) this.skills.attack = list1w[i];
+				for(i = 0; i < 5; i++) if(me.getSkill(list2w[i], 0)) this.skills.dualattack = list2w[i];
+				for(i = 0; i < 3; i++) if(me.getSkill(listpi[i], 0)) this.skills.elementalattack = listpi[i];
+				if(me.getSkill("Battle Command", 0)) this.skills.bcommand = true;
+				if(me.getSkill("Shout", 0)) this.skills.shout = true;
+				if(me.getSkill("Battle Orders", 0)) this.skills.borders = true;
+
+				print("Using " + this.skills.attack + " to attack.");
+				print("Using " + this.skills.dualattack + " if dualwield.");
+				print("Using " + this.skills.elementalattack + " against physical immune.");
+
+				break;
+			}
+		}
+	}
+}
+
+function oPlayerDisplay(player) {
+
+	txtdump('Name: ' + player.name);
+
+	txtdump('Level: ' + player.level);
+	txtdump('ClassID: ' + player.classid);
+	txtdump('Strenght: ' + player.str);
+	txtdump('Dexterity: ' + player.dex);
+	txtdump('Vitality: ' + player.vit);
+	txtdump('Energy: ' + player.enr);
+	txtdump('Spare Stats: ' + player.sparestats);
+	txtdump('Spare Skills: ' + player.spareskills);
+	txtdump('HP: ' + player.hp);
+	txtdump('Max HP: ' + player.maxhp);
+	txtdump('MP: ' + player.mp);
+	txtdump('Max MP: ' + player.maxmp);
+
+	txtdump('Min Damage: ' + player.mindamage);
+	txtdump('Max Damage: ' + player.maxdamage);
+	txtdump('Armor Class: ' + player.ac);
+
+	txtdump('Chance to Block: ' + player.block + '%');
+	txtdump('Life Leech: ' + player.lifeleech);
+	txtdump('Mana Leech: ' + player.manaleech);
+
+	txtdump('Damage to Demon: ' + player.dmgdemon + '%');
+	txtdump('Damage to Undead: ' + player.dmgundead + '%');
+	txtdump('Crushing Blow: ' + player.crushingblow + '%');
+	txtdump('Deadly Strike: ' + player.deadlystrike + '%');
+	txtdump('Slow: ' + player.slow + '%');
+	txtdump('Cannot Be Frozen: ' + player.cbf);
+	txtdump('Pierce: ' + player.pierce + '%');
+
+	txtdump('Increased Attack Speed: ' + player.ias + '%');
+	txtdump('Faster Run/Walk: ' + player.move + '%');
+	txtdump('Faster Hit Recovery: ' + player.fhr + '%');
+	txtdump('Faster Block Rate: ' + player.fbr + '%');
+	txtdump('Faster Cast Rate: ' + player.fcr + '%');
+
+	txtdump('Damage Reduction: ' + player.physres + '%');
+	txtdump('Fire Resist: ' + player.fireres + '%');
+	txtdump('Cold Resist: ' + player.coldres + '%');
+	txtdump('Lightning Resist: ' + player.lightres + '%');
+	txtdump('Poison Resist: ' + player.poisonres + '%');
+
+	txtdump('Fire Absorb: ' + player.fireabsorb + '%');
+	txtdump('Lightning Absorb: ' + player.lightabsorb + '%');
+	txtdump('Cold Absorb: ' + player.coldabsorb + '%');
+
+	txtdump('Avg Fire Damage: ' + player.firedmg);
+	txtdump('Avg Cold Damage: ' + player.colddmg);
+	txtdump('Avg Lightning Damage: ' + player.lightdmg);
+	txtdump('Avg Poison Damage: ' + player.poisondmg)
+	txtdump('Avg Elemental Damage: ' + player.elementaldmg);
+
+	txtdump('+ Skills: ' + player.plusskills);
+	txtdump('Gold Find: ' + player.goldfind + '%');
+	txtdump('Magic Find: ' + player.magicfind + '%');
+}
+
+function txtdump(string) {
+	file = fileOpen(txtdumpfile, 2);
+	file.writeLine(string);
+	file.close();
+}
+
+function ikApproach(_data) {
+	var target = new mlCoord();
+	var spot = new mlCoord();
+	if(_data && _data.x && data.y) {target.x = _data.x; target.y = _data.y;}
+	if(_data && _data.Target) {target.x = _data.Target.x; target.y = _data.Target.y;}
+	if(_data && !_data.Range) _data.Range = 4;
+	if(_data && !_data.p) _data.p = 0;
+	var factor = DistEuclidian(me.x, me.y, target.x, target.y)/_data.Range;
+	if(factor < 0) return false;
+	spot = mlFindClosestWalkable(target.x + ((me.x - target.x)/factor),target.y + ((me.y - target.y)/factor));
+	new oTaskMove(_data.p, "MoveTo", {x:spot.x, y:spot.y, Recalc:false}).Insert();
+}

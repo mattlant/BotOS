@@ -1,0 +1,707 @@
+//##################################################
+//######   BotOS Framework - Out of Game    ########
+//##################################################
+/*
+----------------------------------------------------*/
+/*----------------------------------------------------
+Copyright (C) 2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as permission is 
+granted by the author, Matt Lanteigne.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+
+
+
+
+include("BotOS/OOG/BotOS.OOG.Controls.d2l");
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG) != 'function') {
+	BotOS.OOG = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+if(typeof(BotOS.OOG.Controls) != 'function') {
+	BotOS.OOG.Controls = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+
+
+//////////////////////////////////////////////////////////////////////
+// MAIN SCREEN BUTTONS
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SinglePlayerButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.SinglePlayerButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264, 324, 272, 35, "SINGLE PLAYER");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.SinglePlayerButton.prototype = new BotOS.OOG.Controls.Button;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.BattleNETButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.BattleNetButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	366,	272,	35, "BATTLE.NET");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.BattleNetButton.prototype = new BotOS.OOG.Controls.Button;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GateWayButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.GateWayButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	391,	272,	25, "GATEWAY: U.S. EAST");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.GateWayButton.prototype = new BotOS.OOG.Controls.Button;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.OtherMultiPlayerButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.OtherMultiPlayerButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	433,	272,	35, "OTHER MULTIPLAYER");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.OtherMultiPlayerButton.prototype = new BotOS.OOG.Controls.Button;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.CreditsButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.CreditsButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this,264,	528,	135,	25, "CREDITS");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.CreditsButton.prototype = new BotOS.OOG.Controls.Button;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.CinematicsButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.CinematicsButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 402,	528,	135,	25, "CINEMATICS");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.CinematicsButton.prototype = new BotOS.OOG.Controls.Button;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SinglePlayerButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ExitDiabloButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	568,	272,	35, "EXIT DIABLO II");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ExitDiabloButton.prototype = new BotOS.OOG.Controls.Button;
+
+//////////////////////////////////////////////////////////////////////
+// Realm Change Screen
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.RealmListBox NOT GAME :/
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.RealmListBox = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.ListBox.call(this, 257,	500,	292,	160);
+
+		this.Realm setter = function (val) {
+            var realms = [[0, 0], [0x14D, 0x15F],[0x153, 0x179],[0x116, 0x191],[0x11F, 0x1AB]];
+			this.Click(realms[val][0], realms[val][1]);
+
+		}
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.RealmListBox.prototype = new BotOS.OOG.Controls.ListBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.RealmOKButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.RealmOKButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 281,	538,	96, 	32, "OK");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.RealmOKButton.prototype = new BotOS.OOG.Controls.Button;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.RealmCancelButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.RealmCancelButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 436 ,   538 ,   96,	32, "CANCEL");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.RealmCancelButton.prototype = new BotOS.OOG.Controls.Button;
+
+//////////////////////////////////////////////////////////////////////
+// Open bnet screen
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SinglePlayerButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.OpenBattleNetButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	310,	272,	35, "OPEN BATTLE.NET");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.OpenBattleNetButton.prototype = new BotOS.OOG.Controls.Button;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.BattleNETButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.TCPButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	350,	272,	35, "TCP/IP GAME");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.TCPButton.prototype = new BotOS.OOG.Controls.Button;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GateWayButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.OpenCancelButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	568,	272,	35, "CANCEL");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.OpenCancelButton.prototype = new BotOS.OOG.Controls.Button;
+
+
+//////////////////////////////////////////////////////////////////////
+// Account Login Buttons
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SinglePlayerButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.AccountTextBox = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.TextBox.call(this, 322,	342,	162,	19, "ACCOUNT");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.AccountTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.BattleNETButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.PasswordTextBox = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.TextBox.call(this, 322,	396,	162,	19, "PASSWORD");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.PasswordTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GateWayButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.CreateNewAccountButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	572,	272,	35, "CREATE NEW ACCOUNT");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.CreateNewAccountButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GateWayButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.AccountSettingsButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	528,	272,	35, "ACCOUNT SETTINGS");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.AccountSettingsButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GateWayButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.LoginButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 264,	484,	272,	35, "LOG IN");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.LoginButton.prototype = new BotOS.OOG.Controls.Button;
+
+//////////////////////////////////////////////////////////////////////
+// Character Selection Buttons
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.CreateNewCharacterButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.CreateNewCharacterButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 33,	528,	168,	60, "CREATE NEW");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.CreateNewCharacterButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.ConvertCharacterButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ConvertCharacterButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 233,	528,	168,	60, "CONVERT TO");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ConvertCharacterButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.DeleteCharacterButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.DeleteCharacterButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 433,	528,	168,	60, "DELETE");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.DeleteCharacterButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.DeleteCharacterButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.CharacterScrollBar = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.ScrollBar.call(this, 585,	457,	10, 	363, "SCROLLBAR");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.CharacterScrollBar.prototype = new BotOS.OOG.Controls.ScrollBar;
+
+//////////////////////////////////////////////////////////////////////
+// Lobby/Chat Controls
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.CreateButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.CreateButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 533,	469,	120,	20, "CREATE");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.CreateButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.ChannelButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ChannelButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 535,	490,	80, 	20, "CHANNEL");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ChannelButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.JoinGameButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.JoinButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 652,	469,	120,	20, "JOIN");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.JoinButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.LadderButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.LadderButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 614,	490,	80, 	20, "LADDER");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.LadderButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.QuitButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.QuitButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 693,	490,	80, 	20, "QUIT");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.QuitButton.prototype = new BotOS.OOG.Controls.Button;
+
+//////////////////////////////////////////////////////////////////////
+// Channel Sub Controls
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.ChannelOKButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ChannelOKButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 671,	433,	96, 	32, "OK");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ChannelOKButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.ChannelNameTextBox
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ChannelNameTextBox = function () {
+		//inherit from TextBox
+		BotOS.OOG.Controls.TextBox.call(this, 432,	162,	155,	20, "ChannelTextBox");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ChannelNameTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.ChannelListBoxScrollBar NOT GAME :/
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ChannelListBoxScrollBar = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.ScrollBar.call(this, 753,	393,	10, 	197, "ChannelListBoxScrollBar");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ChannelListBoxScrollBar.prototype = new BotOS.OOG.Controls.ScrollBar;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.ChannelListBox NOT GAME :/
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ChannelListBox = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.ListBox.call(this, 432,	397,	321,	200);
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ChannelListBox.prototype = new BotOS.OOG.Controls.ListBox;
+
+//////////////////////////////////////////////////////////////////////
+// Chat Sub Controls
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SendButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.SendButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 27,	470,	80, 	20, "SEND");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.SendButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.WhisperButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.WhisperButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 107,	470,	80, 	20, "WHISPER");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.WhisperButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.HelpButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.HelpButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 187,	470,	80, 	20, "HELP");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.HelpButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SquelchButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.SquelchButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 27,	490,	72, 	20, "SQUELCH");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.SquelchButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.UnSquelchButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.UnSquelchButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 99,	490,	96, 	20, "UNSQUELCH");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.UnSquelchButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.EmoteButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.EmoteButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 195,	490,	72, 	20, "EMOTE");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.EmoteButton.prototype = new BotOS.OOG.Controls.Button;
+
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.ChatTextBox
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ChatTextBox = function () {
+		//inherit from TextBox
+		BotOS.OOG.Controls.TextBox.call(this, 28,	450,	335,	32, "Chat Entry");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ChatTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SomeScrollBar NOT GAME :/
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ChatScrollBar = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.ScrollBar.call(this, 400,	390,	10, 	314, "SCROLLBAR");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ChatScrollBar.prototype = new BotOS.OOG.Controls.ScrollBar;
+
+//////////////////////////////////////////////////////////////////////
+// Lobby Controls
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.EnterChatButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.EnterChatButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 27,	480,	120,	20, "ENTER CHAT");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.EnterChatButton.prototype = new BotOS.OOG.Controls.Button;
+
+//////////////////////////////////////////////////////////////////////
+// Create Game Controls
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.CreateGameButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.CreateGameButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 594,	433,	172,	32, "CREATE GAME");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.CreateGameButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//Cancel button is a common sub cancel button
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GameNameTextBox
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.GameNameTextBox = function () {
+		//inherit from TextBox
+		BotOS.OOG.Controls.TextBox.call(this,  432,	162,	158,	20, "GameNameTextBox");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.GameNameTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GamePasswordTextBox
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.GamePasswordTextBox = function () {
+		//inherit from TextBox
+		BotOS.OOG.Controls.TextBox.call(this,  432,	217,	158,	20, "GamePasswordTextBox");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.GamePasswordTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GamePasswordTextBox
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.GameDescriptionTextBox = function () {
+		//inherit from TextBox
+		BotOS.OOG.Controls.TextBox.call(this,  432,	268,	333,	20, "GameDescriptionTextBox");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.GameDescriptionTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.MaxPlayersTextBox
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.MaxPlayersTextBox = function () {
+		//inherit from TextBox
+		BotOS.OOG.Controls.TextBox.call(this,  657,	308,	27,	20, "MaxPlayersTextBox");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.MaxPlayersTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.CharacterDifferenceTextBox
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.CharacterDifferenceTextBox = function () {
+		//inherit from TextBox
+		BotOS.OOG.Controls.TextBox.call(this, 657,  	342,	27, 	20, "CharacterDifferenceTextBox");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.CharacterDifferenceTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+	
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.HellRadioButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.HellRadioButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.RadioButton.call(this, 698,381,16,16, "HELL");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.HellRadioButton.prototype = new BotOS.OOG.Controls.RadioButton;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.NightmareRadioButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.NightmareRadioButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.RadioButton.call(this, 555,381,16,16, "NIGHTMARE");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.NightmareRadioButton.prototype = new BotOS.OOG.Controls.RadioButton;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.NormalRadioButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.NormalRadioButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.RadioButton.call(this, 430,381,16,16, "NORMAL");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.NormalRadioButton.prototype = new BotOS.OOG.Controls.RadioButton;
+
+
+//////////////////////////////////////////////////////////////////////
+// Join Game Controls
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.JoinButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.JoinGameButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 594,	433,	172,	32, "JOIN GAME");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.JoinGameButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.JoinGameNameTextBox
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.JoinGameNameTextBox = function () {
+		//inherit from TextBox
+		BotOS.OOG.Controls.TextBox.call(this,  432,	148,	155,	20, "JoinGameNameTextBox");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.JoinGameNameTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.JoinGamePasswordTextBox
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.JoinGamePasswordTextBox = function () {
+		//inherit from TextBox
+		BotOS.OOG.Controls.TextBox.call(this,  606,	148,	155,	20, "JoinGameNameTextBox");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.JoinGamePasswordTextBox.prototype = new BotOS.OOG.Controls.TextBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GameListBox 
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.GameListBox = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.ListBox.call(this, 432,	393,	160,	173);
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.GameListBox.prototype = new BotOS.OOG.Controls.ListBox;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.GameListBoxScrollBar NOT GAME :/
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.GameListBoxScrollBar = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.ScrollBar.call(this, 592,	393,	10,	173, "GameListBoxScrollBar");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.GameListBoxScrollBar.prototype = new BotOS.OOG.Controls.ScrollBar;
+
+//////////////////////////////////////////////////////////////////////
+// Common Controls
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SinglePlayerButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.ExitButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 33,	572,	128,	35, "EXIT");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.ExitButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SinglePlayerButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.OKButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 627,	572,	128,	35, "OK");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.OKButton.prototype = new BotOS.OOG.Controls.Button;
+
+	//////////////////////////////////////////////////////////////////////
+	// BotOS.OOG.Controls.SinglePlayerButton
+	//////////////////////////////////////////////////////////////////////
+	BotOS.OOG.Controls.SubCancelButton = function () {
+		//inherit from Button
+		BotOS.OOG.Controls.Button.call(this, 433,	433,	96,	32, "CANCEL");
+	}
+	//make sure prototype chain is setup
+	BotOS.OOG.Controls.SubCancelButton.prototype = new BotOS.OOG.Controls.Button;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+BotOS.OOG.Controls.TextBox = function (x, y, xs, ys, name) {
+	//inherit from Control
+	BotOS.OOG.Controls.Control.call(this, 1, x, y, xs, ys, false, true, name);
+}
+//make sure prototype chain is setup
+BotOS.OOG.Controls.TextBox.prototype = new BotOS.OOG.Controls.Control;
+
+
+*/
+
+
+

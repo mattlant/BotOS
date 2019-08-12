@@ -1,0 +1,269 @@
+
+
+//##################################################
+//####   Matts Console Framework Library 0.1   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+----------------------------------------------------
+History
+Version 1.0.0
+- Initial Release
+
+----------------------------------------------------
+
+*/
+
+
+
+include("BotOS/BotOS.Exceptions.d2l");
+include("BotOS/BotOS.Variable.d2l");
+include("BotOS/Arrays/BotOS.Arrays.FIFO.d2l");
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1);
+	}
+}
+
+if(typeof(BotOS.Console) != 'function'){
+	BotOS.Console = function () {
+		throw new BotOS.NamespaceException("BotOS.Console Cannot be instantiated", 1);
+	}
+}
+
+
+//7x80 console for standard BotOS Output.
+BotOS.Console.TextConsole = function (x, y, height, width, bufferlen) {
+
+	if(!bufferlen) bufferlen = 80;
+
+	var Height = 10;
+	var Width = 40;
+	var Buffer = new BotOS.Arrays.FIFO(bufferlen);
+	var isnotcurrent = false;
+	var bufferposition = 0;
+
+	//Heaight property
+	this.Height setter = function (value) {
+		if(!(BotOS.Variable.IsNumber(value) && value > 0 && value < 200)) 
+			throw new BotOS.ArgumentException("BotOS.Console.TextConsole.Height requires a valid number to be passed", 1, "BotOS.Console.GFX.d2l");
+		Height = value;
+		//TODO, ad in position changing functionality
+	}
+	this.Height getter = function() { return Height; }
+
+	//Y property
+	this.Width setter = function (value) {
+		if(!(BotOS.Variable.IsNumber(value) && value > 0 && value < 200)) 
+			throw new BotOS.ArgumentException("BotOS.Console.TextConsole.Width requires a valid number to be passed", 1, "BotOS.Console.GFX.d2l");
+		Width = value;
+		//TODO, ad in position changing functionality
+	}
+	this.Width getter = function() { return Width; }
+	
+	this.Height = height;
+	this.Width = width;
+
+	var Terminal = new BotOS.Console.Terminal(x,y,this.Height,this.Width);
+
+
+	this.Write = TC_Write;
+	this.Print = TC_Write;
+	
+	function TC_Write(text) {
+		//calc number of lines this write will be
+		if(!BotOS.Variable.IsString(text)) {
+			text = "TextConsole.Write -> NonString: " + text;
+		}
+		var lines = Math.floor(text.length/Width)+1;
+		if(text.length > Width) {
+			//split text to multiple lines
+			var i = 0;
+			while(i < (text.length /*+ Width*/)) {
+				Buffer.Add(text.substr(i,Width));
+				i += Width;
+			}
+		}
+		else {
+			Buffer.Add(text);
+		}
+
+		if(isnotcurrent) return;
+		var linestowrite;
+		var buff = Buffer.GetQueue();
+		if(buff.length < Height) 
+			linestowrite = buff;
+		else
+			linestowrite = buff.slice(buff.length-Height);
+
+		for(var i = 0; i < linestowrite.length; i++) {
+			
+			Terminal.PrintLineAt(i, linestowrite[i]);
+		}
+
+		bufferposition = Buffer.GetQueue().length;
+
+
+	}
+
+	this.Clear = function () {
+		for(var i = 0; i < Height; i++) {
+			Terminal.ClearLine(i);
+		}
+	}
+	
+	this.ScrollUp = function () {
+		if(bufferposition <= Height) return;
+		isnotcurrent = true;
+		bufferposition--;
+		var buff = Buffer.GetQueue();
+		var linestowrite = buff.slice(bufferposition-Height, bufferposition);
+		for(var i = 0; i < linestowrite.length; i++) {
+			
+			Terminal.PrintLineAt(i, linestowrite[i]);
+		}
+	}
+
+	this.ScrollDown = function () {
+		if(isnotcurrent == false) 
+			return;
+		
+
+		bufferposition++;
+		var buff = Buffer.GetQueue();
+		var linestowrite = buff.slice(bufferposition-Height, bufferposition);
+		for(var i = 0; i < linestowrite.length; i++) {
+			
+			Terminal.PrintLineAt(i, linestowrite[i]);
+		}
+
+
+		if(bufferposition == Buffer.GetQueue().length)
+		   isnotcurrent = false;
+	}
+
+}
+
+// Matts terminal display
+
+BotOS.Console.FONTINFO = [{x:12, y:12},{x:12, y:12},{x:22, y:22},{x:30, y:30},{x:11, y:13},{x:15, y:17},
+	{x:8, y:10},{x:19, y:20},{x:12, y:14},{x:16, y:19},{x:12, y:14},{x:12, y:14},{x:8, y:10}]
+
+BotOS.Console.Terminal = function (_ox, _oy, _rows, _cols, _font, _color, _initchar)
+{
+	if(typeof(_ox) != "number" || _ox < 0 || _ox > 800) _ox = 10;
+	if(typeof(_oy) != "number" || _oy < 0 || _oy > 600) _oy = 10;
+	if(typeof(_rows) != "number" || _rows < 0 || _rows > 200) _rows = 40;
+	if(typeof(_cols) != "number" || _cols < 0 || _cols > 200) _cols = 40;
+	if(typeof(_font) != "number") _font = 6;
+	if(typeof(_color) != "number") _color = 0;
+	if(typeof(_initchar) != "string") _initchar = " ";
+
+	this.Rows = _rows;
+	this.Columns = _cols;
+
+	this.Font = _font;
+	this.Color = _color;
+	this.XOrigin = _ox;
+	this.YOrigin = _oy;
+
+
+	this.Screen = new Array();
+	var loop = 0;
+	for(var x=0; x<this.Columns; x++)
+	{
+		this.Screen[x] = new Array();
+		for(var y=0; y<this.Rows; y++) {
+			//this.Screen[x][y] = null;
+			this.Screen[x][y] = getScreenHook();
+			this.Screen[x][y].text = _initchar;
+			this.Screen[x][y].x = _ox + x * BotOS.Console.FONTINFO[_font].x;
+			this.Screen[x][y].y = _oy + y * BotOS.Console.FONTINFO[_font].y;
+			this.Screen[x][y].font = _font;
+			this.Screen[x][y].color = _color;
+		}
+	}
+
+	this.CLS = function () {
+		for(var x=0; x<this.Columns; x++)
+		{
+			for(var y=0; y<this.Rows; y++)
+				this.Poke(x, y, " ");
+		}
+	}
+
+	this.Poke = function(x, y, text, color){
+		switch(arguments.length) {
+			case 4:
+				this.Screen[x][y].color = color;
+			case 3:
+				this.Screen[x][y].text = text;
+				break;
+			case 2:
+				this.Screen[x][y].text = " ";
+		}
+	}
+	this.Peek = function(x,y){
+		return this.Screen[x][y].text;
+	}
+
+	this.ClearLine = function (y) {
+		for(var x=0; x<this.Columns; x++){
+				this.Poke(x, y, " ");
+		}
+	}
+	
+	this.PrintLineAt = function (y, _text) {
+		this.ClearLine(y);
+		for(var i = 0; i<_text.length; i++) {
+			this.Poke(i, y, _text.substr(i,1));
+		}
+	}
+
+	this.ShiftUp = function (count) {
+		//Shift the lines up or down the number of lines
+		for(var i = 0; i < count; i++) {
+
+		}
+
+	}
+
+
+}
+
+function oGridDisplay(_ox, _oy, _rows, _cols, _font, _color, _initchar) {
+
+	var rowindex = 0;
+	var colindex = 0;
+
+	this.Terminal = new oTerminal(_ox, _oy, _rows, _cols, _font, _color, _initchar);
+	this.print = function(_text){
+		for(var i = 0; i<_text.length; i++) {
+			this.Terminal.Poke(i, rowindex, _text.substr(i,1));
+		}
+		rowindex++;
+	}
+
+}
+
+

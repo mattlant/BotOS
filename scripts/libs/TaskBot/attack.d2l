@@ -1,0 +1,115 @@
+
+var currenttarget = null;
+var isattacking=false;
+var moveattack = false;
+var moveattackkillall=false;
+var sctarget = new ScreenHook("Last Target: ", 10, 488);
+
+
+function oTaskSkill(_p, _function, _data, _object, _tag)
+{
+	//inherit oTask
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+
+	this.UseSkill = oTaskSkill_useskill;
+	
+	function oTaskSkill_useskill() {
+		
+		//if(AI.IsUsingSkill) return;
+		var gpp = 500;
+		//print(this.Data.Skill, this.Data.Target.Monster.name);
+		if(this.Data.Target) {
+			if(this.Data.Position && MonsterQueue.getMonsters({Range:3}).getLength() < 5) {
+				Log.Write(mlLOGGENERAL, "inpositional -> Targeted", boLOGINFO);
+//				StdOutput.Write("inpositional");
+				var plusminus = this.Data.Position * (Math.ceil((25*(this.Data.Position / 30) + 25)) / 100);
+				var dir = new Object();
+				dir.d = 0;
+//				StdOutput.Write("plusminus: " + plusminus);
+				Log.Write(mlLOGGENERAL, "plusminus: " + plusminus, boLOGINFO);
+				//if(this.Data.x
+				if(this.Data.Target.Distance < (this.Data.Position - plusminus)) {
+
+					this.Data.Position-=this.Data.Target.Distance;
+					for(var x = -(this.Data.Position); x < (this.Data.Position+1); x+=this.Data.Position) {
+						for(var y = -(this.Data.Position); y < (this.Data.Position+1); y+=this.Data.Position) {
+							if(!x && !y) continue;
+							if(Map.LOS(me.x, me.y, me.x+x, me.y+y, 50, true)) {
+								var dt = Dist(me.x+x, me.y+y, this.Data.Target.Monster.x, this.Data.Target.Monster.y);
+								if(dt > dir.d)
+									dir = {x:me.x+x, y:me.y+y, d:dt};
+							}
+						}
+					}
+
+					//var targetxy = Map.getSafeOffScreenXY(this.Data.Target.Monster.x, 
+					//	this.Data.Target.Monster.y, me.x, me.y, this.Data.Position, true, 20);
+
+					new oGoalMove(0, "PathToXY", {dx:dir.x, dy:dir.y, p:this.p+1}).PathToXY();
+				}
+				if(this.Data.Target.Distance > (this.Data.Position + plusminus)) {
+					var targetxy = BotOS.Pathing.GetSafeOffScreenXY(this.Data.Target.Monster.x, 
+						this.Data.Target.Monster.y, me.x, me.y, this.Data.Position, true);
+
+					new oGoalMove(0, "PathToXY", {dx:targetxy.x, dy:targetxy.y, p:this.p+1}).PathToXY();
+				}
+			}
+		}
+		else {
+			if(this.Data.Position && MonsterQueue.getMonsters({Range:3}).getLength() < 5) {
+//				print("inpositional");
+				Log.Write(mlLOGGENERAL, "inpositional -> XY", boLOGINFO);
+				var plusminus = this.Data.Position * (Math.ceil((25*(this.Data.Position / 30) + 25)) / 100);
+				var dir = new Object();
+				dir.d = 0;
+//				print("plusminus: " + plusminus);
+				Log.Write(mlLOGGENERAL, "plusminus: " + plusminus, boLOGINFO);
+				//if(this.Data.x
+				var mydist = mlDist(me.x, me.y, this.Data.x, this.Data.y)
+				if(mydist < (this.Data.Position - plusminus)) {
+
+					this.Data.Position-=mydist;
+					for(var x = -(this.Data.Position); x < (this.Data.Position+1); x+=this.Data.Position) {
+						for(var y = -(this.Data.Position); y < (this.Data.Position+1); y+=this.Data.Position) {
+							if(!x && !y) continue;
+							if(Map.LOS(me.x, me.y, me.x+x, me.y+y, 50, true)) {
+								var dt = Dist(me.x+x, me.y+y, this.Data.x, this.Data.y);
+								if(dt > dir.d)
+									dir = {x:me.x+x, y:me.y+y, d:dt};
+							}
+						}
+					}
+
+					//var targetxy = Map.getSafeOffScreenXY(this.Data.Target.Monster.x, 
+					//	this.Data.Target.Monster.y, me.x, me.y, this.Data.Position, true, 20);
+
+					new oGoalMove(0, "PathToXY", {dx:dir.x, dy:dir.y, p:this.p+1}).PathToXY();
+				}
+				if(mydist > (this.Data.Position + plusminus)) {
+					var targetxy = BotOS.Pathing.GetSafeOffScreenXY(this.Data.x, 
+						this.Data.y, me.x, me.y, this.Data.Position, true);
+
+					new oGoalMove(0, "PathToXY", {dx:targetxy.x, dy:targetxy.y, p:this.p+1}).PathToXY();
+				}
+			}
+		}
+		//print(this.Data.Skill, this.Data.Target.Monster.name);
+		//this.Data.Skill = "Frozen Orb";
+		//new oTaskCommon(this.p, "Cast", this.Data).Insert();
+		//new oTaskCommon(this.p, "Cast", {Target:this.Data.Target, Skill:"Frozen Orb"}).Insert();
+		//justcast:
+		if(this.Data.Target)
+			new oTaskCommon(this.p, "Cast", {Skill:this.Data.Skill, Target:this.Data.Target, Hand:this.Data.Hand}).Insert();
+		else	
+			new oTaskCommon(this.p, "Cast", {Skill:this.Data.Skill, x:this.Data.x, y:this.Data.y, Hand:this.Data.Hand}).Insert();
+		AI.IsUsingSkill = true;
+		//new oTaskCommon(this.p+1, "Delay", {Amount:1}).Insert();
+		 
+	}
+}
+
+
+
+

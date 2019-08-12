@@ -1,0 +1,16 @@
+tlMovement Log File Initialized at: 1:41:26:2
+1:41:26:52	 - **WARNING**	 - Test
+1:41:31:70	 - **INFO**	 - Entering oGoalMove_GotoArea
+1:41:31:300	 - **INFO**	 - Starting Area: Harrogath
+1:41:31:360	 - **INFO**	 - Waypoint Area: 129
+1:41:31:360	 - **INFO**	 - Act: 5
+1:41:31:430	 - **INFO**	 - WP: 9
+1:41:33:834	 - **INFO**	 - Entering oGoalMove_GotoArea
+1:41:34:535	 - **INFO**	 - In Tiles Calc
+1:41:34:595	 - **INFO**	 - Room numbers equal
+1:41:34:605	 - **INFO**	 - Room numbers equal
+1:41:34:615	 - **INFO**	 - We are going to: 12756, 12299
+1:41:34:625	 - **INFO**	 - oGoalMove_pathtoxy -> About to path to XY
+1:41:57:858	 - **INFO**	 - oGoalMove_pathtoxy -> About to path to XY
+1:42:1:794	 - **INFO**	 - oGoalMove_pathtoxy -> About to path to XY
+1:42:7:121	 - **INFO**	 - oGoalMove_pathtoxy -> About to path to XY

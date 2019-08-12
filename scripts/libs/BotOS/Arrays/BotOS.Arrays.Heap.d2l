@@ -1,0 +1,297 @@
+//##################################################
+//####    Matts Arrays Framework Library 1.0   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+----------------------------------------------------
+History
+Version 1.0.3
+- Changed to the new namespaces
+
+Version 1.0.2
+- Optimized the oHeap object for ~15% performance
+improvement
+
+Version 1.0.1
+- Added other queue objects
+
+Version 1.0.0
+- Initial Release
+
+----------------------------------------------------
+SCRIPT USAGE:
+
+to create a heap, first instantiate it. When instantiating, make sure to provide
+the name of the variable on your object that holds the priority. You can optionally
+specify which order the heap will be in. If nothing is provide, a default priority
+name of "p" will be used and a highest value has highest priority system.
+
+var myheap = new BotOS.Arrays.Heap("priority", mlHEAPHIGH);
+
+to add an object sinply use the insert method and provide the actual object:
+
+myheap.Insert(object);
+
+to get the first item AND remove it use teh remove method:
+
+var highestitem = myheap.Remove();
+
+to get the first item AND NOT remove it use the peek method:
+
+var highestitem = myheap.Peek();
+
+to get the heaps length use the getLength method:
+
+var lengthofheap = myheap.getLength();
+
+
+***Other objects listed in this file will be eventually moved from this file***
+
+
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+
+
+*/
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+if(typeof(BotOS.Arrays) != 'function'){
+	BotOS.Arrays = function () {
+		throw new BotOS.NamespaceException("BotOS.Arrays Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+var mlHEAPLOW = 1; //lower number has higher priority
+var mlHEAPHIGH = 2; //higher number has higher priority
+
+BotOS.Arrays.Heap = function(pr, o)
+{
+	if(!pr) {pr = "p";}
+	if(!o) {o = mlHEAPHIGH;}
+	this._p = pr; //private
+	this._o = o; //private
+	if(this._o == mlHEAPHIGH){
+		this.Insert = Heap_inserthigh;
+		this.Remove = Heap_removehigh; }
+	else{
+		this.Insert = Heap_insertlow;
+		this.Remove = Heap_removelow; }
+
+	this.Peek = Heap_peek;
+	this.Clear = Heap_clear;
+	this.getLength = Heap_qlength;
+
+	this._heap = new Array(); //private
+	this._heap.length++;
+
+	function Heap_inserthigh(d)
+	{
+		var i = this._heap.length;
+		var id2 = Math.floor(i/2);
+		while (i > 1 && this._heap[id2][this._p] < d[this._p])
+		{
+			this._heap[i] = this._heap[id2];
+			i  =  id2;
+			id2 = Math.floor(i/2);
+		}
+		this._heap[i] = d;
+	}
+	function Heap_removehigh()
+	{
+		if (this._heap.length == 1) return null;
+		var j, i = 1;
+		//var j;
+		var d = this._heap[1];
+		var hl1 = this._heap.length-1;
+		var hl12 = Math.floor(hl1 / 2);
+		var tmp = this._heap[hl1];
+		while (i <= hl12) {
+			j = i + i;
+			if ((j < hl1) && this._heap[j][this._p] < this._heap[j + 1][this._p])
+				j++;
+			if (this._heap[j][this._p] <= tmp[this._p])
+				break;
+			this._heap[i] = this._heap[j];
+			i = j;
+		}
+		this._heap[i] = tmp;
+		this._heap.pop();
+		return d;
+	}
+	function Heap_insertlow(d)
+	{
+		var i = this._heap.length;
+		var id2 = Math.floor(i/2);
+		while (i > 1 && this._heap[id2][this._p] > d[this._p])
+		{
+			this._heap[i] = this._heap[id2];
+			i  =  id2;
+			id2 = Math.floor(i/2);
+		}
+		this._heap[i] = d;
+	}
+	function Heap_removelow()
+	{
+		if (this._heap.length == 1) return null;
+		var j, i = 1;
+		//var j;
+		var d = this._heap[1];
+		var hl1 = this._heap.length-1;
+		var hl12 = Math.floor(hl1 / 2);
+		var tmp = this._heap[hl1];
+		while (i <= hl12) {
+			j = i+i;
+			if ((j < hl1) && this._heap[j][this._p] > this._heap[j + 1][this._p])
+				j++;
+			if (this._heap[j][this._p] >= tmp[this._p])
+				break;
+			this._heap[i] = this._heap[j];
+			i = j;
+		}
+		this._heap[i] = tmp;
+		this._heap.pop();
+		return d;
+	}
+
+	function Heap_peek()
+	{
+		if (this._heap.length == 1) return null;
+		return this._heap[1];
+	}
+
+	function Heap_clear()
+	{
+		this._heap.length = 1;
+	}
+
+	function Heap_qlength()
+	{
+		return this._heap.length-1;
+	}
+
+}
+
+
+BotOS.Arrays.HeapLL = function(pr, o)
+{
+	//inherit the heap
+	BotOS.Arrays.Heap.call(this, pr, o)
+
+	this.getNext = HeapLL_getnext;
+	this.getPrev = HeapLL_getprev;
+	this.getItem = HeapLL_getitem;
+	this.Index = 0;
+
+	function HeapLL_getnext()
+	{
+		var diff = 0xFFFFFFFF;
+		var nextindex = -1;
+		if(this._heap.length <= 1 || this.Index == -1) return null;
+		if(this.Index == 0){
+			this.Index = 1;
+			return this._heap[1];
+		}
+
+		for(var gn = 1; gn < this._heap.length; gn++)
+		{
+			var newdiff = Math.abs(this._heap[this.Index][this._p] - this._heap[gn][this._p]);
+			switch(this._o)
+			{
+				case mlHEAPLOW:
+					if(this._heap[this.Index][this._p] < this._heap[gn][this._p] && newdiff < diff)
+					{
+						diff = newdiff;
+						nextindex = gn;
+					}
+					break;
+				case mlHEAPHIGH:
+					if(this._heap[this.Index][this._p] > this._heap[gn][this._p] && newdiff < diff)
+					{
+						diff = newdiff;
+						nextindex = gn;
+					}
+					break;
+			}
+		}
+
+		if(this.Index == nextindex){
+			this.Index = -1;
+			return null;
+		}
+		this.Index = nextindex;
+		return this._heap[this.Index];
+	}
+
+	function HeapLL_getprev()
+	{
+		var diff = 0xFFFFFFFF;
+		var nextindex = 0;
+		if(this._heap.length == 1 || this.Index == -1) return null;
+		if(this.Index == 0){
+			this.Index = 1;
+			return this._heap[1];
+		}
+
+		for(var gn = 1; gn < this._heap.length; gn++)
+		{
+			var newdiff = Math.abs(this._heap[this.Index][this._p] - this._heap[gn][this._p]);
+			switch(this._o)
+			{
+				case mlHEAPLOW:
+					if(this._heap[this.Index][this._p] > this._heap[gn][this._p] && newdiff < diff)
+					{
+						diff = newdiff;
+						nextindex = gn;
+					}
+					break;
+				case mlHEAPHIGH:
+					if(this._heap[this.Index][this._p] < this._heap[gn][this._p] && newdiff < diff)
+					{
+						diff = newdiff;
+						nextindex = gn;
+					}
+					break;
+			}
+		}
+		if(this.Index == nextindex){
+			this.Index = -1;
+			return null;
+		}
+		this.Index = this.nextindex;
+		return this._heap[this.Index];
+	}
+
+	function HeapLL_getitem()
+	{
+		if(this._heap.length == 1 || this.Index == 0) return null;
+		return this._heap[this.Index];
+	}
+}
+
+

@@ -1,0 +1,68 @@
+
+//##################################################
+//######   BotOS Framework - Out of Game    ########
+//##################################################
+/*
+----------------------------------------------------*/
+/*----------------------------------------------------
+Copyright (C) 2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as permission is 
+granted by the author, Matt Lanteigne.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG) != 'function') {
+	BotOS.OOG = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+if(typeof(BotOS.OOG.Controls) != 'function') {
+	BotOS.OOG.Controls = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG.Controls Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+include("BotOS/OOG/BotOS.OOG.Screen.d2l");
+
+BotOS.OOG.Controls.CreateGameSubScreen = function (init) {
+	//we inherit from Screen since the screen is a control itself 
+	BotOS.OOG.Screen.call(this, null, "Create Screen");
+
+	var boc = BotOS.OOG.Controls;
+
+	this.Add(new boc.CreateGameButton(), "CreateGameButton");
+	this.Add(new boc.GameNameTextBox(), "GameNameTextBox");
+	this.Add(new boc.GamePasswordTextBox(), "GamePasswordTextBox");
+	this.Add(new boc.GameDescriptionTextBox(), "GameDescriptionTextBox");
+	//this.Add(new boc.MaxPlayersTextBox(), "MaxPlayersTextBox");
+	//this.Add(new boc.CharacterDifferenceTextBox(), "CharacterDifferenceTextBox");
+	this.Add(new boc.HellRadioButton(), "HellRadioButton");
+	this.Add(new boc.NightmareRadioButton(), "NightmareRadioButton");
+	this.Add(new boc.NormalRadioButton(), "NormalRadioButton");
+
+	if (init) this.Initialize();
+
+
+
+}
+
+BotOS.OOG.Controls.CreateGameSubScreen.prototype = new BotOS.OOG.Screen;
+
+
+

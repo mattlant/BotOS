@@ -1,0 +1,3336 @@
+//***************************************************************************
+// Sy_Constants.d2l by Syadasti <mike@gogulski.com>
+//
+/////////////////////////////////////////////////////////////////////////////
+// NOTE: If this file looks like a mess to you, set your tab stops to 4
+/////////////////////////////////////////////////////////////////////////////
+//
+// d2jsp constants library by Syadadasti
+//
+/////////////////////////////////////////////////////////////////////////////
+//
+// This library is intended to replace all instances of game data constants
+// in d2jsp scripts with symbolic names.  This should make scripts more 
+// readable and maintainable, and should also serve to "future-proof" d2jsp
+// scripts against changes to constant values upon the release of the next
+// patch.
+//
+/////////////////////////////////////////////////////////////////////////////
+//
+// version 0.5 3/29/03
+//		added short abbreviations
+//		fixed several typos
+//		added c_MonsterClassID_ and c_MissileClassID_ defines
+// version 0.4 3/25/03
+//		added c_FontFace_ defines
+//		added c_XpPerLevel array
+//		added c_QuestNames array
+//		fixed capitalization in shrine names array
+// version 0.3 3/10/03
+//		added c_StateNames array
+//		added c_RoomStat_ defines
+//		added c_ItemType_ defines, c_ItemTypeNames and c_ItemTypeCodes arrays
+//		added c_ColorChangeEscape and expanded list of ÿc<color> strings
+//		added NPC Menu defines
+//		added waypoints and quest IDs
+// version 0.2 3/7/03
+//		made capitalization consistent (InitialCaps not initialCaps)
+//		added shrine types, screen color strings, UI Flags
+// version 0.1 3/4/03
+//		initial release
+//
+// MISSING/FIXME:
+//
+// chest classids/names
+//
+// getUnit(type, code/name, mode) mode parameter (njag needs to update docs)
+//
+//***************************************************************************
+
+// Library version
+
+const c_Sy_Constants_Version = 0.5;
+
+// Banner
+
+print("Loading Syadasti's Constants Library (Sy_Constants.d2l) version " + c_Sy_Constants_Version.toString());
+
+// gold()
+const c_Gold_DropToGround = 0;								const cG_DropToGround = 0;
+const c_Gold_MoveToInventory = 1;							const cG_MoveToInventory = 1;
+const c_Gold_MoveToStash = 2;								const cG_MoveToStash = 2;
+
+// item.getBaseStat()
+
+const c_ItemBaseStat_AlternateGfx = 0;						const cIBS_AlternateGfx = 0;
+const c_ItemBaseStat_WeaponClass = 1;						const cIBS_WeaponClass = 1;
+const c_ItemBaseStat_TwoHandedWeaponClass = 2;				const cIBS_TwoHandedWeaponClass = 2;
+const c_ItemBaseStat_MinAC = 4;								const cIBS_MinAC = 4;
+const c_ItemBaseStat_MaxAC = 5;								const cIBS_MaxAC = 5;
+const c_ItemBaseStat_BaseGambleCost = 6;					const cIBS_BaseGambleCost = 6;
+const c_ItemBaseStat_BaseAttackSpeed = 7;					const cIBS_BaseAttackSpeed = 7;
+const c_ItemBaseStat_DurabilityWarning = 8;					const cIBS_DurabilityWarning = 8;
+const c_ItemBaseStat_BaseCost = 9;							const cIBS_BaseCost = 9;
+const c_ItemBaseStat_Version = 15;							const cIBS_Version = 15;
+const c_ItemBaseStat_ItemRarity = 21;						const cIBS_ItemRarity = 21;
+const c_ItemBaseStat_BaseItemLevel = 22;					const cIBS_BaseItemLevel = 22;
+const c_ItemBaseStat_MinDmg = 23;							const cIBS_MinDmg = 23;
+const c_ItemBaseStat_MaxDmg = 24;							const cIBS_MaxDmg = 24;
+const c_ItemBaseStat_MinTwoHandDmg = 27;					const cIBS_MinTwoHandDmg = 27;
+const c_ItemBaseStat_MaxTwoHandDmg = 28;					const cIBS_MaxTwoHandDmg = 28;
+const c_ItemBaseStat_AttackRange = 29;						const cIBS_AttackRange = 29;
+const c_ItemBaseStat_StrBonus = 30;							const cIBS_StrBonus = 30;
+const c_ItemBaseStat_DexBonus = 31;							const cIBS_DexBonus = 31;
+const c_ItemBaseStat_StrReq = 32;							const cIBS_StrReq = 32;
+const c_ItemBaseStat_DexReq = 33;							const cIBS_DexReq = 33;
+const c_ItemBaseStat_SizeX = 35;							const cIBS_SizeX = 35;
+const c_ItemBaseStat_SizeY = 36;							const cIBS_SizeY = 36;
+const c_ItemBaseStat_BaseBlock = 37;						const cIBS_BaseBlock = 37;
+const c_ItemBaseStat_BaseDurability = 38;					const cIBS_BaseDurability = 38;
+const c_ItemBaseStat_Component = 41;						const cIBS_Component = 41;
+const c_ItemBaseStat_TwoHanded = 48;						const cIBS_TwoHanded = 48;
+const c_ItemBaseStat_Type = 50;								const cIBS_Type = 50;
+const c_ItemBaseStat_SoundId = 53;							const cIBS_SoundId = 53;
+const c_ItemBaseStat_Quest = 55;							const cIBS_Quest = 55;
+const c_ItemBaseStat_TransTable = 57;						const cIBS_TransTable = 57;
+const c_ItemBaseStat_LightRadius = 59;						const cIBS_LightRadius = 59;
+const c_ItemBaseStat_DurationWarningWep = 65;				const cIBS_DurationWarningWep = 65;
+const c_ItemBaseStat_MaxSockets = 68;						const cIBS_MaxSockets = 68;
+const c_ItemBaseStat_BaseLevelReq = 75;						const cIBS_BaseLevelReq = 75;
+const c_ItemBaseStat_MagicLvl = 76;							const cIBS_MagicLvl = 76;
+const c_ItemBaseStat_Transform = 77;						const cIBS_Transform = 77;
+const c_ItemBaseStat_InvTrans = 78;							const cIBS_InvTrans = 78;
+
+// room.getCollision()
+
+const c_RoomCollisionFlag_BlockWalk = 0x01;					const cRCF_BlockWalk = 0x01;
+const c_RoomCollisionFlag_BlockLight = 0x02;				const cRCF_BlockLight = 0x02;
+const c_RoomCollisionFlag_BlockLOS = 0x04;					const cRCF_BlockLOS = 0x04;
+const c_RoomCollisionFlag_BlockPlayerWalk = 0x08;			const cRCF_BlockPlayerWalk = 0x08;
+const c_RoomCollisionFlag_BlockLightOnly = 0x20;			const cRCF_BlockLightOnly = 0x20;
+
+// unit.getEnchant()
+
+const c_UnitEnchant_ExtraStrong = 0;						const cUE_ExtraStrong = 0;
+const c_UnitEnchant_ExtraFast = 1;							const cUE_ExtraFast = 1;
+const c_UnitEnchant_Cursed = 2;								const cUE_Cursed = 2;
+const c_UnitEnchant_MagicResistant = 3;						const cUE_MagicResistant = 3;
+const c_UnitEnchant_FireEnchanted = 4;						const cUE_FireEnchanted = 4;
+const c_UnitEnchant_Champion = 5;							const cUE_Champion = 5;
+const c_UnitEnchant_LightningEnchanted = 6;					const cUE_LightningEnchanted = 6;
+const c_UnitEnchant_ColdEnchanted = 7;						const cUE_ColdEnchanted = 7;
+const c_UnitEnchant_Thief = 8;								const cUE_Thief = 8;
+const c_UnitEnchant_ManaBurn = 9;							const cUE_ManaBurn = 9;
+const c_UnitEnchant_Teleportation = 10;						const cUE_Teleportation = 10;
+const c_UnitEnchant_SpectralHit = 11;						const cUE_SpectralHit = 11;
+const c_UnitEnchant_StoneSkin = 12;							const cUE_StoneSkin = 12;
+const c_UnitEnchant_MultipleShots = 13;						const cUE_MultipleShots = 13;
+const c_UnitEnchant_Ghostly = 14;							const cUE_Ghostly = 14;
+const c_UnitEnchant_Fanatic = 15;							const cUE_Fanatic = 15;
+const c_UnitEnchant_Possessed = 16;							const cUE_Possessed = 16;
+const c_UnitEnchant_Berserker = 17;							const cUE_Berserker = 17;
+
+// item.getFlag()
+
+const c_ItemFlag_Equipped =		0x0000001;					const cIF_Equipped =	0x0000001;
+const c_ItemFlag_InSocket =		0x0000008;					const cIF_InSocket =	0x0000008;
+const c_ItemFlag_Identified =	0x0000010;					const cIF_Identified =	0x0000010;
+const c_ItemFlag_SwitchIn =		0x0000040;					const cIF_SwitchIn =	0x0000040;
+const c_ItemFlag_SwitchOut =	0x0000080;					const cIF_SwitchOut =	0x0000080;
+const c_ItemFlag_Broken =		0x0000100;					const cIF_Broken =		0x0000100;
+const c_ItemFlag_Rejuv =		0x0000400;					const cIF_Rejuv =		0x0000400;
+const c_ItemFlag_Socketed =		0x0000800;					const cIF_Socketed =	0x0000800;
+const c_ItemFlag_InStore =		0x0002000;					const cIF_InStore =		0x0002000;
+const c_ItemFlag_NotInSocket =	0x0004000;					const cIF_NotInSocket =	0x0004000;
+const c_ItemFlag_Ear =			0x0010000;					const cIF_Ear =			0x0010000;
+const c_ItemFlag_StartItem =	0x0020000;					const cIF_StartItem =	0x0020000;
+const c_ItemFlag_RuneOrPot =	0x0200000;					const cIF_RuneOrPot =	0x0200000;
+const c_ItemFlag_Etheral =		0x0400000;					const cIF_Etheral =		0x0400000;
+const c_ItemFlag_Named =		0x1000000;					const cIF_Named =		0x1000000;
+const c_ItemFlag_Runeword =		0x4000000;					const cIF_Runeword =	0x4000000;
+
+// unit.getStat()
+
+const c_UnitStat_Strength = 0;								const cUS_Strength = 0;
+const c_UnitStat_Energy = 1;								const cUS_Energy = 1;
+const c_UnitStat_Dexterity = 2;								const cUS_Dexterity = 2;
+const c_UnitStat_Vitality = 3;								const cUS_Vitality = 3;
+const c_UnitStat_StatPts = 4;								const cUS_StatPts = 4;
+const c_UnitStat_NewSkills = 5;								const cUS_NewSkills = 5;
+const c_UnitStat_HitPoints = 6;								const cUS_HitPoints = 6;
+const c_UnitStat_MaxHP = 7;									const cUS_MaxHP = 7;
+const c_UnitStat_Mana = 8;									const cUS_Mana = 8;
+const c_UnitStat_MaxMana = 9;								const cUS_MaxMana = 9;
+const c_UnitStat_Stamina = 10;								const cUS_Stamina = 10;
+const c_UnitStat_MaxStamina = 11;							const cUS_MaxStamina = 11;
+const c_UnitStat_Level = 12;								const cUS_Level = 12;
+const c_UnitStat_Experience = 13;							const cUS_Experience = 13;
+const c_UnitStat_Gold = 14;									const cUS_Gold = 14;
+const c_UnitStat_GoldBank = 15;								const cUS_GoldBank = 15;
+const c_UnitStat_ItemArmorPercent = 16;						const cUS_ItemArmorPercent = 16;
+const c_UnitStat_ItemMaxDamagePercent = 17;					const cUS_ItemMaxDamagePercent = 17;
+const c_UnitStat_ItemMinDamagePercent = 18;					const cUS_ItemMinDamagePercent = 18;
+const c_UnitStat_ToHit = 19;								const cUS_ToHit = 19;
+const c_UnitStat_ToBlock = 20;								const cUS_ToBlock = 20;
+const c_UnitStat_MinDamage = 21;							const cUS_MinDamage = 21;
+const c_UnitStat_MaxDamage = 22;							const cUS_MaxDamage = 22;
+const c_UnitStat_SecondaryMinDamage = 23;					const cUS_SecondaryMinDamage = 23;
+const c_UnitStat_SecondaryMaxDamage = 24;					const cUS_SecondaryMaxDamage = 24;
+const c_UnitStat_DamagePercent = 25;						const cUS_DamagePercent = 25;
+const c_UnitStat_ManaRecovery = 26;							const cUS_ManaRecovery = 26;
+const c_UnitStat_ManaRecoveryBonus = 27;					const cUS_ManaRecoveryBonus = 27;
+const c_UnitStat_StaminaRecoveryBonus = 28;					const cUS_StaminaRecoveryBonus = 28;
+const c_UnitStat_LastExp = 29;								const cUS_LastExp = 29;
+const c_UnitStat_NextExp = 30;								const cUS_NextExp = 30;
+const c_UnitStat_ArmorClass = 31;							const cUS_ArmorClass = 31;
+const c_UnitStat_ArmorClassVsMissile = 32;					const cUS_ArmorClassVsMissile = 32;
+const c_UnitStat_ArmorClassVsHTH = 33;						const cUS_ArmorClassVsHTH = 33;
+const c_UnitStat_NormalDamageReduction = 34;				const cUS_NormalDamageReduction = 34;
+const c_UnitStat_MagicDamageReduction = 35;					const cUS_MagicDamageReduction = 35;
+const c_UnitStat_DamageResist = 36;							const cUS_DamageResist = 36;
+const c_UnitStat_MagicResist = 37;							const cUS_MagicResist = 37;
+const c_UnitStat_MaxMagicResist = 38;						const cUS_MaxMagicResist = 38;
+const c_UnitStat_FireResist = 39;							const cUS_FireResist = 39;
+const c_UnitStat_MaxFireResist = 40;						const cUS_MaxFireResist = 40;
+const c_UnitStat_LightningResist = 41;						const cUS_LightningResist = 41;
+const c_UnitStat_MaxLightningResist = 42;					const cUS_MaxLightningResist = 42;
+const c_UnitStat_ColdResist = 43;							const cUS_ColdResist = 43;
+const c_UnitStat_MaxColdResist = 44;						const cUS_MaxColdResist = 44;
+const c_UnitStat_PoisonResist = 45;							const cUS_PoisonResist = 45;
+const c_UnitStat_MaxPoisonResist = 46;						const cUS_MaxPoisonResist = 46;
+const c_UnitStat_DamageAura = 47;							const cUS_DamageAura = 47;
+const c_UnitStat_FireMinDamage = 48;						const cUS_FireMinDamage = 48;
+const c_UnitStat_FireMaxDamage = 49;						const cUS_FireMaxDamage = 49;
+const c_UnitStat_LightningMinDamage = 50;					const cUS_LightningMinDamage = 50;
+const c_UnitStat_LightningMaxDamage = 51;					const cUS_LightningMaxDamage = 51;
+const c_UnitStat_MagicMinDamage = 52;						const cUS_MagicMinDamage = 52;
+const c_UnitStat_MagicMaxDamage = 53;						const cUS_MagicMaxDamage = 53;
+const c_UnitStat_ColdMinDamage = 54;						const cUS_ColdMinDamage = 54;
+const c_UnitStat_ColdMaxDamage = 55;						const cUS_ColdMaxDamage = 55;
+const c_UnitStat_ColdLength = 56;							const cUS_ColdLength = 56;
+const c_UnitStat_PoisonMinDamage = 57;						const cUS_PoisonMinDamage = 57;
+const c_UnitStat_PoisonMaxDamage = 58;						const cUS_PoisonMaxDamage = 58;
+const c_UnitStat_PoisonLength = 59;							const cUS_PoisonLength = 59;
+const c_UnitStat_LifeDrainMinDamage = 60;					const cUS_LifeDrainMinDamage = 60;
+const c_UnitStat_LifeDrainMaxDamage = 61;					const cUS_LifeDrainMaxDamage = 61;
+const c_UnitStat_ManaDrainMinDamage = 62;					const cUS_ManaDrainMinDamage = 62;
+const c_UnitStat_ManaDrainMaxDamage = 63;					const cUS_ManaDrainMaxDamage = 63;
+const c_UnitStat_StaminaDrainMinDamage = 64;				const cUS_StaminaDrainMinDamage = 64;
+const c_UnitStat_StaminaDrainMaxDamage = 65;				const cUS_StaminaDrainMaxDamage = 65;
+const c_UnitStat_StunLength = 66;							const cUS_StunLength = 66;
+const c_UnitStat_VelocityPercent = 67;						const cUS_VelocityPercent = 67;
+const c_UnitStat_AttackRate = 68;							const cUS_AttackRate = 68;
+const c_UnitStat_OtherAnimRate = 69;						const cUS_OtherAnimRate = 69;
+const c_UnitStat_Quantity = 70;								const cUS_Quantity = 70;
+const c_UnitStat_Value = 71;								const cUS_Value = 71;
+const c_UnitStat_Durability = 72;							const cUS_Durability = 72;
+const c_UnitStat_MaxDurability = 73;						const cUS_MaxDurability = 73;
+const c_UnitStat_HPRegen = 74;								const cUS_HPRegen = 74;
+const c_UnitStat_ItemMaxDurabilityPercent = 75;				const cUS_ItemMaxDurabilityPercent = 75;
+const c_UnitStat_ItemMaxHPPercent = 76;						const cUS_ItemMaxHPPercent = 76;
+const c_UnitStat_ItemMaxManaPercent = 77;					const cUS_ItemMaxManaPercent = 77;
+const c_UnitStat_ItemAttackerTakesDamage = 78;				const cUS_ItemAttackerTakesDamage = 78;
+const c_UnitStat_ItemGoldBonus = 79;						const cUS_ItemGoldBonus = 79;
+const c_UnitStat_ItemMagicBonus = 80;						const cUS_ItemMagicBonus = 80;
+const c_UnitStat_ItemKnockback = 81;						const cUS_ItemKnockback = 81;
+const c_UnitStat_ItemTimeDuration = 82;						const cUS_ItemTimeDuration = 82;
+const c_UnitStat_ItemAddAmazonSkillPoints = 83;				const cUS_ItemAddAmazonSkillPoints = 83;
+const c_UnitStat_ItemAddPaladinSkillPoints = 84;			const cUS_ItemAddPaladinSkillPoints = 84;
+const c_UnitStat_ItemAddNecromancerSkillPoints = 85;		const cUS_ItemAddNecromancerSkillPoints = 85;
+const c_UnitStat_ItemAddSorceressSkillPoints = 86;			const cUS_ItemAddSorceressSkillPoints = 86;
+const c_UnitStat_ItemAddBarbarianSkillPoints = 87;			const cUS_ItemAddBarbarianSkillPoints = 87;
+const c_UnitStat_ItemDoubleHerbDuration = 88;				const cUS_ItemDoubleHerbDuration = 88;
+const c_UnitStat_ItemLightRadius = 89;						const cUS_ItemLightRadius = 89;
+const c_UnitStat_ItemLightColor = 90;						const cUS_ItemLightColor = 90;
+const c_UnitStat_ItemReqPercent = 91;						const cUS_ItemReqPercent = 91;
+const c_UnitStat_ItemFastAttackRate = 92;					const cUS_ItemFastAttackRate = 92;
+const c_UnitStat_ItemFasterAttackRate = 93;					const cUS_ItemFasterAttackRate = 93;
+const c_UnitStat_ItemFastestAttackRate = 94;				const cUS_ItemFastestAttackRate = 94;
+const c_UnitStat_ItemFastMoveVelocity = 95;					const cUS_ItemFastMoveVelocity = 95;
+const c_UnitStat_ItemFasterMoveVelocity = 96;				const cUS_ItemFasterMoveVelocity = 96;
+const c_UnitStat_ItemFastestMoveVelocity = 97;				const cUS_ItemFastestMoveVelocity = 97;
+const c_UnitStat_ItemFastGetHitRate = 98;					const cUS_ItemFastGetHitRate = 98;
+const c_UnitStat_ItemFasterGetHitRate = 99;					const cUS_ItemFasterGetHitRate = 99;
+const c_UnitStat_ItemFastestGetHitRate = 100;				const cUS_ItemFastestGetHitRate = 100;
+const c_UnitStat_ItemFastBlockRate = 101;					const cUS_ItemFastBlockRate = 101;
+const c_UnitStat_ItemFasterBlockRate = 102;					const cUS_ItemFasterBlockRate = 102;
+const c_UnitStat_ItemFastestBlockRate = 103;				const cUS_ItemFastestBlockRate = 103;
+const c_UnitStat_ItemFastCastRate = 104;					const cUS_ItemFastCastRate = 104;
+const c_UnitStat_ItemFasterCastRate = 105;					const cUS_ItemFasterCastRate = 105;
+const c_UnitStat_ItemFastestCastRate = 106;					const cUS_ItemFastestCastRate = 106;
+const c_UnitStat_ItemSingleSkill1 = 107;					const cUS_ItemSingleSkill1 = 107;
+const c_UnitStat_ItemSingleSkill2 = 108;					const cUS_ItemSingleSkill2 = 108;
+const c_UnitStat_ItemSingleSkill3 = 109;					const cUS_ItemSingleSkill3 = 109;
+const c_UnitStat_ItemPoisonLengthResist = 110;				const cUS_ItemPoisonLengthResist = 110;
+const c_UnitStat_ItemNormalDamage = 111;					const cUS_ItemNormalDamage = 111;
+const c_UnitStat_ItemHowl = 112;							const cUS_ItemHowl = 112;
+const c_UnitStat_ItemStupidity = 113;						const cUS_ItemStupidity = 113;
+const c_UnitStat_ItemDamageToMana = 114;					const cUS_ItemDamageToMana = 114;
+const c_UnitStat_ItemIgnoreTargetAC = 115;					const cUS_ItemIgnoreTargetAC = 115;
+const c_UnitStat_ItemFractionalTargetAC = 116;				const cUS_ItemFractionalTargetAC = 116;
+const c_UnitStat_ItemPreventHeal = 117;						const cUS_ItemPreventHeal = 117;
+const c_UnitStat_ItemHalfFreezeDuration = 118;				const cUS_ItemHalfFreezeDuration = 118;
+const c_UnitStat_ItemToHitPercent = 119;					const cUS_ItemToHitPercent = 119;
+const c_UnitStat_ItemDamageTargetAC = 120;					const cUS_ItemDamageTargetAC = 120;
+const c_UnitStat_ItemDemonDamagePercent = 121;				const cUS_ItemDemonDamagePercent = 121;
+const c_UnitStat_ItemUndeadDamagePercent = 122;				const cUS_ItemUndeadDamagePercent = 122;
+const c_UnitStat_ItemDemonToHit = 123;						const cUS_ItemDemonToHit = 123;
+const c_UnitStat_ItemUndeadToHit = 124;						const cUS_ItemUndeadToHit = 124;
+const c_UnitStat_ItemThrowable = 125;						const cUS_ItemThrowable = 125;
+const c_UnitStat_ItemFireSkill = 126;						const cUS_ItemFireSkill = 126;
+const c_UnitStat_ItemAllSkills = 127;						const cUS_ItemAllSkills = 127;
+const c_UnitStat_ItemAttackerTakesLightningDamage = 128;	const cUS_ItemAttackerTakesLightningDamage = 128;
+const c_UnitStat_IronMaidenLevel = 129;						const cUS_IronMaidenLevel = 129;
+const c_UnitStat_LifeTapLevel = 130;						const cUS_LifeTapLevel = 130;
+const c_UnitStat_ThornsLevel = 131;							const cUS_ThornsLevel = 131;
+const c_UnitStat_BoneArmor = 132;							const cUS_BoneArmor = 132;
+const c_UnitStat_BoneArmorMax = 133;						const cUS_BoneArmorMax = 133;
+const c_UnitStat_ItemFreeze = 134;							const cUS_ItemFreeze = 134;
+const c_UnitStat_ItemOpenWounds = 135;						const cUS_ItemOpenWounds = 135;
+const c_UnitStat_ItemCrushingBlow = 136;					const cUS_ItemCrushingBlow = 136;
+const c_UnitStat_ItemKickDamage = 137;						const cUS_ItemKickDamage = 137;
+const c_UnitStat_ItemManaAfterKill = 138;					const cUS_ItemManaAfterKill = 138;
+const c_UnitStat_ItemHealAfterDemonKill = 139;				const cUS_ItemHealAfterDemonKill = 139;
+const c_UnitStat_ItemExtraBlood = 140;						const cUS_ItemExtraBlood = 140;
+const c_UnitStat_ItemDeadlyStrike = 141;					const cUS_ItemDeadlyStrike = 141;
+const c_UnitStat_ItemAbsorbFirePercent = 142;				const cUS_ItemAbsorbFirePercent = 142;
+const c_UnitStat_ItemAbsorbFire = 143;						const cUS_ItemAbsorbFire = 143;
+const c_UnitStat_ItemAbsorbLightningPercent = 144;			const cUS_ItemAbsorbLightningPercent = 144;
+const c_UnitStat_ItemAbsorbLightning = 145;					const cUS_ItemAbsorbLightning = 145;
+const c_UnitStat_ItemAbsorbMagicPercent = 146;				const cUS_ItemAbsorbMagicPercent = 146;
+const c_UnitStat_ItemAbsorbMagic = 147;						const cUS_ItemAbsorbMagic = 147;
+const c_UnitStat_ItemAbsorbColdPercent = 148;				const cUS_ItemAbsorbColdPercent = 148;
+const c_UnitStat_ItemAbsorbCold = 149;						const cUS_ItemAbsorbCold = 149;
+const c_UnitStat_ItemSlow = 150;							const cUS_ItemSlow = 150;
+const c_UnitStat_ItemBlessedAim = 151;						const cUS_ItemBlessedAim = 151;
+const c_UnitStat_ItemDefiance = 152;						const cUS_ItemDefiance = 152;
+const c_UnitStat_ItemCannotBeFrozen = 153;					const cUS_ItemCannotBeFrozen = 153;
+const c_UnitStat_ItemStaminaDrainPercent = 154;				const cUS_ItemStaminaDrainPercent = 154;
+const c_UnitStat_ItemReanimate = 155;						const cUS_ItemReanimate = 155;
+const c_UnitStat_ItemPierce = 156;							const cUS_ItemPierce = 156;
+const c_UnitStat_ItemMagicArrow = 157;						const cUS_ItemMagicArrow = 157;
+const c_UnitStat_ItemExplosiveArrow = 158;					const cUS_ItemExplosiveArrow = 158;
+const c_UnitStat_ItemThrowMinDamage = 159;					const cUS_ItemThrowMinDamage = 159;
+const c_UnitStat_ItemThrowMaxDamage = 160;					const cUS_ItemThrowMaxDamage = 160;
+const c_UnitStat_SkillHandOfAthena = 161;					const cUS_SkillHandOfAthena = 161;
+const c_UnitStat_SkillStaminaPercent = 162;					const cUS_SkillStaminaPercent = 162;
+const c_UnitStat_SkillPassiveStaminaPercent = 163;			const cUS_SkillPassiveStaminaPercent = 163;
+const c_UnitStat_SkillConcentration = 164;					const cUS_SkillConcentration = 164;
+const c_UnitStat_SkillEnchant = 165;						const cUS_SkillEnchant = 165;
+const c_UnitStat_SkillPierce = 166;							const cUS_SkillPierce = 166;
+const c_UnitStat_SkillConviction = 167;						const cUS_SkillConviction = 167;
+const c_UnitStat_SkillChillingArmor = 168;					const cUS_SkillChillingArmor = 168;
+const c_UnitStat_SkillFrenzy = 169;							const cUS_SkillFrenzy = 169;
+const c_UnitStat_SkillDecrepify = 170;						const cUS_SkillDecrepify = 170;
+const c_UnitStat_SkillArmorPercent = 171;					const cUS_SkillArmorPercent = 171;
+const c_UnitStat_Alignment = 172;							const cUS_Alignment = 172;
+const c_UnitStat_Target0 = 173;								const cUS_Target0 = 173;
+const c_UnitStat_Target1 = 174;								const cUS_Target1 = 174;
+const c_UnitStat_GoldLost = 175;							const cUS_GoldLost = 175;
+const c_UnitStat_ConversionLevel = 176;						const cUS_ConversionLevel = 176;
+const c_UnitStat_ConversionMaxHP = 177;						const cUS_ConversionMaxHP = 177;
+const c_UnitStat_UnitDoOverlay = 178;						const cUS_UnitDoOverlay = 178;
+const c_UnitStat_ItemAddDruidSkillPoints = 179;				const cUS_ItemAddDruidSkillPoints = 179;
+const c_UnitStat_ItemAddAssassinSkillPoints = 180;			const cUS_ItemAddAssassinSkillPoints = 180;
+const c_UnitStat_ItemAddSkillSingle4 = 181;					const cUS_ItemAddSkillSingle4 = 181;
+const c_UnitStat_ItemAddSkillSingle5 = 182;					const cUS_ItemAddSkillSingle5 = 182;
+const c_UnitStat_ItemAddSkillSingle6 = 183;					const cUS_ItemAddSkillSingle6 = 183;
+const c_UnitStat_ItemAddSkillSingle7 = 184;					const cUS_ItemAddSkillSingle7 = 184;
+const c_UnitStat_ItemAddSkillSingle8 = 185;					const cUS_ItemAddSkillSingle8 = 185;
+const c_UnitStat_ItemAddSkillSingle9 = 186;					const cUS_ItemAddSkillSingle9 = 186;
+const c_UnitStat_ItemAddSkillSingle10 = 187;				const cUS_ItemAddSkillSingle10 = 187;
+const c_UnitStat_ItemAddSkillTab1 = 188;					const cUS_ItemAddSkillTab1 = 188;
+const c_UnitStat_ItemAddSkillTab2 = 189;					const cUS_ItemAddSkillTab2 = 189;
+const c_UnitStat_ItemAddSkillTab3 = 190;					const cUS_ItemAddSkillTab3 = 190;
+const c_UnitStat_ItemAddSkillTab4 = 191;					const cUS_ItemAddSkillTab4 = 191;
+const c_UnitStat_ItemAddSkillTab5 = 192;					const cUS_ItemAddSkillTab5 = 192;
+const c_UnitStat_ItemAddSkillTab6 = 193;					const cUS_ItemAddSkillTab6 = 193;
+const c_UnitStat_ItemNumSockets = 194;						const cUS_ItemNumSockets = 194;
+const c_UnitStat_ItemSkillOnAttack1 = 195;					const cUS_ItemSkillOnAttack1 = 195;
+const c_UnitStat_ItemSkillOnAttack2 = 196;					const cUS_ItemSkillOnAttack2 = 196;
+const c_UnitStat_ItemSkillOnAttack3 = 197;					const cUS_ItemSkillOnAttack3 = 197;
+const c_UnitStat_ItemSkillOnHit1 = 198;						const cUS_ItemSkillOnHit1 = 198;
+const c_UnitStat_ItemSkillOnHit2 = 199;						const cUS_ItemSkillOnHit2 = 199;
+const c_UnitStat_ItemSkillOnHit3 = 200;						const cUS_ItemSkillOnHit3 = 200;
+const c_UnitStat_ItemSkillOnGetHit1 = 201;					const cUS_ItemSkillOnGetHit1 = 201;
+const c_UnitStat_ItemSkillOnGetHit2 = 202;					const cUS_ItemSkillOnGetHit2 = 202;
+const c_UnitStat_ItemSkillOnGetHit3 = 203;					const cUS_ItemSkillOnGetHit3 = 203;
+const c_UnitStat_ItemChargedSkill0 = 204;					const cUS_ItemChargedSkill0 = 204;
+const c_UnitStat_ItemChargedSkill1 = 205;					const cUS_ItemChargedSkill1 = 205;
+const c_UnitStat_ItemChargedSkill2 = 206;					const cUS_ItemChargedSkill2 = 206;
+const c_UnitStat_ItemChargedSkill3 = 207;					const cUS_ItemChargedSkill3 = 207;
+const c_UnitStat_ItemChargedSkill4 = 208;					const cUS_ItemChargedSkill4 = 208;
+const c_UnitStat_ItemChargedSkill5 = 209;					const cUS_ItemChargedSkill5 = 209;
+const c_UnitStat_ItemChargedSkill6 = 210;					const cUS_ItemChargedSkill6 = 210;
+const c_UnitStat_ItemChargedSkill7 = 211;					const cUS_ItemChargedSkill7 = 211;
+const c_UnitStat_ItemChargedSkill8 = 212;					const cUS_ItemChargedSkill8 = 212;
+const c_UnitStat_ItemChargedSkill9 = 213;					const cUS_ItemChargedSkill9 = 213;
+const c_UnitStat_ItemArmorPerLevel = 214;					const cUS_ItemArmorPerLevel = 214;
+const c_UnitStat_ItemArmorPercentPerLevel = 215;			const cUS_ItemArmorPercentPerLevel = 215;
+const c_UnitStat_ItemHPPerLevel = 216;						const cUS_ItemHPPerLevel = 216;
+const c_UnitStat_ItemManaPerLevel = 217;					const cUS_ItemManaPerLevel = 217;
+const c_UnitStat_ItemMaxDamagePerLevel = 218;				const cUS_ItemMaxDamagePerLevel = 218;
+const c_UnitStat_ItemMaxDamagePercentPerLevel = 219;		const cUS_ItemMaxDamagePercentPerLevel = 219;
+const c_UnitStat_ItemStrengthPerLevel = 220;				const cUS_ItemStrengthPerLevel = 220;
+const c_UnitStat_ItemDexterityPerLevel = 221;				const cUS_ItemDexterityPerLevel = 221;
+const c_UnitStat_ItemEnergyPerLevel = 222;					const cUS_ItemEnergyPerLevel = 222;
+const c_UnitStat_ItemVitalityPerLevel = 223;				const cUS_ItemVitalityPerLevel = 223;
+const c_UnitStat_ItemToHitPerLevel = 224;					const cUS_ItemToHitPerLevel = 224;
+const c_UnitStat_ItemToHitPercentPerLevel = 225;			const cUS_ItemToHitPercentPerLevel = 225;
+const c_UnitStat_ItemColdDamageMaxPerLevel = 226;			const cUS_ItemColdDamageMaxPerLevel = 226;
+const c_UnitStat_ItemFireDamageMaxPerLevel = 227;			const cUS_ItemFireDamageMaxPerLevel = 227;
+const c_UnitStat_ItemLightningDamageMaxPerLevel = 228;		const cUS_ItemLightningDamageMaxPerLevel = 228;
+const c_UnitStat_ItemPoisonDamageMaxPerLevel = 229;			const cUS_ItemPoisonDamageMaxPerLevel = 229;
+const c_UnitStat_ItemResistColdPerLevel = 230;				const cUS_ItemResistColdPerLevel = 230;
+const c_UnitStat_ItemResistFirePerLevel = 231;				const cUS_ItemResistFirePerLevel = 231;
+const c_UnitStat_ItemResistLightningPerLevel = 232;			const cUS_ItemResistLightningPerLevel = 232;
+const c_UnitStat_ItemResistPoisonPerLevel = 233;			const cUS_ItemResistPoisonPerLevel = 233;
+const c_UnitStat_ItemAbsorbColdPerLevel = 234;				const cUS_ItemAbsorbColdPerLevel = 234;
+const c_UnitStat_ItemAbsorbFirePerLevel = 235;				const cUS_ItemAbsorbFirePerLevel = 235;
+const c_UnitStat_ItemAbsorbLightningPerLevel = 236;			const cUS_ItemAbsorbLightningPerLevel = 236;
+const c_UnitStat_ItemAbsorbPoisonPerLevel = 237;			const cUS_ItemAbsorbPoisonPerLevel = 237;
+const c_UnitStat_ItemThornsPerLevel = 238;					const cUS_ItemThornsPerLevel = 238;
+const c_UnitStat_ItemFindGoldPerLevel = 239;				const cUS_ItemFindGoldPerLevel = 239;
+const c_UnitStat_ItemFindMagicPerLevel = 240;				const cUS_ItemFindMagicPerLevel = 240;
+const c_UnitStat_ItemRegenStaminaPerLevel = 241;			const cUS_ItemRegenStaminaPerLevel = 241;
+const c_UnitStat_ItemStaminaPerLevel = 242;					const cUS_ItemStaminaPerLevel = 242;
+const c_UnitStat_ItemDamageDemonPerLevel = 243;				const cUS_ItemDamageDemonPerLevel = 243;
+const c_UnitStat_ItemDamageUndeadPerLevel = 244;			const cUS_ItemDamageUndeadPerLevel = 244;
+const c_UnitStat_ItemToHitDemonPerLevel = 245;				const cUS_ItemToHitDemonPerLevel = 245;
+const c_UnitStat_ItemToHitUndeadPerLevel = 246;				const cUS_ItemToHitUndeadPerLevel = 246;
+const c_UnitStat_ItemCrushingBlowPerLevel = 247;			const cUS_ItemCrushingBlowPerLevel = 247;
+const c_UnitStat_ItemOpenWoundsPerLevel = 248;				const cUS_ItemOpenWoundsPerLevel = 248;
+const c_UnitStat_ItemKickDamagePerLevel = 249;				const cUS_ItemKickDamagePerLevel = 249;
+const c_UnitStat_ItemDeadlyStrikePerLevel = 250;			const cUS_ItemDeadlyStrikePerLevel = 250;
+const c_UnitStat_ItemFindGemsPerLevel = 251;				const cUS_ItemFindGemsPerLevel = 251;
+const c_UnitStat_ItemReplenishDurability = 252;				const cUS_ItemReplenishDurability = 252;
+const c_UnitStat_ItemReplenishQuantity = 253;				const cUS_ItemReplenishQuantity = 253;
+const c_UnitStat_ItemExtraStack = 254;						const cUS_ItemExtraStack = 254;
+const c_UnitStat_ItemFindItem = 255;						const cUS_ItemFindItem = 255;
+const c_UnitStat_ItemSlashDamage = 256;						const cUS_ItemSlashDamage = 256;
+const c_UnitStat_ItemSlashDamagePercent = 257;				const cUS_ItemSlashDamagePercent = 257;
+const c_UnitStat_ItemCrushDamage = 258;						const cUS_ItemCrushDamage = 258;
+const c_UnitStat_ItemCrushDamagePercent = 259;				const cUS_ItemCrushDamagePercent = 259;
+const c_UnitStat_ItemThrustDamage = 260;					const cUS_ItemThrustDamage = 260;
+const c_UnitStat_ItemThrustDamagePercent = 261;				const cUS_ItemThrustDamagePercent = 261;
+const c_UnitStat_ItemAbsorbSlash = 262;						const cUS_ItemAbsorbSlash = 262;
+const c_UnitStat_ItemAbsorbCrush = 263;						const cUS_ItemAbsorbCrush = 263;
+const c_UnitStat_ItemAbsorbThrust = 264;					const cUS_ItemAbsorbThrust = 264;
+const c_UnitStat_ItemAbsorbSlashPercent = 265;				const cUS_ItemAbsorbSlashPercent = 265;
+const c_UnitStat_ItemAbsorbCrushPercent = 266;				const cUS_ItemAbsorbCrushPercent = 266;
+const c_UnitStat_ItemAbsorbThrustPercent = 267;				const cUS_ItemAbsorbThrustPercent = 267;
+const c_UnitStat_ItemArmorByTime = 268;						const cUS_ItemArmorByTime = 268;
+const c_UnitStat_ItemArmorPercentByTime = 269;				const cUS_ItemArmorPercentByTime = 269;
+const c_UnitStat_ItemHPByTime = 270;						const cUS_ItemHPByTime = 270;
+const c_UnitStat_ItemManaByTime = 271;						const cUS_ItemManaByTime = 271;
+const c_UnitStat_ItemMaxDamageByTime = 272;					const cUS_ItemMaxDamageByTime = 272;
+const c_UnitStat_ItemMaxDamagePercentByTime = 273;			const cUS_ItemMaxDamagePercentByTime = 273;
+const c_UnitStat_ItemStrengthByTime = 274;					const cUS_ItemStrengthByTime = 274;
+const c_UnitStat_ItemDexterityByTime = 275;					const cUS_ItemDexterityByTime = 275;
+const c_UnitStat_ItemEnergyByTime = 276;					const cUS_ItemEnergyByTime = 276;
+const c_UnitStat_ItemVitalityByTime = 277;					const cUS_ItemVitalityByTime = 277;
+const c_UnitStat_ItemToHitByTime = 278;						const cUS_ItemToHitByTime = 278;
+const c_UnitStat_ItemToHitPercentByTime = 279;				const cUS_ItemToHitPercentByTime = 279;
+const c_UnitStat_ItemColdDamageMaxByTime = 280;				const cUS_ItemColdDamageMaxByTime = 280;
+const c_UnitStat_ItemFireDamageMaxByTime = 281;				const cUS_ItemFireDamageMaxByTime = 281;
+const c_UnitStat_ItemLightningDamageMaxByTime = 282;		const cUS_ItemLightningDamageMaxByTime = 282;
+const c_UnitStat_ItemPoisonDamageMaxByTime = 283;			const cUS_ItemPoisonDamageMaxByTime = 283;
+const c_UnitStat_ItemResistColdByTime = 284;				const cUS_ItemResistColdByTime = 284;
+const c_UnitStat_ItemResistFireByTime = 285;				const cUS_ItemResistFireByTime = 285;
+const c_UnitStat_ItemResistLightningByTime = 286;			const cUS_ItemResistLightningByTime = 286;
+const c_UnitStat_ItemResistPoisonByTime = 287;				const cUS_ItemResistPoisonByTime = 287;
+const c_UnitStat_ItemAbsorbColdByTime = 288;				const cUS_ItemAbsorbColdByTime = 288;
+const c_UnitStat_ItemAbsorbFireByTime = 289;				const cUS_ItemAbsorbFireByTime = 289;
+const c_UnitStat_ItemAbsorbLightningByTime = 290;			const cUS_ItemAbsorbLightningByTime = 290;
+const c_UnitStat_ItemAbsorbPoisonByTime = 291;				const cUS_ItemAbsorbPoisonByTime = 291;
+const c_UnitStat_ItemFindGoldByTime = 292;					const cUS_ItemFindGoldByTime = 292;
+const c_UnitStat_ItemFindMagicByTime = 293;					const cUS_ItemFindMagicByTime = 293;
+const c_UnitStat_ItemRegenStaminaByTime = 294;				const cUS_ItemRegenStaminaByTime = 294;
+const c_UnitStat_ItemStaminaByTime = 295;					const cUS_ItemStaminaByTime = 295;
+const c_UnitStat_ItemDamageDemonByTime = 296;				const cUS_ItemDamageDemonByTime = 296;
+const c_UnitStat_ItemDamageUndeadByTime = 297;				const cUS_ItemDamageUndeadByTime = 297;
+const c_UnitStat_ItemToHitDemonByTime = 298;				const cUS_ItemToHitDemonByTime = 298;
+const c_UnitStat_ItemToHitUndeadByTime = 299;				const cUS_ItemToHitUndeadByTime = 299;
+const c_UnitStat_ItemCrushingBlowByTime = 300;				const cUS_ItemCrushingBlowByTime = 300;
+const c_UnitStat_ItemOpenWoundsByTime = 301;				const cUS_ItemOpenWoundsByTime = 301;
+const c_UnitStat_ItemKickDamageByTime = 302;				const cUS_ItemKickDamageByTime = 302;
+const c_UnitStat_ItemDeadlyStrikeByTime = 303;				const cUS_ItemDeadlyStrikeByTime = 303;
+const c_UnitStat_ItemFindGemsByTime = 304;					const cUS_ItemFindGemsByTime = 304;
+const c_UnitStat_ItemPierceCold = 305;						const cUS_ItemPierceCold = 305;
+const c_UnitStat_ItemPierceFire = 306;						const cUS_ItemPierceFire = 306;
+const c_UnitStat_ItemPierceLightning = 307;					const cUS_ItemPierceLightning = 307;
+const c_UnitStat_ItemPiercePoison = 308;					const cUS_ItemPiercePoison = 308;
+const c_UnitStat_ItemDamageVsMonster = 309;					const cUS_ItemDamageVsMonster = 309;
+const c_UnitStat_ItemDamagePercentVsMonster = 310;			const cUS_ItemDamagePercentVsMonster = 310;
+const c_UnitStat_ItemToHitVsMonster = 311;					const cUS_ItemToHitVsMonster = 311;
+const c_UnitStat_ItemToHitPercentVsMonster = 312;			const cUS_ItemToHitPercentVsMonster = 312;
+const c_UnitStat_ItemACVsMonster = 313;						const cUS_ItemACVsMonster = 313;
+const c_UnitStat_ItemACPercentVsMonster = 314;				const cUS_ItemACPercentVsMonster = 314;
+const c_UnitStat_FireLength = 315;							const cUS_FireLength = 315;
+const c_UnitStat_BurningMin = 316;							const cUS_BurningMin = 316;
+const c_UnitStat_BurningMax = 317;							const cUS_BurningMax = 317;
+const c_UnitStat_ProgressiveDamage = 318;					const cUS_ProgressiveDamage = 318;
+const c_UnitStat_ProgressiveSteal = 319;					const cUS_ProgressiveSteal = 319;
+const c_UnitStat_ProgressiveOther = 320;					const cUS_ProgressiveOther = 320;
+const c_UnitStat_ProgressiveFire = 321;						const cUS_ProgressiveFire = 321;
+const c_UnitStat_ProgressiveCold = 322;						const cUS_ProgressiveCold = 322;
+const c_UnitStat_ProgressiveLightning = 323;				const cUS_ProgressiveLightning = 323;
+const c_UnitStat_ItemExtraCharges = 324;					const cUS_ItemExtraCharges = 324;
+const c_UnitStat_ProgressiveToHit = 323;					const cUS_ProgressiveToHit = 323;
+
+// room.getStat()
+
+const c_RoomStat_xStart = 0;								const cRS_xStart = 0;
+const c_RoomStat_yStart = 1;								const cRS_yStart = 1;
+const c_RoomStat_xSize1 = 2;								const cRS_xSize1 = 2;
+const c_RoomStat_ySize1 = 3;								const cRS_ySize1 = 3;
+const c_RoomStat_xPos = 4;									const cRS_xPos = 4;
+const c_RoomStat_yPos = 5;									const cRS_yPos = 5;
+const c_RoomStat_xSize2 = 6;								const cRS_xSize2 = 6;
+const c_RoomStat_ySize2 = 7;								const cRS_ySize2 = 7;
+const c_RoomStat_8 = 8;										const cRS_8 = 8;		// FIXME ... unknown
+const c_RoomStat_nPosGameX = 9;								const cRS_nPosGameX = 9;
+const c_RoomStat_nPosGameY = 10;							const cRS_nPosGameY = 10;
+const c_RoomStat_nSizeGameX = 11;							const cRS_nSizeGameX = 11;
+const c_RoomStat_nSizeGameY = 12;							const cRS_nSizeGameY = 12;
+const c_RoomStat_nPosRoomX = 13;							const cRS_nPosRoomX = 13;
+const c_RoomStat_nPosRoomY = 14;							const cRS_nPosRoomY = 14;
+const c_RoomStat_nSizeRoomX  = 15;							const cRS_nSizeRoomX  = 15;
+const c_RoomStat_nSizeRoomY = 16;							const cRS_nSizeRoomY = 16;
+
+// unit.getState()
+// note that UnitState abbreviations use Us tag to be distinct from UnitStat's US
+
+const c_UnitState_None = 0;									const cUs_None = 0;
+const c_UnitState_Freeze = 1;								const cUs_Freeze = 1;
+const c_UnitState_Poison = 2;								const cUs_Poison = 2;
+const c_UnitState_ResistFire = 3;							const cUs_ResistFire = 3;
+const c_UnitState_ResistCold = 4;							const cUs_ResistCold = 4;
+const c_UnitState_ResistLight = 5;							const cUs_ResistLight = 5;
+const c_UnitState_ResistMagic = 6;							const cUs_ResistMagic = 6;
+const c_UnitState_PlayerBody = 7;							const cUs_PlayerBody = 7;
+const c_UnitState_ResistAll = 8;							const cUs_ResistAll = 8;
+const c_UnitState_AmplifyDamage = 9;						const cUs_AmplifyDamage = 9;
+const c_UnitState_FrozenArmor = 10;							const cUs_FrozenArmor = 10;
+const c_UnitState_Cold = 11;								const cUs_Cold = 11;
+const c_UnitState_Inferno = 12;								const cUs_Inferno = 12;
+const c_UnitState_Blaze = 13;								const cUs_Blaze = 13;
+const c_UnitState_BoneArmor = 14;							const cUs_BoneArmor = 14;
+const c_UnitState_Concentrate = 15;							const cUs_Concentrate = 15;
+const c_UnitState_Enchant = 16;								const cUs_Enchant = 16;
+const c_UnitState_Innersight = 17;							const cUs_Innersight = 17;
+const c_UnitState_SkillMove = 18;							const cUs_SkillMove = 18;
+const c_UnitState_Weaken = 19;								const cUs_Weaken = 19;
+const c_UnitState_ChillingArmor = 20;						const cUs_ChillingArmor = 20;
+const c_UnitState_Stunned = 21;								const cUs_Stunned = 21;
+const c_UnitState_SpiderLay = 22;							const cUs_SpiderLay = 22;
+const c_UnitState_DimVision = 23;							const cUs_DimVision = 23;
+const c_UnitState_Slowed = 24;								const cUs_Slowed = 24;
+const c_UnitState_FetishAura = 25;							const cUs_FetishAura = 25;
+const c_UnitState_Shout = 26;								const cUs_Shout = 26;
+const c_UnitState_Taunt = 27;								const cUs_Taunt = 27;
+const c_UnitState_Conviction = 28;							const cUs_Conviction = 28;
+const c_UnitState_Convicted = 29;							const cUs_Convicted = 29;
+const c_UnitState_EnergyShield = 30;						const cUs_EnergyShield = 30;
+const c_UnitState_VenomClaws = 31;							const cUs_VenomClaws = 31;
+const c_UnitState_BattleOrders = 32;						const cUs_BattleOrders = 32;
+const c_UnitState_Might = 33;								const cUs_Might = 33;
+const c_UnitState_Prayer = 34;								const cUs_Prayer = 34;
+const c_UnitState_HolyFire = 35;							const cUs_HolyFire = 35;
+const c_UnitState_Thorns = 36;								const cUs_Thorns = 36;
+const c_UnitState_Defiance = 37;							const cUs_Defiance = 37;
+const c_UnitState_ThunderStorm = 38;						const cUs_ThunderStorm = 38;
+const c_UnitState_LightningBolt = 39;						const cUs_LightningBolt = 39;
+const c_UnitState_BlessedAim = 40;							const cUs_BlessedAim = 40;
+const c_UnitState_Stamina = 41;								const cUs_Stamina = 41;
+const c_UnitState_Concentration = 42;						const cUs_Concentration = 42;
+const c_UnitState_HolyWind = 43;							const cUs_HolyWind = 43;
+const c_UnitState_HolyWindCold = 44;						const cUs_HolyWindCold = 44;
+const c_UnitState_Cleansing = 45;							const cUs_Cleansing = 45;
+const c_UnitState_HolyShock = 46;							const cUs_HolyShock = 46;
+const c_UnitState_Sanctuary = 47;							const cUs_Sanctuary = 47;
+const c_UnitState_Meditation = 48;							const cUs_Meditation = 48;
+const c_UnitState_Fanaticism = 49;							const cUs_Fanaticism = 49;
+const c_UnitState_Redemption = 50;							const cUs_Redemption = 50;
+const c_UnitState_BattleCommand = 51;						const cUs_BattleCommand = 51;
+const c_UnitState_PreventHeal = 52;							const cUs_PreventHeal = 52;
+const c_UnitState_Conversion = 53;							const cUs_Conversion = 53;
+const c_UnitState_Uninterruptable = 54;						const cUs_Uninterruptable = 54;
+const c_UnitState_IronMaiden = 55;							const cUs_IronMaiden = 55;
+const c_UnitState_Terror = 56;								const cUs_Terror = 56;
+const c_UnitState_Attract = 57;								const cUs_Attract = 57;
+const c_UnitState_Lifetap = 58;								const cUs_Lifetap = 58;
+const c_UnitState_Confuse = 59;								const cUs_Confuse = 59;
+const c_UnitState_Decrepify = 60;							const cUs_Decrepify = 60;
+const c_UnitState_LowerResist = 61;							const cUs_LowerResist = 61;
+const c_UnitState_OpenWounds = 62;							const cUs_OpenWounds = 62;
+const c_UnitState_Dopplezon = 63;							const cUs_Dopplezon = 63;
+const c_UnitState_CriticalStrike = 64;						const cUs_CriticalStrike = 64;
+const c_UnitState_Dodge = 65;								const cUs_Dodge = 65;
+const c_UnitState_Avoid = 66;								const cUs_Avoid = 66;
+const c_UnitState_Penetrate = 67;							const cUs_Penetrate = 67;
+const c_UnitState_Evade = 68;								const cUs_Evade = 68;
+const c_UnitState_Pierce = 69;								const cUs_Pierce = 69;
+const c_UnitState_Warmth = 70;								const cUs_Warmth = 70;
+const c_UnitState_FireMastery = 71;							const cUs_FireMastery = 71;
+const c_UnitState_LightningMastery = 72;					const cUs_LightningMastery = 72;
+const c_UnitState_ColdMastery = 73;							const cUs_ColdMastery = 73;
+const c_UnitState_SwordMastery = 74;						const cUs_SwordMastery = 74;
+const c_UnitState_AxeMastery = 75;							const cUs_AxeMastery = 75;
+const c_UnitState_MaceMastery = 76;							const cUs_MaceMastery = 76;
+const c_UnitState_PolearmMastery = 77;						const cUs_PolearmMastery = 77;
+const c_UnitState_ThrowingMastery = 78;						const cUs_ThrowingMastery = 78;
+const c_UnitState_SpearMastery = 79;						const cUs_SpearMastery = 79;
+const c_UnitState_IncreasedStamina = 80;					const cUs_IncreasedStamina = 80;
+const c_UnitState_IronSkin = 81;							const cUs_IronSkin = 81;
+const c_UnitState_IncreasedSpeed = 82;						const cUs_IncreasedSpeed = 82;
+const c_UnitState_NaturalResistance = 83;					const cUs_NaturalResistance = 83;
+const c_UnitState_FingerMageCurse = 84;						const cUs_FingerMageCurse = 84;
+const c_UnitState_NoManaRegen = 85;							const cUs_NoManaRegen = 85;
+const c_UnitState_JustHit = 86;								const cUs_JustHit = 86;
+const c_UnitState_SlowMissiles = 87;						const cUs_SlowMissiles = 87;
+const c_UnitState_ShiverArmor = 88;							const cUs_ShiverArmor = 88;
+const c_UnitState_BattleCry = 89;							const cUs_BattleCry = 89;
+const c_UnitState_Blue = 90;								const cUs_Blue = 90;
+const c_UnitState_Red = 91;									const cUs_Red = 91;
+const c_UnitState_DeathDelay = 92;							const cUs_DeathDelay = 92;
+const c_UnitState_Valkyrie = 93;							const cUs_Valkyrie = 93;
+const c_UnitState_Frenzy = 94;								const cUs_Frenzy = 94;
+const c_UnitState_Berserk = 95;								const cUs_Berserk = 95;
+const c_UnitState_Revive = 96;								const cUs_Revive = 96;
+const c_UnitState_ItemFullSet = 97;							const cUs_ItemFullSet = 97;
+const c_UnitState_SourceUnit = 98;							const cUs_SourceUnit = 98;
+const c_UnitState_Redeemed = 99;							const cUs_Redeemed = 99;
+const c_UnitState_HealthPot = 100;							const cUs_HealthPot = 100;
+const c_UnitState_HolyShield = 101;							const cUs_HolyShield = 101;
+const c_UnitState_JustPortaled = 102;						const cUs_JustPortaled = 102;
+const c_UnitState_MonFrenzy = 103;							const cUs_MonFrenzy = 103;
+const c_UnitState_CorpseNodraw = 104;						const cUs_CorpseNodraw = 104;
+const c_UnitState_Alignment = 105;							const cUs_Alignment = 105;
+const c_UnitState_ManaPot = 106;							const cUs_ManaPot = 106;
+const c_UnitState_Shatter = 107;							const cUs_Shatter = 107;
+const c_UnitState_SyncWarped = 108;							const cUs_SyncWarped = 108;
+const c_UnitState_ConversionSave = 109;						const cUs_ConversionSave = 109;
+const c_UnitState_Pregnant = 110;							const cUs_Pregnant = 110;
+const c_UnitState_111 = 111;								const cUs_111 = 111;
+const c_UnitState_Rabies = 112;								const cUs_Rabies = 112;
+const c_UnitState_DefenseCurse = 113;						const cUs_DefenseCurse = 113;
+const c_UnitState_BloodMana = 114;							const cUs_BloodMana = 114;
+const c_UnitState_Burning = 115;							const cUs_Burning = 115;
+const c_UnitState_DragonFlight = 116;						const cUs_DragonFlight = 116;
+const c_UnitState_Maul = 117;								const cUs_Maul = 117;
+const c_UnitState_CorpseNoselect = 118;						const cUs_CorpseNoselect = 118;
+const c_UnitState_ShadowWarrior = 119;						const cUs_ShadowWarrior = 119;
+const c_UnitState_FeralRage = 120;							const cUs_FeralRage = 120;
+const c_UnitState_SkillDelay = 121;							const cUs_SkillDelay = 121;
+const c_UnitState_ProgressiveDamage = 122;					const cUs_ProgressiveDamage = 122;
+const c_UnitState_ProgressiveSteal = 123;					const cUs_ProgressiveSteal = 123;
+const c_UnitState_ProgressiveOther = 124;					const cUs_ProgressiveOther = 124;
+const c_UnitState_ProgressiveFire = 125;					const cUs_ProgressiveFire = 125;
+const c_UnitState_ProgressiveCold = 126;					const cUs_ProgressiveCold = 126;
+const c_UnitState_ProgressiveLightning = 127;				const cUs_ProgressiveLightning = 127;
+const c_UnitState_ShrineArmor = 128;						const cUs_ShrineArmor = 128;
+const c_UnitState_ShrineCombat = 129;						const cUs_ShrineCombat = 129;
+const c_UnitState_ShrineResistLightning = 130;				const cUs_ShrineResistLightning = 130;
+const c_UnitState_ShrineResistFire = 131;					const cUs_ShrineResistFire = 131;
+const c_UnitState_ShrineResistCold = 132;					const cUs_ShrineResistCold = 132;
+const c_UnitState_ShrineResistPoison = 133;					const cUs_ShrineResistPoison = 133;
+const c_UnitState_ShrineSkill = 134;						const cUs_ShrineSkill = 134;
+const c_UnitState_ShrineManaRegen = 135;					const cUs_ShrineManaRegen = 135;
+const c_UnitState_ShrineStamina = 136;						const cUs_ShrineStamina = 136;
+const c_UnitState_ShrineExperience = 137;					const cUs_ShrineExperience = 137;
+const c_UnitState_FenrisRage = 138;							const cUs_FenrisRage = 138;
+const c_UnitState_Wolf = 139;								const cUs_Wolf = 139;
+const c_UnitState_Bear = 140;								const cUs_Bear = 140;
+const c_UnitState_Bloodlust = 141;							const cUs_Bloodlust = 141;
+const c_UnitState_ChangeClass = 142;						const cUs_ChangeClass = 142;
+const c_UnitState_Attached = 143;							const cUs_Attached = 143;
+const c_UnitState_Hurricane = 144;							const cUs_Hurricane = 144;
+const c_UnitState_Armageddon = 145;							const cUs_Armageddon = 145;
+const c_UnitState_Invis = 146;								const cUs_Invis = 146;
+const c_UnitState_Barbs = 147;								const cUs_Barbs = 147;
+const c_UnitState_Wolverine = 148;							const cUs_Wolverine = 148;
+const c_UnitState_OakSage = 149;							const cUs_OakSage = 149;
+const c_UnitState_VineBeast = 150;							const cUs_VineBeast = 150;
+const c_UnitState_CycloneArmor = 151;						const cUs_CycloneArmor = 151;
+const c_UnitState_ClawMastery = 152;						const cUs_ClawMastery = 152;
+const c_UnitState_CloakOfShadows = 153;						const cUs_CloakOfShadows = 153;
+const c_UnitState_Recycled = 154;							const cUs_Recycled = 154;
+const c_UnitState_WeaponBlock = 155;						const cUs_WeaponBlock = 155;
+const c_UnitState_Cloaked = 156;							const cUs_Cloaked = 156;
+const c_UnitState_Quickness = 157;							const cUs_Quickness = 157;
+const c_UnitState_BladeShield = 158;						const cUs_BladeShield = 158;
+const c_UnitState_Fade = 159;								const cUs_Fade = 159;
+
+var c_StateNames = new Array(
+	"None",
+	"Freeze",
+	"Poison",
+	"Resist Fire",
+	"Resist Cold",
+	"Resist Light",
+	"Resist Magic",
+	"Player Body",
+	"Resist All",
+	"Amplify Damage",
+	"Frozen Armor",
+	"Cold",
+	"Inferno",
+	"Blaze",
+	"Bone Armor",
+	"Concentrate",
+	"Enchant",
+	"Innersight",
+	"Skill Move",
+	"Weaken",
+	"Chilling Armor",
+	"Stunned",
+	"Spider Lay",
+	"Dim Vision",
+	"Slowed",
+	"Fetish Aura",
+	"Shout",
+	"Taunt",
+	"Conviction",
+	"Convicted",
+	"Energy Shield",
+	"Venom Claws",
+	"Battle Orders",
+	"Might",
+	"Prayer",
+	"Holy Fire",
+	"Thorns",
+	"Defiance",
+	"Thunder Storm",
+	"Lightning Bolt",
+	"Blessed Aim",
+	"Stamina",
+	"Concentration",
+	"Holy Wind",
+	"Holy Wind Cold",
+	"Cleansing",
+	"Holy Shock",
+	"Sanctuary",
+	"Meditation",
+	"Fanaticism",
+	"Redemption",
+	"Battle Command",
+	"Prevent Heal",
+	"Conversion",
+	"Uninterruptable",
+	"Iron Maiden",
+	"Terror",
+	"Attract",
+	"Lifetap",
+	"Confuse",
+	"Decrepify",
+	"Lower Resist",
+	"Open Wounds",
+	"Dopplezon",
+	"Critical Strike",
+	"Dodge",
+	"Avoid",
+	"Penetrate",
+	"Evade",
+	"Pierce",
+	"Warmth",
+	"Fire Mastery",
+	"Lightning Mastery",
+	"Cold Mastery",
+	"Sword Mastery",
+	"Axe Mastery",
+	"Mace Mastery",
+	"Polearm Mastery",
+	"Throwing Mastery",
+	"Spear Mastery",
+	"Increased Stamina",
+	"Iron Skin",
+	"Increased Speed",
+	"Natural Resistance",
+	"Finger Mage Curse",
+	"No Mana Regen",
+	"Just Hit",
+	"Slow Missiles",
+	"Shiver Armor",
+	"Battle Cry",
+	"Blue",
+	"Red",
+	"Death Delay",
+	"Valkyrie",
+	"Frenzy",
+	"Berserk",
+	"Revive",
+	"Item Full Set",
+	"Source Unit",
+	"Redeemed",
+	"Health Pot",
+	"Holy Shield",
+	"Just Portaled",
+	"Mon Frenzy",
+	"Corpse Nodraw",
+	"Alignment",
+	"Mana Pot",
+	"Shatter",
+	"Sync Warped",
+	"Conversion Save",
+	"Pregnant",
+	"Unknown State 111",
+	"Rabies",
+	"Defense Curse",
+	"Blood Mana",
+	"Burning",
+	"Dragon Flight",
+	"Maul",
+	"Corpse Noselect",
+	"Shadow Warrior",
+	"Feral Rage",
+	"Skill Delay",
+	"Progressive Damage",
+	"Progressive Steal",
+	"Progressive Other",
+	"Progressive Fire",
+	"Progressive Cold",
+	"Progressive Lightning",
+	"Shrine Armor",
+	"Shrine Combat",
+	"Shrine Resist Lightning",
+	"Shrine Resist Fire",
+	"Shrine Resist Cold",
+	"Shrine Resist Poison",
+	"Shrine Skill",
+	"Shrine Mana Regen",
+	"Shrine Stamina",
+	"Shrine Experience",
+	"Fenris Rage",
+	"Wolf",
+	"Bear",
+	"Bloodlust",
+	"Change Class",
+	"Attached",
+	"Hurricane",
+	"Armageddon",
+	"Invis",
+	"Barbs",
+	"Wolverine",
+	"Oak Sage",
+	"Vine Beast",
+	"Cyclone Armor",
+	"Claw Mastery",
+	"Cloak Of Shadows",
+	"Recycled",
+	"Weapon Block",
+	"Cloaked",
+	"Quickness",
+	"Blade Shield",
+	"Fade"
+);
+
+// item.interact()
+
+// FIXME: TBD
+// does "unset" in http://www.d2jsp.org/docs/commands/item.interact.html mean null or 0?
+
+// FIXME: what about trade screen?
+// item.move(x, y, StorageLocation)
+
+const c_ItemMove_PlayerInventory = 0;						const cIM_PlayerInventory = 0;
+const c_ItemMove_Cube = 3;									const cIM_Cube = 3;
+const c_ItemMove_Stash = 4;									const cIM_Stash = 4;
+
+// item.move(BodyLocation)
+
+const c_BodyLocation_Head = 1;								const cBL_Head = 1;
+const c_BodyLocation_Amulet = 2;							const cBL_Amulet = 2;
+const c_BodyLocation_Armor = 3;								const cBL_Armor = 3;
+const c_BodyLocation_RightWeapon = 4;						const cBL_RightWeapon = 4;
+const c_BodyLocation_LeftWeapon = 5;						const cBL_LeftWeapon = 5;
+const c_BodyLocation_RightRing = 6;							const cBL_RightRing = 6;
+const c_BodyLocation_LeftRing = 7;							const cBL_LeftRing = 7;
+const c_BodyLocation_Belt = 8;								const cBL_Belt = 8;
+const c_BodyLocation_Boots = 9;								const cBL_Boots = 9;
+const c_BodyLocation_Gloves = 10;							const cBL_Gloves = 10;
+
+// me.useStatPoint()
+
+const c_UseStatPoint_Strength = 0;							const cUSP_Strength = 0;
+const c_UseStatPoint_Energy = 1;							const cUSP_Energy = 1;
+const c_UseStatPoint_Dexterity = 2;							const cUSP_Dexterity = 2;
+const c_UseStatPoint_Vitality = 3;							const cUSP_Vitality = 3;
+
+// me.useSkillPoint()
+
+const c_Skill_MagicArrow = 6;								const cS_MagicArrow = 6;
+const c_Skill_FireArrow = 7;								const cS_FireArrow = 7;
+const c_Skill_InnerSight = 8;								const cS_InnerSight = 8;
+const c_Skill_CriticalStrike = 9;							const cS_CriticalStrike = 9;
+const c_Skill_Jab = 10;										const cS_Jab = 10;
+const c_Skill_ColdArrow = 11;								const cS_ColdArrow = 11;
+const c_Skill_MultipleShot = 12;							const cS_MultipleShot = 12;
+const c_Skill_Dodge = 13;									const cS_Dodge = 13;
+const c_Skill_PowerStrike = 14;								const cS_PowerStrike = 14;
+const c_Skill_PoisonJavelin = 15;							const cS_PoisonJavelin = 15;
+const c_Skill_ExplodingArrow = 16;							const cS_ExplodingArrow = 16;
+const c_Skill_SlowMissiles = 17;							const cS_SlowMissiles = 17;
+const c_Skill_Avoid = 18;									const cS_Avoid = 18;
+const c_Skill_Impale = 19;									const cS_Impale = 19;
+const c_Skill_LightningBolt = 20;							const cS_LightningBolt = 20;
+const c_Skill_IceArrow = 21;								const cS_IceArrow = 21;
+const c_Skill_GuidedArrow = 22;								const cS_GuidedArrow = 22;
+const c_Skill_Penetrate = 23;								const cS_Penetrate = 23;
+const c_Skill_ChargedStrike = 24;							const cS_ChargedStrike = 24;
+const c_Skill_PlagueJavelin = 25;							const cS_PlagueJavelin = 25;
+const c_Skill_Strafe = 26;									const cS_Strafe = 26;
+const c_Skill_ImmolationArrow = 27;							const cS_ImmolationArrow = 27;
+const c_Skill_Dopplezon = 28;								const cS_Dopplezon = 28;
+const c_Skill_Evade = 29;									const cS_Evade = 29;
+const c_Skill_Fend = 30;									const cS_Fend = 30;
+const c_Skill_FreezingArrow = 31;							const cS_FreezingArrow = 31;
+const c_Skill_Valkyrie = 32;								const cS_Valkyrie = 32;
+const c_Skill_Pierce = 33;									const cS_Pierce = 33;
+const c_Skill_LightningStrike = 34;							const cS_LightningStrike = 34;
+const c_Skill_LightningFury = 35;							const cS_LightningFury = 35;
+const c_Skill_FireBolt = 36;								const cS_FireBolt = 36;
+const c_Skill_Warmth = 37;									const cS_Warmth = 37;
+const c_Skill_ChargedBolt = 38;								const cS_ChargedBolt = 38;
+const c_Skill_IceBolt = 39;									const cS_IceBolt = 39;
+const c_Skill_FrozenArmor = 40;								const cS_FrozenArmor = 40;
+const c_Skill_Inferno = 41;									const cS_Inferno = 41;
+const c_Skill_StaticField = 42;								const cS_StaticField = 42;
+const c_Skill_Telekinesis = 43;								const cS_Telekinesis = 43;
+const c_Skill_FrostNova = 44;								const cS_FrostNova = 44;
+const c_Skill_IceBlast = 45;								const cS_IceBlast = 45;
+const c_Skill_Blaze = 46;									const cS_Blaze = 46;
+const c_Skill_FireBall = 47;								const cS_FireBall = 47;
+const c_Skill_Nova = 48;									const cS_Nova = 48;
+const c_Skill_Lightning = 49;								const cS_Lightning = 49;
+const c_Skill_ShiverArmor = 50;								const cS_ShiverArmor = 50;
+const c_Skill_FireWall = 51;								const cS_FireWall = 51;
+const c_Skill_Enchant = 52;									const cS_Enchant = 52;
+const c_Skill_ChainLightning = 53;							const cS_ChainLightning = 53;
+const c_Skill_Teleport = 54;								const cS_Teleport = 54;
+const c_Skill_GlacialSpike = 55;							const cS_GlacialSpike = 55;
+const c_Skill_Meteor = 56;									const cS_Meteor = 56;
+const c_Skill_ThunderStorm = 57;							const cS_ThunderStorm = 57;
+const c_Skill_EnergyShield = 58;							const cS_EnergyShield = 58;
+const c_Skill_Blizzard = 59;								const cS_Blizzard = 59;
+const c_Skill_ChillingArmor = 60;							const cS_ChillingArmor = 60;
+const c_Skill_FireMastery = 61;								const cS_FireMastery = 61;
+const c_Skill_Hydra = 62;									const cS_Hydra = 62;
+const c_Skill_LightningMastery = 63;						const cS_LightningMastery = 63;
+const c_Skill_FrozenOrb = 64;								const cS_FrozenOrb = 64;
+const c_Skill_ColdMastery = 65;								const cS_ColdMastery = 65;
+const c_Skill_AmplifyDamage = 66;							const cS_AmplifyDamage = 66;
+const c_Skill_Teeth = 67;									const cS_Teeth = 67;
+const c_Skill_BoneArmor = 68;								const cS_BoneArmor = 68;
+const c_Skill_SkeletonMastery = 69;							const cS_SkeletonMastery = 69;
+const c_Skill_RaiseSkeleton = 70;							const cS_RaiseSkeleton = 70;
+const c_Skill_DimVison = 71;								const cS_DimVison = 71;
+const c_Skill_Weaken = 72;									const cS_Weaken = 72;
+const c_Skill_PoisonDagger = 73;							const cS_PoisonDagger = 73;
+const c_Skill_CorpseExplosion = 74;							const cS_CorpseExplosion = 74;
+const c_Skill_ClayGolem = 75;								const cS_ClayGolem = 75;
+const c_Skill_IronMaiden = 76;								const cS_IronMaiden = 76;
+const c_Skill_Terror = 77;									const cS_Terror = 77;
+const c_Skill_BoneWall = 78;								const cS_BoneWall = 78;
+const c_Skill_GolemMastery = 79;							const cS_GolemMastery = 79;
+const c_Skill_RaiseSkeletalMage = 80;						const cS_RaiseSkeletalMage = 80;
+const c_Skill_Confuse = 81;									const cS_Confuse = 81;
+const c_Skill_LifeTap = 82;									const cS_LifeTap = 82;
+const c_Skill_PoisonExplosion = 83;							const cS_PoisonExplosion = 83;
+const c_Skill_BoneSpear = 84;								const cS_BoneSpear = 84;
+const c_Skill_BloodGolem = 85;								const cS_BloodGolem = 85;
+const c_Skill_Attract = 86;									const cS_Attract = 86;
+const c_Skill_Decrepify = 87;								const cS_Decrepify = 87;
+const c_Skill_BonePrison = 88;								const cS_BonePrison = 88;
+const c_Skill_SummonResist = 89;							const cS_SummonResist = 89;
+const c_Skill_IronGolem = 90;								const cS_IronGolem = 90;
+const c_Skill_LowerResist = 91;								const cS_LowerResist = 91;
+const c_Skill_PoisonNova = 92;								const cS_PoisonNova = 92;
+const c_Skill_BoneSpirit = 93;								const cS_BoneSpirit = 93;
+const c_Skill_FireGolem = 94;								const cS_FireGolem = 94;
+const c_Skill_Revive = 95;									const cS_Revive = 95;
+const c_Skill_Sacrifice = 96;								const cS_Sacrifice = 96;
+const c_Skill_Smite = 97;									const cS_Smite = 97;
+const c_Skill_Might = 98;									const cS_Might = 98;
+const c_Skill_Prayer = 99;									const cS_Prayer = 99;
+const c_Skill_ResistFire = 100;								const cS_ResistFire = 100;
+const c_Skill_HolyBolt = 101;								const cS_HolyBolt = 101;
+const c_Skill_HolyFire = 102;								const cS_HolyFire = 102;
+const c_Skill_Thorns = 103;									const cS_Thorns = 103;
+const c_Skill_Defiance = 104;								const cS_Defiance = 104;
+const c_Skill_ResistCold = 105;								const cS_ResistCold = 105;
+const c_Skill_Zeal = 106;									const cS_Zeal = 106;
+const c_Skill_Charge = 107;									const cS_Charge = 107;
+const c_Skill_BlessedAim = 108;								const cS_BlessedAim = 108;
+const c_Skill_Cleansing = 109;								const cS_Cleansing = 109;
+const c_Skill_ResistLightning = 110;						const cS_ResistLightning = 110;
+const c_Skill_Vengeance = 111;								const cS_Vengeance = 111;
+const c_Skill_BlessedHammer = 112;							const cS_BlessedHammer = 112;
+const c_Skill_Concentration = 113;							const cS_Concentration = 113;
+const c_Skill_HolyFreeze = 114;								const cS_HolyFreeze = 114;
+const c_Skill_Vigor = 115;									const cS_Vigor = 115;
+const c_Skill_Conversion = 116;								const cS_Conversion = 116;
+const c_Skill_HolyShield = 117;								const cS_HolyShield = 117;
+const c_Skill_HolyShock = 118;								const cS_HolyShock = 118;
+const c_Skill_Sanctuary = 119;								const cS_Sanctuary = 119;
+const c_Skill_Meditation = 120;								const cS_Meditation = 120;
+const c_Skill_FistOfTheHeavens = 121;						const cS_FistOfTheHeavens = 121;
+const c_Skill_Fanaticism = 122;								const cS_Fanaticism = 122;
+const c_Skill_Conviction = 123;								const cS_Conviction = 123;
+const c_Skill_Redemption = 124;								const cS_Redemption = 124;
+const c_Skill_Salvation = 125;								const cS_Salvation = 125;
+const c_Skill_Bash = 126;									const cS_Bash = 126;
+const c_Skill_SwordMastery = 127;							const cS_SwordMastery = 127;
+const c_Skill_AxeMastery = 128;								const cS_AxeMastery = 128;
+const c_Skill_MaceMastery = 129;							const cS_MaceMastery = 129;
+const c_Skill_Howl = 130;									const cS_Howl = 130;
+const c_Skill_FindPotion = 131;								const cS_FindPotion = 131;
+const c_Skill_Leap = 132;									const cS_Leap = 132;
+const c_Skill_DoubleSwing = 133;							const cS_DoubleSwing = 133;
+const c_Skill_PolearmMastery = 134;							const cS_PolearmMastery = 134;
+const c_Skill_ThrowingMastery = 135;						const cS_ThrowingMastery = 135;
+const c_Skill_SpearMastery = 136;							const cS_SpearMastery = 136;
+const c_Skill_Taunt = 137;									const cS_Taunt = 137;
+const c_Skill_Shout = 138;									const cS_Shout = 138;
+const c_Skill_Stun = 139;									const cS_Stun = 139;
+const c_Skill_DoubleThrow = 140;							const cS_DoubleThrow = 140;
+const c_Skill_IncreasedStamina = 141;						const cS_IncreasedStamina = 141;
+const c_Skill_FindItem = 142;								const cS_FindItem = 142;
+const c_Skill_LeapAttack = 143;								const cS_LeapAttack = 143;
+const c_Skill_Concentrate = 144;							const cS_Concentrate = 144;
+const c_Skill_IronSkin = 145;								const cS_IronSkin = 145;
+const c_Skill_BattleCry = 146;								const cS_BattleCry = 146;
+const c_Skill_Frenzy = 147;									const cS_Frenzy = 147;
+const c_Skill_IncreasedSpeed = 148;							const cS_IncreasedSpeed = 148;
+const c_Skill_BattleOrders = 149;							const cS_BattleOrders = 149;
+const c_Skill_GrimWard = 150;								const cS_GrimWard = 150;
+const c_Skill_Whirlwind = 151;								const cS_Whirlwind = 151;
+const c_Skill_Berserk = 152;								const cS_Berserk = 152;
+const c_Skill_NaturalResistance = 153;						const cS_NaturalResistance = 153;
+const c_Skill_WarCry = 154;									const cS_WarCry = 154;
+const c_Skill_BattleCommand = 155;							const cS_BattleCommand = 155;
+const c_Skill_Werewolf = 223;								const cS_Werewolf = 223;
+const c_Skill_ShapeShifting = 224;							const cS_ShapeShifting = 224;
+const c_Skill_FireStorm = 225;								const cS_FireStorm = 225;
+const c_Skill_OakSage = 226;								const cS_OakSage = 226;
+const c_Skill_SummonSpiritWolf = 227;						const cS_SummonSpiritWolf = 227;
+const c_Skill_Werebear = 228;								const cS_Werebear = 228;
+const c_Skill_MoltenBoulder = 229;							const cS_MoltenBoulder = 229;
+const c_Skill_ArcticBlast = 230;							const cS_ArcticBlast = 230;
+const c_Skill_CycleOfLife = 231;							const cS_CycleOfLife = 231;
+const c_Skill_FeralRage = 232;								const cS_FeralRage = 232;
+const c_Skill_Maul = 233;									const cS_Maul = 233;
+const c_Skill_Eruption = 234;								const cS_Eruption = 234;
+const c_Skill_CycloneArmor = 235;							const cS_CycloneArmor = 235;
+const c_Skill_HeartOfWolverine = 236;						const cS_HeartOfWolverine = 236;
+const c_Skill_SummonFenris = 237;							const cS_SummonFenris = 237;
+const c_Skill_Rabies = 238;									const cS_Rabies = 238;
+const c_Skill_FireClaws = 239;								const cS_FireClaws = 239;
+const c_Skill_Twister = 240;								const cS_Twister = 240;
+const c_Skill_Vines = 241;									const cS_Vines = 241;
+const c_Skill_Hunger = 242;									const cS_Hunger = 242;
+const c_Skill_ShockWave = 243;								const cS_ShockWave = 243;
+const c_Skill_Volcano = 244;								const cS_Volcano = 244;
+const c_Skill_Tornado = 245;								const cS_Tornado = 245;
+const c_Skill_SpiritOfBarbs = 246;							const cS_SpiritOfBarbs = 246;
+const c_Skill_SummonGrizzly = 247;							const cS_SummonGrizzly = 247;
+const c_Skill_Fury = 248;									const cS_Fury = 248;
+const c_Skill_Armageddon = 249;								const cS_Armageddon = 249;
+const c_Skill_Hurricane = 250;								const cS_Hurricane = 250;
+const c_Skill_FireTrauma = 251;								const cS_FireTrauma = 251;
+const c_Skill_ClawMastery = 252;							const cS_ClawMastery = 252;
+const c_Skill_PsychicHammer = 253;							const cS_PsychicHammer = 253;
+const c_Skill_TigerStrike = 254;							const cS_TigerStrike = 254;
+const c_Skill_DragonTalon = 255;							const cS_DragonTalon = 255;
+const c_Skill_ShockField = 256;								const cS_ShockField = 256;
+const c_Skill_BladeSentinel = 257;							const cS_BladeSentinel = 257;
+const c_Skill_Quickness = 258;								const cS_Quickness = 258;
+const c_Skill_FistsOfFire = 259;							const cS_FistsOfFire = 259;
+const c_Skill_DragonClaw = 260;								const cS_DragonClaw = 260;
+const c_Skill_ChargedBoltSentry = 261;						const cS_ChargedBoltSentry = 261;
+const c_Skill_WakeOfFireSentry = 262;						const cS_WakeOfFireSentry = 262;
+const c_Skill_WeaponBlock = 263;							const cS_WeaponBlock = 263;
+const c_Skill_CloakOfShadows = 264;							const cS_CloakOfShadows = 264;
+const c_Skill_CobraStrike = 265;							const cS_CobraStrike = 265;
+const c_Skill_BladeFury = 266;								const cS_BladeFury = 266;
+const c_Skill_Fade = 267;									const cS_Fade = 267;
+const c_Skill_ShadowWarrior = 268;							const cS_ShadowWarrior = 268;
+const c_Skill_ClawsOfThunder = 269;							const cS_ClawsOfThunder = 269;
+const c_Skill_DragonTail = 270;								const cS_DragonTail = 270;
+const c_Skill_LightningSentry = 271;						const cS_LightningSentry = 271;
+const c_Skill_InfernoSentry = 272;							const cS_InfernoSentry = 272;
+const c_Skill_MindBlast = 273;								const cS_MindBlast = 273;
+const c_Skill_BladesOfIce = 274;							const cS_BladesOfIce = 274;
+const c_Skill_DragonFlight = 275;							const cS_DragonFlight = 275;
+const c_Skill_DeathSentry = 276;							const cS_DeathSentry = 276;
+const c_Skill_BladeShield = 277;							const cS_BladeShield = 277;
+const c_Skill_Venom = 278;									const cS_Venom = 278;
+const c_Skill_ShadowMaster = 279;							const cS_ShadowMaster = 279;
+
+// me.useSkill(hand)
+
+const c_Hand_Right = 0;										const cH_Right = 0;
+const c_Hand_Left = 1;										const cH_Left = 1;
+
+// unit.act
+
+const c_Act_1 = 1;											const cA_1 = 1;
+const c_Act_2 = 2;											const cA_2 = 2;
+const c_Act_3 = 3;											const cA_3 = 3;
+const c_Act_4 = 4;											const cA_4 = 4;
+const c_Act_5 = 5;											const cA_5 = 5;
+
+// unit.area
+// try: print(c_AreaNames[me.area]);
+
+var c_AreaNames = new Array(
+	"None",
+	"Rogue Encampment",
+	"Blood Moor",
+	"Cold Plains",
+	"Stony Field",
+	"Dark Wood",
+	"Black Marsh",
+	"Tamoe Highland",
+	"Den of Evil",
+	"Cave 1",
+	"Underground Passage 1",
+	"Hole 1",
+	"Pit 1",
+	"Cave 2",
+	"Underground Passage 2",
+	"Hole 2",
+	"Pit 2",
+	"Burial Grounds",
+	"Crypt",
+	"Mausoleum",
+	"Forgotten Tower",
+	"Tower Cellar 1",
+	"Tower Cellar 2",
+	"Tower Cellar 3",
+	"Tower Cellar 4",
+	"Tower Cellar 5",
+	"Monastery Gate",
+	"Outer Cloister",
+	"Barracks",
+	"Jail 1",
+	"Jail 2",
+	"Jail 3",
+	"Inner Cloister",
+	"Cathedral",
+	"Catacombs 1",
+	"Catacombs 2",
+	"Catacombs 3",
+	"Catacombs 4",
+	"Tristram",
+	"Moo Moo Farm",
+	"Lut Gholein",
+	"Rocky Waste",
+	"Dry Hills",
+	"Far Oasis",
+	"Lost City",
+	"Valley of Snakes",
+	"Canyon of the Magi",
+	"Sewers 1",
+	"Sewers 2",
+	"Sewers 3",
+	"Harem 1",
+	"Harem 2",
+	"Palace Cellar 1",
+	"Palace Cellar 2",
+	"Palace Cellar 3",
+	"Stony Tomb 1",
+	"Halls of the Dead 1",
+	"Halls of the Dead 2",
+	"Claw Viper Temple 1",
+	"Stony Tomb 2",
+	"Halls of the Dead 3",
+	"Claw Viper Temple 2",
+	"Maggot Lair 1",
+	"Maggot Lair 2",
+	"Maggot Lair 3",
+	"Ancient Tunnels",
+	"Tal Rashas Tomb1",
+	"Tal Rashas Tomb2",
+	"Tal Rashas Tomb3",
+	"Tal Rashas Tomb4",
+	"Tal Rashas Tomb5",
+	"Tal Rashas Tomb6",
+	"Tal Rashas Tomb7",
+	"Duriels Lair",
+	"Arcane Sanctuary",
+	"Kurast Docks",
+	"Spider Forest",
+	"Great Marsh",
+	"Flayer Jungle",
+	"Lower Kurast",
+	"Kurast Bazaar",
+	"Upper Kurast",
+	"Kurast Causeway",
+	"Travincal",
+	"Spider Cave",
+	"Spider Cavern",
+	"Swampy Pit 1",
+	"Swampy Pit 2",
+	"Flayer Dungeon 1",
+	"Flayer Dungeon 2",
+	"Swampy Pit 3",
+	"Flayer Dungeon 3",
+	"Sewers 1",
+	"Sewers 2",
+	"Ruined Temple",
+	"Disused Fane",
+	"Forgotten Reliquary",
+	"Forgotten Temple",
+	"Ruined Fane",
+	"Disused Reliquary",
+	"Durance of Hate 1",
+	"Durance of Hate 2",
+	"Durance of Hate 3",
+	"The Pandemonium Fortress",
+	"Outer Steppes",
+	"Plains of Despair",
+	"City of the Damned",
+	"River of Flame",
+	"Chaos Sanctuary",
+	"Harrogath",
+	"Bloody Foothills",
+	"Frigid Highlands",
+	"Arreat Plateau",
+	"Crystalized Cavern 1",
+	"Cellar of Pity",
+	"Crystalized Cavern 2",
+	"Echo Chamber",
+	"Tundra Wastelands",
+	"Glacial Caves 1",
+	"Glacial Caves 2",
+	"Rocky Summit",
+	"Nihlathaks Temple",
+	"Halls of Anguish",
+	"Halls of Deaths Calling",
+	"Halls of Vaught",
+	"Hell1",
+	"Hell2",
+	"Hell3",
+	"The Worldstone Keep 1",
+	"The Worldstone Keep 2",
+	"The Worldstone Keep 3",
+	"Throne of Destruction",
+	"The Worldstone Chamber" );
+
+// unit.classid
+
+//	player.classid
+
+const c_UnitClassID_Amazon = 0;								const cUCID_Amazon = 0;
+const c_UnitClassID_Sorceress = 1;							const cUCID_Sorceress = 1;
+const c_UnitClassID_Necromancer = 2;						const cUCID_Necromancer = 2;
+const c_UnitClassID_Paladin = 3;							const cUCID_Paladin = 3;
+const c_UnitClassID_Barbarian = 4;							const cUCID_Barbarian = 4;
+const c_UnitClassID_Druid = 5;								const cUCID_Druid = 5;
+const c_UnitClassID_Assassin = 6;							const cUCID_Assassin = 6;
+
+//	monster.classid -- derived from Mousepad's d2maphack.vcb
+
+const c_MonsterClassID_Skeleton = 1;						const cMCID_Skeleton = 1;
+const c_MonsterClassID_Returned = 2;						const cMCID_Returned = 2;
+const c_MonsterClassID_BoneWarrior = 3;						const cMCID_BoneWarrior = 3;
+const c_MonsterClassID_BurningDead = 4;						const cMCID_BurningDead = 4;
+const c_MonsterClassID_Horror = 5;							const cMCID_Horror = 5;
+const c_MonsterClassID_Zombie = 6;							const cMCID_Zombie = 6;
+const c_MonsterClassID_HungryDead = 7;						const cMCID_HungryDead = 7;
+const c_MonsterClassID_Ghoul = 8;							const cMCID_Ghoul = 8;
+const c_MonsterClassID_DrownedCarcass = 9;					const cMCID_DrownedCarcass = 9;
+const c_MonsterClassID_PlagueBearer = 10;					const cMCID_PlagueBearer = 10;
+const c_MonsterClassID_Afflicted = 11;						const cMCID_Afflicted = 11;
+const c_MonsterClassID_Tainted = 12;						const cMCID_Tainted = 12;
+const c_MonsterClassID_Misshapen = 13;						const cMCID_Misshapen = 13;
+const c_MonsterClassID_Disfigured = 14;						const cMCID_Disfigured = 14;
+const c_MonsterClassID_Damned = 15;							const cMCID_Damned = 15;
+const c_MonsterClassID_FoulCrow = 16;						const cMCID_FoulCrow = 16;
+const c_MonsterClassID_BloodHawk = 17;						const cMCID_BloodHawk = 17;
+const c_MonsterClassID_BlackRaptor = 18;					const cMCID_BlackRaptor = 18;
+const c_MonsterClassID_CloudStalker = 19;					const cMCID_CloudStalker = 19;
+const c_MonsterClassID_Fallen = 20;							const cMCID_Fallen = 20;
+const c_MonsterClassID_Carver = 21;							const cMCID_Carver = 21;
+const c_MonsterClassID_Devilkin = 22;						const cMCID_Devilkin = 22;
+const c_MonsterClassID_DarkOne = 23;						const cMCID_DarkOne = 23;
+const c_MonsterClassID_WarpedOne = 24;						const cMCID_WarpedOne = 24;
+const c_MonsterClassID_Brute = 25;							const cMCID_Brute = 25;
+const c_MonsterClassID_Yeti = 26;							const cMCID_Yeti = 26;
+const c_MonsterClassID_Crusher = 27;						const cMCID_Crusher = 27;
+const c_MonsterClassID_WailingBeast = 28;					const cMCID_WailingBeast = 28;
+const c_MonsterClassID_GargantuanBeast = 29;				const cMCID_GargantuanBeast = 29;
+const c_MonsterClassID_SandRaider = 30;						const cMCID_SandRaider = 30;
+const c_MonsterClassID_Marauder = 31;						const cMCID_Marauder = 31;
+const c_MonsterClassID_Invader = 32;						const cMCID_Invader = 32;
+const c_MonsterClassID_Infidel = 33;						const cMCID_Infidel = 33;
+const c_MonsterClassID_Assailant = 34;						const cMCID_Assailant = 34;
+const c_MonsterClassID_unusedGorgon = 35;					const cMCID_unusedGorgon = 35;
+const c_MonsterClassID_unusedStoneStalker = 36;				const cMCID_unusedStoneStalker = 36;
+const c_MonsterClassID_unusedSerpentQueen = 37;				const cMCID_unusedSerpentQueen = 37;
+const c_MonsterClassID_unusedStygianWatcher = 38;			const cMCID_unusedStygianWatcher = 38;
+const c_MonsterClassID_Ghost = 39;							const cMCID_Ghost = 39;
+const c_MonsterClassID_Wraith = 40;							const cMCID_Wraith = 40;
+const c_MonsterClassID_Specter = 41;						const cMCID_Specter = 41;
+const c_MonsterClassID_Apparition = 42;						const cMCID_Apparition = 42;
+const c_MonsterClassID_DarkShape = 43;						const cMCID_DarkShape = 43;
+const c_MonsterClassID_DarkHunter = 44;						const cMCID_DarkHunter = 44;
+const c_MonsterClassID_VileHunter = 45;						const cMCID_VileHunter = 45;
+const c_MonsterClassID_DarkStalker = 46;					const cMCID_DarkStalker = 46;
+const c_MonsterClassID_BlackRogue = 47;						const cMCID_BlackRogue = 47;
+const c_MonsterClassID_FleshHunter = 48;					const cMCID_FleshHunter = 48;
+const c_MonsterClassID_DuneBeast = 49;						const cMCID_DuneBeast = 49;
+const c_MonsterClassID_RockDweller = 50;					const cMCID_RockDweller = 50;
+const c_MonsterClassID_JungleHunter = 51;					const cMCID_JungleHunter = 51;
+const c_MonsterClassID_DoomApe = 52;						const cMCID_DoomApe = 52;
+const c_MonsterClassID_TempleGuard = 53;					const cMCID_TempleGuard = 53;
+const c_MonsterClassID_MoonClan = 54;						const cMCID_MoonClan = 54;
+const c_MonsterClassID_NightClan = 55;						const cMCID_NightClan = 55;
+const c_MonsterClassID_BloodClan = 56;						const cMCID_BloodClan = 56;
+const c_MonsterClassID_HellClan = 57;						const cMCID_HellClan = 57;
+const c_MonsterClassID_DeathClan = 58;						const cMCID_DeathClan = 58;
+const c_MonsterClassID_FallenShaman = 59;					const cMCID_FallenShaman = 59;
+const c_MonsterClassID_CarverShaman = 60;					const cMCID_CarverShaman = 60;
+const c_MonsterClassID_DevilkinShaman = 61;					const cMCID_DevilkinShaman = 61;
+const c_MonsterClassID_DarkShaman = 62;						const cMCID_DarkShaman = 62;
+const c_MonsterClassID_WarpedShaman = 63;					const cMCID_WarpedShaman = 63;
+const c_MonsterClassID_QuillRat = 64;						const cMCID_QuillRat = 64;
+const c_MonsterClassID_SpikeFiend = 65;						const cMCID_SpikeFiend = 65;
+const c_MonsterClassID_ThornBeast = 66;						const cMCID_ThornBeast = 66;
+const c_MonsterClassID_RazorSpine = 67;						const cMCID_RazorSpine = 67;
+const c_MonsterClassID_BushBarb = 68;						const cMCID_BushBarb = 68;
+const c_MonsterClassID_SandMaggot = 69;						const cMCID_SandMaggot = 69;
+const c_MonsterClassID_RockWorm = 70;						const cMCID_RockWorm = 70;
+const c_MonsterClassID_Devourer = 71;						const cMCID_Devourer = 71;
+const c_MonsterClassID_GiantLamprey = 72;					const cMCID_GiantLamprey = 72;
+const c_MonsterClassID_BloodMaggot = 73;					const cMCID_BloodMaggot = 73;
+const c_MonsterClassID_TombViper = 74;						const cMCID_TombViper = 74;
+const c_MonsterClassID_ClawViper = 75;						const cMCID_ClawViper = 75;
+const c_MonsterClassID_Salamander = 76;						const cMCID_Salamander = 76;
+const c_MonsterClassID_PitViper = 77;						const cMCID_PitViper = 77;
+const c_MonsterClassID_SerpentMagus = 78;					const cMCID_SerpentMagus = 78;
+const c_MonsterClassID_SandLeaper = 79;						const cMCID_SandLeaper = 79;
+const c_MonsterClassID_CaveLeaper = 80;						const cMCID_CaveLeaper = 80;
+const c_MonsterClassID_TombCreeper = 81;					const cMCID_TombCreeper = 81;
+const c_MonsterClassID_TreeLurker = 82;						const cMCID_TreeLurker = 82;
+const c_MonsterClassID_CliffLurker = 83;					const cMCID_CliffLurker = 83;
+const c_MonsterClassID_Huntress = 84;						const cMCID_Huntress = 84;
+const c_MonsterClassID_SaberCat = 85;						const cMCID_SaberCat = 85;
+const c_MonsterClassID_NightTiger = 86;						const cMCID_NightTiger = 86;
+const c_MonsterClassID_HellCat = 87;						const cMCID_HellCat = 87;
+const c_MonsterClassID_Itchies = 88;						const cMCID_Itchies = 88;
+const c_MonsterClassID_BlackLocusts = 89;					const cMCID_BlackLocusts = 89;
+const c_MonsterClassID_PlagueBugs = 90;						const cMCID_PlagueBugs = 90;
+const c_MonsterClassID_HellSwarm = 91;						const cMCID_HellSwarm = 91;
+const c_MonsterClassID_DungSoldier = 92;					const cMCID_DungSoldier = 92;
+const c_MonsterClassID_DeathBeetle = 93;					const cMCID_DeathBeetle = 93;
+const c_MonsterClassID_Scarab = 94;							const cMCID_Scarab = 94;
+const c_MonsterClassID_SteelScarab = 95;					const cMCID_SteelScarab = 95;
+const c_MonsterClassID_BoneScarab = 96;						const cMCID_BoneScarab = 96;
+const c_MonsterClassID_DriedCorpse = 97;					const cMCID_DriedCorpse = 97;
+const c_MonsterClassID_Decayed = 98;						const cMCID_Decayed = 98;
+const c_MonsterClassID_Embalmed = 99;						const cMCID_Embalmed = 99;
+const c_MonsterClassID_PreservedDead = 100;					const cMCID_PreservedDead = 100;
+const c_MonsterClassID_Cadaver = 101;						const cMCID_Cadaver = 101;
+const c_MonsterClassID_HollowOne = 102;						const cMCID_HollowOne = 102;
+const c_MonsterClassID_Guardian = 103;						const cMCID_Guardian = 103;
+const c_MonsterClassID_Unraveler = 104;						const cMCID_Unraveler = 104;
+const c_MonsterClassID_HoradrimAncient = 105;				const cMCID_HoradrimAncient = 105;
+const c_MonsterClassID_BaalUnraveler = 106;					const cMCID_BaalUnraveler = 106;
+const c_MonsterClassID_unusedDamnedHorde = 107;				const cMCID_unusedDamnedHorde = 107;
+const c_MonsterClassID_unusedTwistedHorde = 108;			const cMCID_unusedTwistedHorde = 108;
+const c_MonsterClassID_unusedWickedHorde = 109;				const cMCID_unusedWickedHorde = 109;
+const c_MonsterClassID_unusedUnholyHorde = 110;				const cMCID_unusedUnholyHorde = 110;
+const c_MonsterClassID_CarrionBird = 111;					const cMCID_CarrionBird = 111;
+const c_MonsterClassID_UndeadScavenger = 112;				const cMCID_UndeadScavenger = 112;
+const c_MonsterClassID_HellBuzzard = 113;					const cMCID_HellBuzzard = 113;
+const c_MonsterClassID_WingedNightmare = 114;				const cMCID_WingedNightmare = 114;
+const c_MonsterClassID_Sucker = 115;						const cMCID_Sucker = 115;
+const c_MonsterClassID_Feeder = 116;						const cMCID_Feeder = 116;
+const c_MonsterClassID_BloodHook = 117;						const cMCID_BloodHook = 117;
+const c_MonsterClassID_BloodWing = 118;						const cMCID_BloodWing = 118;
+const c_MonsterClassID_Gloam = 119;							const cMCID_Gloam = 119;
+const c_MonsterClassID_SwampGhost = 120;					const cMCID_SwampGhost = 120;
+const c_MonsterClassID_BurningSoul = 121;					const cMCID_BurningSoul = 121;
+const c_MonsterClassID_BlackSoul = 122;						const cMCID_BlackSoul = 122;
+const c_MonsterClassID_Arach = 123;							const cMCID_Arach = 123;
+const c_MonsterClassID_SandFisher = 124;					const cMCID_SandFisher = 124;
+const c_MonsterClassID_PoisonSpinner = 125;					const cMCID_PoisonSpinner = 125;
+const c_MonsterClassID_FlameSpider = 126;					const cMCID_FlameSpider = 126;
+const c_MonsterClassID_SpiderMagus = 127;					const cMCID_SpiderMagus = 127;
+const c_MonsterClassID_ThornedHulk = 128;					const cMCID_ThornedHulk = 128;
+const c_MonsterClassID_BrambleHulk = 129;					const cMCID_BrambleHulk = 129;
+const c_MonsterClassID_Thrasher = 130;						const cMCID_Thrasher = 130;
+const c_MonsterClassID_Spikefist = 131;						const cMCID_Spikefist = 131;
+const c_MonsterClassID_GhoulLord = 132;						const cMCID_GhoulLord = 132;
+const c_MonsterClassID_NightLord1 = 133;					const cMCID_NightLord1 = 133;
+const c_MonsterClassID_DarkLord = 134;						const cMCID_DarkLord = 134;
+const c_MonsterClassID_BloodLord1 = 135;					const cMCID_BloodLord1 = 135;
+const c_MonsterClassID_TheBanished = 136;					const cMCID_TheBanished = 136;
+const c_MonsterClassID_DesertWing = 137;					const cMCID_DesertWing = 137;
+const c_MonsterClassID_Fiend = 138;							const cMCID_Fiend = 138;
+const c_MonsterClassID_Gloombat = 139;						const cMCID_Gloombat = 139;
+const c_MonsterClassID_BloodDiver = 140;					const cMCID_BloodDiver = 140;
+const c_MonsterClassID_DarkFamiliar = 141;					const cMCID_DarkFamiliar = 141;
+const c_MonsterClassID_RatMan1 = 142;						const cMCID_RatMan1 = 142;
+const c_MonsterClassID_Fetish1 = 143;						const cMCID_Fetish1 = 143;
+const c_MonsterClassID_Flayer1 = 144;						const cMCID_Flayer1 = 144;
+const c_MonsterClassID_SoulKiller1 = 145;					const cMCID_SoulKiller1 = 145;
+const c_MonsterClassID_StygianDoll1 = 146;					const cMCID_StygianDoll1 = 146;
+const c_MonsterClassID_DeckardCain1 = 147;					const cMCID_DeckardCain1 = 147;
+const c_MonsterClassID_Gheed = 148;							const cMCID_Gheed = 148;
+const c_MonsterClassID_Akara = 149;							const cMCID_Akara = 149;
+const c_MonsterClassID_dummychicken = 150;					const cMCID_dummychicken = 150;
+const c_MonsterClassID_Kashya = 151;						const cMCID_Kashya = 151;
+const c_MonsterClassID_dummyrat = 152;						const cMCID_dummyrat = 152;
+const c_MonsterClassID_dummyRogueTown = 153;				const cMCID_dummyRogueTown = 153;
+const c_MonsterClassID_dummyHellMeteor = 154;				const cMCID_dummyHellMeteor = 154;
+const c_MonsterClassID_Charsi = 155;						const cMCID_Charsi = 155;
+const c_MonsterClassID_Warriv1 = 156;						const cMCID_Warriv1 = 156;
+const c_MonsterClassID_Andariel = 157;						const cMCID_Andariel = 157;
+const c_MonsterClassID_dummySmallbird = 158;				const cMCID_dummySmallbird = 158;
+const c_MonsterClassID_dummyLargebird = 159;				const cMCID_dummyLargebird = 159;
+const c_MonsterClassID_dummyBat = 160;						const cMCID_dummyBat = 160;
+const c_MonsterClassID_DarkRanger = 161;					const cMCID_DarkRanger = 161;
+const c_MonsterClassID_VileArcher = 162;					const cMCID_VileArcher = 162;
+const c_MonsterClassID_DarkArcher = 163;					const cMCID_DarkArcher = 163;
+const c_MonsterClassID_BlackArcher = 164;					const cMCID_BlackArcher = 164;
+const c_MonsterClassID_FleshArcher = 165;					const cMCID_FleshArcher = 165;
+const c_MonsterClassID_DarkSpearwoman = 166;				const cMCID_DarkSpearwoman = 166;
+const c_MonsterClassID_VileLancer = 167;					const cMCID_VileLancer = 167;
+const c_MonsterClassID_DarkLancer = 168;					const cMCID_DarkLancer = 168;
+const c_MonsterClassID_BlackLancer = 169;					const cMCID_BlackLancer = 169;
+const c_MonsterClassID_FleshLancer = 170;					const cMCID_FleshLancer = 170;
+const c_MonsterClassID_SkeletonArcher = 171;				const cMCID_SkeletonArcher = 171;
+const c_MonsterClassID_ReturnedArcher = 172;				const cMCID_ReturnedArcher = 172;
+const c_MonsterClassID_BoneArcher = 173;					const cMCID_BoneArcher = 173;
+const c_MonsterClassID_BurningDeadArcher = 174;				const cMCID_BurningDeadArcher = 174;
+const c_MonsterClassID_HorrorArcher = 175;					const cMCID_HorrorArcher = 175;
+const c_MonsterClassID_Warriv2 = 176;						const cMCID_Warriv2 = 176;
+const c_MonsterClassID_Atma = 177;							const cMCID_Atma = 177;
+const c_MonsterClassID_Drognan = 178;						const cMCID_Drognan = 178;
+const c_MonsterClassID_Fara = 179;							const cMCID_Fara = 179;
+const c_MonsterClassID_dummyCow = 180;						const cMCID_dummyCow = 180;
+const c_MonsterClassID_SandMaggotYoung = 181;				const cMCID_SandMaggotYoung = 181;
+const c_MonsterClassID_RockWormYoung = 182;					const cMCID_RockWormYoung = 182;
+const c_MonsterClassID_DevourerYoung = 183;					const cMCID_DevourerYoung = 183;
+const c_MonsterClassID_GiantLampreyYoung = 184;				const cMCID_GiantLampreyYoung = 184;
+const c_MonsterClassID_BloodMaggotYoung = 185;				const cMCID_BloodMaggotYoung = 185;
+const c_MonsterClassID_dummyCamel = 186;					const cMCID_dummyCamel = 186;
+const c_MonsterClassID_Blunderbore = 187;					const cMCID_Blunderbore = 187;
+const c_MonsterClassID_Gorebelly = 188;						const cMCID_Gorebelly = 188;
+const c_MonsterClassID_Mauler = 189;						const cMCID_Mauler = 189;
+const c_MonsterClassID_Urdar = 190;							const cMCID_Urdar = 190;
+const c_MonsterClassID_SandMaggotEgg = 191;					const cMCID_SandMaggotEgg = 191;
+const c_MonsterClassID_RockWormEgg = 192;					const cMCID_RockWormEgg = 192;
+const c_MonsterClassID_DevourerEgg = 193;					const cMCID_DevourerEgg = 193;
+const c_MonsterClassID_GiantLampreyEgg = 194;				const cMCID_GiantLampreyEgg = 194;
+const c_MonsterClassID_BloodMaggotEgg = 195;				const cMCID_BloodMaggotEgg = 195;
+const c_MonsterClassID_dummyAct2Male = 196;					const cMCID_dummyAct2Male = 196;
+const c_MonsterClassID_dummyAct2Female = 197;				const cMCID_dummyAct2Female = 197;
+const c_MonsterClassID_dummyAct2Child = 198;				const cMCID_dummyAct2Child = 198;
+const c_MonsterClassID_Greiz = 199;							const cMCID_Greiz = 199;
+const c_MonsterClassID_Elzix = 200;							const cMCID_Elzix = 200;
+const c_MonsterClassID_Geglash = 201;						const cMCID_Geglash = 201;
+const c_MonsterClassID_Jerhyn = 202;						const cMCID_Jerhyn = 202;
+const c_MonsterClassID_Lysander = 203;						const cMCID_Lysander = 203;
+const c_MonsterClassID_dummyAct2Guard = 204;				const cMCID_dummyAct2Guard = 204;
+const c_MonsterClassID_dummyAct2Vendor1 = 205;				const cMCID_dummyAct2Vendor1 = 205;
+const c_MonsterClassID_dummyAct2Vendor2 = 206;				const cMCID_dummyAct2Vendor2 = 206;
+const c_MonsterClassID_FoulCrowNest = 207;					const cMCID_FoulCrowNest = 207;
+const c_MonsterClassID_BloodHawkNest = 208;					const cMCID_BloodHawkNest = 208;
+const c_MonsterClassID_BlackRaptorNest = 209;				const cMCID_BlackRaptorNest = 209;
+const c_MonsterClassID_CloudStalkerNest = 210;				const cMCID_CloudStalkerNest = 210;
+const c_MonsterClassID_Meshif1 = 211;						const cMCID_Meshif1 = 211;
+const c_MonsterClassID_Duriel = 212;						const cMCID_Duriel = 212;
+const c_MonsterClassID_UndeadRatMan = 213;					const cMCID_UndeadRatMan = 213;
+const c_MonsterClassID_UndeadFetish = 214;					const cMCID_UndeadFetish = 214;
+const c_MonsterClassID_UndeadFlayer = 215;					const cMCID_UndeadFlayer = 215;
+const c_MonsterClassID_UndeadSoulKiller = 216;				const cMCID_UndeadSoulKiller = 216;
+const c_MonsterClassID_UndeadStygianDoll = 217;				const cMCID_UndeadStygianDoll = 217;
+const c_MonsterClassID_unusedDarkGuard = 218;				const cMCID_unusedDarkGuard = 218;
+const c_MonsterClassID_unusedDarkKnight = 219;				const cMCID_unusedDarkKnight = 219;
+const c_MonsterClassID_unusedBloodGuard = 220;				const cMCID_unusedBloodGuard = 220;
+const c_MonsterClassID_unusedBloodKnight = 221;				const cMCID_unusedBloodKnight = 221;
+const c_MonsterClassID_unusedDarkPaladin = 222;				const cMCID_unusedDarkPaladin = 222;
+const c_MonsterClassID_unusedBloodMage = 223;				const cMCID_unusedBloodMage = 223;
+const c_MonsterClassID_unusedDemonist = 224;				const cMCID_unusedDemonist = 224;
+const c_MonsterClassID_unusedBlackMagus = 225;				const cMCID_unusedBlackMagus = 225;
+const c_MonsterClassID_unusedDiabolist = 226;				const cMCID_unusedDiabolist = 226;
+const c_MonsterClassID_unusedDeathMage = 227;				const cMCID_unusedDeathMage = 227;
+const c_MonsterClassID_Maggot = 228;						const cMCID_Maggot = 228;
+const c_MonsterClassID_MummySarcophagus = 229;				const cMCID_MummySarcophagus = 229;
+const c_MonsterClassID_Radament = 230;						const cMCID_Radament = 230;
+const c_MonsterClassID_unusedFireBeast = 231;				const cMCID_unusedFireBeast = 231;
+const c_MonsterClassID_unusedIceGlobe = 232;				const cMCID_unusedIceGlobe = 232;
+const c_MonsterClassID_unusedLightningBeast = 233;			const cMCID_unusedLightningBeast = 233;
+const c_MonsterClassID_unusedPoisonOrb = 234;				const cMCID_unusedPoisonOrb = 234;
+const c_MonsterClassID_FlyingScimitar = 235;				const cMCID_FlyingScimitar = 235;
+const c_MonsterClassID_Zakarumite = 236;					const cMCID_Zakarumite = 236;
+const c_MonsterClassID_Faithful = 237;						const cMCID_Faithful = 237;
+const c_MonsterClassID_Zealot = 238;						const cMCID_Zealot = 238;
+const c_MonsterClassID_Sexton = 239;						const cMCID_Sexton = 239;
+const c_MonsterClassID_Cantor = 240;						const cMCID_Cantor = 240;
+const c_MonsterClassID_Heirophant1 = 241;					const cMCID_Heirophant1 = 241;
+const c_MonsterClassID_Heirophant2 = 242;					const cMCID_Heirophant2 = 242;
+const c_MonsterClassID_Mephisto = 243;						const cMCID_Mephisto = 243;
+const c_MonsterClassID_Diablo = 244;						const cMCID_Diablo = 244;
+const c_MonsterClassID_DeckardCain2 = 245;					const cMCID_DeckardCain2 = 245;
+const c_MonsterClassID_DeckardCain3 = 246;					const cMCID_DeckardCain3 = 246;
+const c_MonsterClassID_DeckardCain4 = 247;					const cMCID_DeckardCain4 = 247;
+const c_MonsterClassID_SwampDweller = 248;					const cMCID_SwampDweller = 248;
+const c_MonsterClassID_BogCreature = 249;					const cMCID_BogCreature = 249;
+const c_MonsterClassID_SlimePrince = 250;					const cMCID_SlimePrince = 250;
+const c_MonsterClassID_TheSummoner = 251;					const cMCID_TheSummoner = 251;
+const c_MonsterClassID_Tyrael = 252;						const cMCID_Tyrael = 252;
+const c_MonsterClassID_Asheara = 253;						const cMCID_Asheara = 253;
+const c_MonsterClassID_Hratli = 254;						const cMCID_Hratli = 254;
+const c_MonsterClassID_Alkor = 255;							const cMCID_Alkor = 255;
+const c_MonsterClassID_Ormus = 256;							const cMCID_Ormus = 256;
+const c_MonsterClassID_Izual = 257;							const cMCID_Izual = 257;
+const c_MonsterClassID_Halbu = 258;							const cMCID_Halbu = 258;
+const c_MonsterClassID_WaterWatcherLimb = 259;				const cMCID_WaterWatcherLimb = 259;
+const c_MonsterClassID_RiverStalkerLimb = 260;				const cMCID_RiverStalkerLimb = 260;
+const c_MonsterClassID_StygianWatcherLimb = 261;			const cMCID_StygianWatcherLimb = 261;
+const c_MonsterClassID_WaterWatcherHead = 262;				const cMCID_WaterWatcherHead = 262;
+const c_MonsterClassID_RiverStalkerHead = 263;				const cMCID_RiverStalkerHead = 263;
+const c_MonsterClassID_StygianWatcherHead = 264;			const cMCID_StygianWatcherHead = 264;
+const c_MonsterClassID_Meshif2 = 265;						const cMCID_Meshif2 = 265;
+const c_MonsterClassID_DeckardCain5 = 266;					const cMCID_DeckardCain5 = 266;
+const c_MonsterClassID_Flavie = 267;						const cMCID_Flavie = 267;
+const c_MonsterClassID_BloodRaven = 268;					const cMCID_BloodRaven = 268;
+const c_MonsterClassID_dummybug = 269;						const cMCID_dummybug = 269;
+const c_MonsterClassID_dummyscorpion = 270;					const cMCID_dummyscorpion = 270;
+const c_MonsterClassID_RogueScout = 271;					const cMCID_RogueScout = 271;
+const c_MonsterClassID_RogueHireling = 272;					const cMCID_RogueHireling = 272;
+const c_MonsterClassID_Act1Hireling = 272;					const cMCID_Act1Hireling = 272;
+const c_MonsterClassID_dummyRogueTownShoot = 273;			const cMCID_dummyRogueTownShoot = 273;
+const c_MonsterClassID_GargoyleTrap = 274;					const cMCID_GargoyleTrap = 274;
+const c_MonsterClassID_ReturnedMage1 = 275;					const cMCID_ReturnedMage1 = 275;
+const c_MonsterClassID_BoneMage1 = 276;						const cMCID_BoneMage1 = 276;
+const c_MonsterClassID_BurningDeadMage1 = 277;				const cMCID_BurningDeadMage1 = 277;
+const c_MonsterClassID_HorrorMage1 = 278;					const cMCID_HorrorMage1 = 278;
+const c_MonsterClassID_RatManShaman = 279;					const cMCID_RatManShaman = 279;
+const c_MonsterClassID_FetishShaman = 280;					const cMCID_FetishShaman = 280;
+const c_MonsterClassID_FlayerShaman = 281;					const cMCID_FlayerShaman = 281;
+const c_MonsterClassID_SoulKillerShaman = 282;				const cMCID_SoulKillerShaman = 282;
+const c_MonsterClassID_StygianDollShaman = 283;				const cMCID_StygianDollShaman = 283;
+const c_MonsterClassID_Larva = 284;							const cMCID_Larva = 284;
+const c_MonsterClassID_SandMaggotQueen = 285;				const cMCID_SandMaggotQueen = 285;
+const c_MonsterClassID_RockWormQueen = 286;					const cMCID_RockWormQueen = 286;
+const c_MonsterClassID_DevourerQueen = 287;					const cMCID_DevourerQueen = 287;
+const c_MonsterClassID_GiantLampreyQueen = 288;				const cMCID_GiantLampreyQueen = 288;
+const c_MonsterClassID_BloodMaggotQueen = 289;				const cMCID_BloodMaggotQueen = 289;
+const c_MonsterClassID_ClayGolem = 290;						const cMCID_ClayGolem = 290;
+const c_MonsterClassID_BloodGolem = 291;					const cMCID_BloodGolem = 291;
+const c_MonsterClassID_IronGolem = 292;						const cMCID_IronGolem = 292;
+const c_MonsterClassID_FireGolem = 293;						const cMCID_FireGolem = 293;
+const c_MonsterClassID_dummyFamiliar = 294;					const cMCID_dummyFamiliar = 294;
+const c_MonsterClassID_dummyAct3Male = 295;					const cMCID_dummyAct3Male = 295;
+const c_MonsterClassID_NightMarauder = 296;					const cMCID_NightMarauder = 296;
+const c_MonsterClassID_dummyAct3Female = 297;				const cMCID_dummyAct3Female = 297;
+const c_MonsterClassID_Natalya = 298;						const cMCID_Natalya = 298;
+const c_MonsterClassID_FleshSpawner = 299;					const cMCID_FleshSpawner = 299;
+const c_MonsterClassID_StygianHag = 300;					const cMCID_StygianHag = 300;
+const c_MonsterClassID_Grotesque = 301;						const cMCID_Grotesque = 301;
+const c_MonsterClassID_FleshBeast = 302;					const cMCID_FleshBeast = 302;
+const c_MonsterClassID_StygianDog = 303;					const cMCID_StygianDog = 303;
+const c_MonsterClassID_GrotesqueWyrm = 304;					const cMCID_GrotesqueWyrm = 304;
+const c_MonsterClassID_DoomCaster = 305;					const cMCID_DoomCaster = 305;
+const c_MonsterClassID_Strangler = 306;						const cMCID_Strangler = 306;
+const c_MonsterClassID_StormCaster = 307;					const cMCID_StormCaster = 307;
+const c_MonsterClassID_Corpulent = 308;						const cMCID_Corpulent = 308;
+const c_MonsterClassID_CorpseSpitter = 309;					const cMCID_CorpseSpitter = 309;
+const c_MonsterClassID_MawFiend = 310;						const cMCID_MawFiend = 310;
+const c_MonsterClassID_DoomKnight = 311;					const cMCID_DoomKnight = 311;
+const c_MonsterClassID_AbyssKnight = 312;					const cMCID_AbyssKnight = 312;
+const c_MonsterClassID_OblivionKnight = 313;				const cMCID_OblivionKnight = 313;
+const c_MonsterClassID_QuillBear = 314;						const cMCID_QuillBear = 314;
+const c_MonsterClassID_SpikeGiant = 315;					const cMCID_SpikeGiant = 315;
+const c_MonsterClassID_ThornBrute = 316;					const cMCID_ThornBrute = 316;
+const c_MonsterClassID_RazorBeast = 317;					const cMCID_RazorBeast = 317;
+const c_MonsterClassID_BarbedGiant = 318;					const cMCID_BarbedGiant = 318;
+const c_MonsterClassID_dummySnake = 319;					const cMCID_dummySnake = 319;
+const c_MonsterClassID_dummyParrot = 320;					const cMCID_dummyParrot = 320;
+const c_MonsterClassID_dummyFish = 321;						const cMCID_dummyFish = 321;
+const c_MonsterClassID_dummyEvilHole1 = 322;				const cMCID_dummyEvilHole1 = 322;
+const c_MonsterClassID_dummyEvilHole2 = 323;				const cMCID_dummyEvilHole2 = 323;
+const c_MonsterClassID_dummyEvilHole3 = 324;				const cMCID_dummyEvilHole3 = 324;
+const c_MonsterClassID_dummyEvilHole4 = 325;				const cMCID_dummyEvilHole4 = 325;
+const c_MonsterClassID_dummyEvilHole5 = 326;				const cMCID_dummyEvilHole5 = 326;
+const c_MonsterClassID_trapfirebolt = 327;					const cMCID_trapfirebolt = 327;
+const c_MonsterClassID_trapunknown1 = 328;					const cMCID_trapunknown1 = 328;
+const c_MonsterClassID_trapunknown2 = 329;					const cMCID_trapunknown2 = 329;
+const c_MonsterClassID_trappoison = 330;					const cMCID_trappoison = 330;
+const c_MonsterClassID_trapchainlightning = 331;			const cMCID_trapchainlightning = 331;
+const c_MonsterClassID_Kaelan = 332;						const cMCID_Kaelan = 332;
+const c_MonsterClassID_dummyInvisoSpawner = 333;			const cMCID_dummyInvisoSpawner = 333;
+const c_MonsterClassID_unusedDiabloClone = 334;				const cMCID_unusedDiabloClone = 334;
+const c_MonsterClassID_SuckerNest = 335;					const cMCID_SuckerNest = 335;
+const c_MonsterClassID_FeederNest = 336;					const cMCID_FeederNest = 336;
+const c_MonsterClassID_BloodHookNest = 337;					const cMCID_BloodHookNest = 337;
+const c_MonsterClassID_BloodWingNest = 338;					const cMCID_BloodWingNest = 338;
+const c_MonsterClassID_Act2Hireling = 339;					const cMCID_Act2Hireling = 339;
+const c_MonsterClassID_dummyMiniSpider = 340;				const cMCID_dummyMiniSpider = 340;
+const c_MonsterClassID_PrisonFL = 341;						const cMCID_PrisonFL = 341;
+const c_MonsterClassID_PrisonFR = 342;						const cMCID_PrisonFR = 342;
+const c_MonsterClassID_PrisonBL = 343;						const cMCID_PrisonBL = 343;
+const c_MonsterClassID_PrisonBR = 344;						const cMCID_PrisonBR = 344;
+const c_MonsterClassID_Bonewall = 345;						const cMCID_Bonewall = 345;
+const c_MonsterClassID_CouncilMember1 = 346;				const cMCID_CouncilMember1 = 346;
+const c_MonsterClassID_CouncilMember2 = 347;				const cMCID_CouncilMember2 = 347;
+const c_MonsterClassID_CouncilMember3 = 348;				const cMCID_CouncilMember3 = 348;
+const c_MonsterClassID_Turret1 = 349;						const cMCID_Turret1 = 349;
+const c_MonsterClassID_Turret2 = 350;						const cMCID_Turret2 = 350;
+const c_MonsterClassID_Turret3 = 351;						const cMCID_Turret3 = 351;
+const c_MonsterClassID_Hydra1 = 352;						const cMCID_Hydra1 = 352;
+const c_MonsterClassID_Hydra2 = 353;						const cMCID_Hydra2 = 353;
+const c_MonsterClassID_Hydra3 = 354;						const cMCID_Hydra3 = 354;
+const c_MonsterClassID_trappillar = 355;					const cMCID_trappillar = 355;
+const c_MonsterClassID_dummyseventombs = 356;				const cMCID_dummyseventombs = 356;
+const c_MonsterClassID_Decoy = 357;							const cMCID_Decoy = 357;
+const c_MonsterClassID_Valkyrie = 358;						const cMCID_Valkyrie = 358;
+const c_MonsterClassID_dummyAct2Hireling = 359;				const cMCID_dummyAct2Hireling = 359;
+const c_MonsterClassID_IronWolf = 360;						const cMCID_IronWolf = 360;
+const c_MonsterClassID_Act3Hireling = 360;					const cMCID_Act3Hireling = 360;
+const c_MonsterClassID_Balrog = 361;						const cMCID_Balrog = 361;
+const c_MonsterClassID_PitLord = 362;						const cMCID_PitLord = 362;
+const c_MonsterClassID_VenomLord = 363;						const cMCID_VenomLord = 363;
+const c_MonsterClassID_Necroskeleton = 364;					const cMCID_Necroskeleton = 364;
+const c_MonsterClassID_Necromage = 365;						const cMCID_Necromage = 365;
+const c_MonsterClassID_Griswold = 366;						const cMCID_Griswold = 366;
+const c_MonsterClassID_CompellingOrb = 367;					const cMCID_CompellingOrb = 367;
+const c_MonsterClassID_Tyrael1 = 368;						const cMCID_Tyrael1 = 368;
+const c_MonsterClassID_DarkWanderer = 369;					const cMCID_DarkWanderer = 369;
+const c_MonsterClassID_trapnova = 370;						const cMCID_trapnova = 370;
+const c_MonsterClassID_dummySpiritMummy = 371;				const cMCID_dummySpiritMummy = 371;
+const c_MonsterClassID_LightningSpire = 372;				const cMCID_LightningSpire = 372;
+const c_MonsterClassID_FireTower = 373;						const cMCID_FireTower = 373;
+const c_MonsterClassID_Slinger = 374;						const cMCID_Slinger = 374;
+const c_MonsterClassID_SpearCat1 = 375;						const cMCID_SpearCat1 = 375;
+const c_MonsterClassID_NightSlinger1 = 376;					const cMCID_NightSlinger1 = 376;
+const c_MonsterClassID_HellSlinger = 377;					const cMCID_HellSlinger = 377;
+const c_MonsterClassID_dummyBobaFett = 378;					const cMCID_dummyBobaFett = 378;
+const c_MonsterClassID_dummyDarthMaul = 379;				const cMCID_dummyDarthMaul = 379;
+const c_MonsterClassID_ReturnedMage2 = 380;					const cMCID_ReturnedMage2 = 380;
+const c_MonsterClassID_BoneMage2 = 381;						const cMCID_BoneMage2 = 381;
+const c_MonsterClassID_DeathMage = 382;						const cMCID_DeathMage = 382;
+const c_MonsterClassID_HorrorMage2 = 383;					const cMCID_HorrorMage2 = 383;
+const c_MonsterClassID_ReturnedMage3 = 384;					const cMCID_ReturnedMage3 = 384;
+const c_MonsterClassID_BoneMage3 = 385;						const cMCID_BoneMage3 = 385;
+const c_MonsterClassID_BurningDeadMage2 = 386;				const cMCID_BurningDeadMage2 = 386;
+const c_MonsterClassID_HorrorMage3 = 387;					const cMCID_HorrorMage3 = 387;
+const c_MonsterClassID_ReturnedMage4 = 388;					const cMCID_ReturnedMage4 = 388;
+const c_MonsterClassID_BoneMage4 = 389;						const cMCID_BoneMage4 = 389;
+const c_MonsterClassID_BurningDeadMage3 = 390;				const cMCID_BurningDeadMage3 = 390;
+const c_MonsterClassID_HorrorMage4 = 391;					const cMCID_HorrorMage4 = 391;
+const c_MonsterClassID_HellBovine = 392;					const cMCID_HellBovine = 392;
+const c_MonsterClassID_windowright = 393;					const cMCID_windowright = 393;
+const c_MonsterClassID_windowleft = 394;					const cMCID_windowleft = 394;
+const c_MonsterClassID_SpearCat2 = 395;						const cMCID_SpearCat2 = 395;
+const c_MonsterClassID_NightSlinger2 = 396;					const cMCID_NightSlinger2 = 396;
+const c_MonsterClassID_RatMan2 = 397;						const cMCID_RatMan2 = 397;
+const c_MonsterClassID_Fetish2 = 398;						const cMCID_Fetish2 = 398;
+const c_MonsterClassID_Flayer2 = 399;						const cMCID_Flayer2 = 399;
+const c_MonsterClassID_SoulKiller2 = 400;					const cMCID_SoulKiller2 = 400;
+const c_MonsterClassID_StygianDoll2 = 401;					const cMCID_StygianDoll2 = 401;
+const c_MonsterClassID_dummyMephistoSpirit = 402;			const cMCID_dummyMephistoSpirit = 402;
+const c_MonsterClassID_TheSmith = 403;						const cMCID_TheSmith = 403;
+const c_MonsterClassID_TrappedSoul1 = 404;					const cMCID_TrappedSoul1 = 404;
+const c_MonsterClassID_TrappedSoul2 = 405;					const cMCID_TrappedSoul2 = 405;
+const c_MonsterClassID_Jamella = 406;						const cMCID_Jamella = 406;
+const c_MonsterClassID_IzualsGhost = 407;					const cMCID_IzualsGhost = 407;
+const c_MonsterClassID_RatMan3 = 408;						const cMCID_RatMan3 = 408;
+const c_MonsterClassID_Hadriel = 409;						const cMCID_Hadriel = 409;
+const c_MonsterClassID_HephastoTheArmorer = 410;			const cMCID_HephastoTheArmorer = 410;
+const c_MonsterClassID_WakeofFire = 411;					const cMCID_WakeofFire = 411;
+const c_MonsterClassID_ChargedBoltSentry = 412;				const cMCID_ChargedBoltSentry = 412;
+const c_MonsterClassID_LightningSentry = 413;				const cMCID_LightningSentry = 413;
+const c_MonsterClassID_BladeSentinel = 414;					const cMCID_BladeSentinel = 414;
+const c_MonsterClassID_InvisPet = 415;						const cMCID_InvisPet = 415;
+const c_MonsterClassID_InfernoSentry = 416;					const cMCID_InfernoSentry = 416;
+const c_MonsterClassID_DeathSentry = 417;					const cMCID_DeathSentry = 417;
+const c_MonsterClassID_ShadowWarrior = 418;					const cMCID_ShadowWarrior = 418;
+const c_MonsterClassID_ShadowMaster = 419;					const cMCID_ShadowMaster = 419;
+const c_MonsterClassID_Raven = 420;							const cMCID_Raven = 420;
+const c_MonsterClassID_SpiritWolf = 421;					const cMCID_SpiritWolf = 421;
+const c_MonsterClassID_DireWolf = 422;						const cMCID_DireWolf = 422;
+const c_MonsterClassID_SpiritofBarbs = 423;					const cMCID_SpiritofBarbs = 423;
+const c_MonsterClassID_HeartofWolverine = 424;				const cMCID_HeartofWolverine = 424;
+const c_MonsterClassID_OakSage = 425;						const cMCID_OakSage = 425;
+const c_MonsterClassID_PlaguePoppy = 426;					const cMCID_PlaguePoppy = 426;
+const c_MonsterClassID_CycleofLife = 427;					const cMCID_CycleofLife = 427;
+const c_MonsterClassID_VineCreature = 428;					const cMCID_VineCreature = 428;
+const c_MonsterClassID_Grizzly = 429;						const cMCID_Grizzly = 429;
+const c_MonsterClassID_Eagle = 430;							const cMCID_Eagle = 430;
+const c_MonsterClassID_Wolf = 431;							const cMCID_Wolf = 431;
+const c_MonsterClassID_Bear = 432;							const cMCID_Bear = 432;
+const c_MonsterClassID_BarricadedDoor1 = 433;				const cMCID_BarricadedDoor1 = 433;
+const c_MonsterClassID_BarricadedDoor2 = 434;				const cMCID_BarricadedDoor2 = 434;
+const c_MonsterClassID_PrisonDoor = 435;					const cMCID_PrisonDoor = 435;
+const c_MonsterClassID_BarricadedTower = 436;				const cMCID_BarricadedTower = 436;
+const c_MonsterClassID_RotWalker = 437;						const cMCID_RotWalker = 437;
+const c_MonsterClassID_ReanimatedHorde = 438;				const cMCID_ReanimatedHorde = 438;
+const c_MonsterClassID_ProwlingDead = 439;					const cMCID_ProwlingDead = 439;
+const c_MonsterClassID_UnholyCorpse = 440;					const cMCID_UnholyCorpse = 440;
+const c_MonsterClassID_DefiledWarrior = 441;				const cMCID_DefiledWarrior = 441;
+const c_MonsterClassID_SiegeBeast = 442;					const cMCID_SiegeBeast = 442;
+const c_MonsterClassID_CrushBeast = 443;					const cMCID_CrushBeast = 443;
+const c_MonsterClassID_BloodBringer = 444;					const cMCID_BloodBringer = 444;
+const c_MonsterClassID_GoreBearer = 445;					const cMCID_GoreBearer = 445;
+const c_MonsterClassID_DemonSteed = 446;					const cMCID_DemonSteed = 446;
+const c_MonsterClassID_SnowDrifter = 447;					const cMCID_SnowDrifter = 447;
+const c_MonsterClassID_Abominable = 448;					const cMCID_Abominable = 448;
+const c_MonsterClassID_ChilledFroth = 449;					const cMCID_ChilledFroth = 449;
+const c_MonsterClassID_FrozenAbyss = 450;					const cMCID_FrozenAbyss = 450;
+const c_MonsterClassID_FallenWolfrider = 451;				const cMCID_FallenWolfrider = 451;
+const c_MonsterClassID_CarverWolfrider = 452;				const cMCID_CarverWolfrider = 452;
+const c_MonsterClassID_DevilkinWolfrider = 453;				const cMCID_DevilkinWolfrider = 453;
+const c_MonsterClassID_Enslaved = 454;						const cMCID_Enslaved = 454;
+const c_MonsterClassID_Slayer = 455;						const cMCID_Slayer = 455;
+const c_MonsterClassID_IceBoar = 456;						const cMCID_IceBoar = 456;
+const c_MonsterClassID_FireBoar = 457;						const cMCID_FireBoar = 457;
+const c_MonsterClassID_HellSpawn = 458;						const cMCID_HellSpawn = 458;
+const c_MonsterClassID_IceSpawn = 459;						const cMCID_IceSpawn = 459;
+const c_MonsterClassID_GreaterHellSpawn = 460;				const cMCID_GreaterHellSpawn = 460;
+const c_MonsterClassID_GreaterIceSpawn = 461;				const cMCID_GreaterIceSpawn = 461;
+const c_MonsterClassID_FanaticEnslaved = 462;				const cMCID_FanaticEnslaved = 462;
+const c_MonsterClassID_BerserkerSlayer = 463;				const cMCID_BerserkerSlayer = 463;
+const c_MonsterClassID_ConsumedIceBoar = 464;				const cMCID_ConsumedIceBoar = 464;
+const c_MonsterClassID_ConsumedFireBoar = 465;				const cMCID_ConsumedFireBoar = 465;
+const c_MonsterClassID_FrenziedHellSpawn = 466;				const cMCID_FrenziedHellSpawn = 466;
+const c_MonsterClassID_FrenziedIceSpawn = 467;				const cMCID_FrenziedIceSpawn = 467;
+const c_MonsterClassID_InsaneHellSpawn = 468;				const cMCID_InsaneHellSpawn = 468;
+const c_MonsterClassID_InsaneIceSpawn = 469;				const cMCID_InsaneIceSpawn = 469;
+const c_MonsterClassID_Succubus = 470;						const cMCID_Succubus = 470;
+const c_MonsterClassID_VileTemptress = 471;					const cMCID_VileTemptress = 471;
+const c_MonsterClassID_StygianHarlot = 472;					const cMCID_StygianHarlot = 472;
+const c_MonsterClassID_HellTemptress = 473;					const cMCID_HellTemptress = 473;
+const c_MonsterClassID_BloodTemptress = 474;				const cMCID_BloodTemptress = 474;
+const c_MonsterClassID_Siren = 475;							const cMCID_Siren = 475;
+const c_MonsterClassID_VileWitch = 476;						const cMCID_VileWitch = 476;
+const c_MonsterClassID_StygianFury = 477;					const cMCID_StygianFury = 477;
+const c_MonsterClassID_BloodWitch = 478;					const cMCID_BloodWitch = 478;
+const c_MonsterClassID_HellWitch = 479;						const cMCID_HellWitch = 479;
+const c_MonsterClassID_Overseer = 480;						const cMCID_Overseer = 480;
+const c_MonsterClassID_Shenk = 480;							const cMCID_Shenk = 480;
+const c_MonsterClassID_Lasher = 481;						const cMCID_Lasher = 481;
+const c_MonsterClassID_Overlord = 482;						const cMCID_Overlord = 482;
+const c_MonsterClassID_BloodBoss = 483;						const cMCID_BloodBoss = 483;
+const c_MonsterClassID_HellWhip = 484;						const cMCID_HellWhip = 484;
+const c_MonsterClassID_DemonPortal1 = 485;					const cMCID_DemonPortal1 = 485;
+const c_MonsterClassID_DemonPortal2 = 486;					const cMCID_DemonPortal2 = 486;
+const c_MonsterClassID_DemonPortal3 = 487;					const cMCID_DemonPortal3 = 487;
+const c_MonsterClassID_DemonPortal4 = 488;					const cMCID_DemonPortal4 = 488;
+const c_MonsterClassID_DemonPortal5 = 489;					const cMCID_DemonPortal5 = 489;
+const c_MonsterClassID_DemonPortal6 = 490;					const cMCID_DemonPortal6 = 490;
+const c_MonsterClassID_DemonPortal7 = 491;					const cMCID_DemonPortal7 = 491;
+const c_MonsterClassID_DemonPortal8 = 492;					const cMCID_DemonPortal8 = 492;
+const c_MonsterClassID_DemonImp = 493;						const cMCID_DemonImp = 493;
+const c_MonsterClassID_DemonRascal = 494;					const cMCID_DemonRascal = 494;
+const c_MonsterClassID_DemonGremlin = 495;					const cMCID_DemonGremlin = 495;
+const c_MonsterClassID_DemonTrickster = 496;				const cMCID_DemonTrickster = 496;
+const c_MonsterClassID_DemonSprite = 497;					const cMCID_DemonSprite = 497;
+const c_MonsterClassID_CatapultS = 498;						const cMCID_CatapultS = 498;
+const c_MonsterClassID_CatapultE = 499;						const cMCID_CatapultE = 499;
+const c_MonsterClassID_CatapultSiege = 500;					const cMCID_CatapultSiege = 500;
+const c_MonsterClassID_CatapultW = 501;						const cMCID_CatapultW = 501;
+const c_MonsterClassID_FrozenCreeper = 502;					const cMCID_FrozenCreeper = 502;
+const c_MonsterClassID_FrozenTerror = 503;					const cMCID_FrozenTerror = 503;
+const c_MonsterClassID_FrozenScourge = 504;					const cMCID_FrozenScourge = 504;
+const c_MonsterClassID_FrozenHorror = 505;					const cMCID_FrozenHorror = 505;
+const c_MonsterClassID_FrozenScorch = 506;					const cMCID_FrozenScorch = 506;
+const c_MonsterClassID_MoonLord = 507;						const cMCID_MoonLord = 507;
+const c_MonsterClassID_NightLord2 = 508;					const cMCID_NightLord2 = 508;
+const c_MonsterClassID_BloodLord2 = 509;					const cMCID_BloodLord2 = 509;
+const c_MonsterClassID_HellLord = 510;						const cMCID_HellLord = 510;
+const c_MonsterClassID_DeathLord = 511;						const cMCID_DeathLord = 511;
+const c_MonsterClassID_Larzuk = 512;						const cMCID_Larzuk = 512;
+const c_MonsterClassID_AnyaTown = 513;						const cMCID_AnyaTown = 513;
+const c_MonsterClassID_Malah = 514;							const cMCID_Malah = 514;
+const c_MonsterClassID_NihlathakTown = 515;					const cMCID_NihlathakTown = 515;
+const c_MonsterClassID_QualKehk = 516;						const cMCID_QualKehk = 516;
+const c_MonsterClassID_CatapultSpotterS = 517;				const cMCID_CatapultSpotterS = 517;
+const c_MonsterClassID_CatapultSpotterE = 518;				const cMCID_CatapultSpotterE = 518;
+const c_MonsterClassID_CatapultSpotterSiege = 519;			const cMCID_CatapultSpotterSiege = 519;
+const c_MonsterClassID_CatapultSpotterW = 520;				const cMCID_CatapultSpotterW = 520;
+const c_MonsterClassID_DeckardCain6 = 521;					const cMCID_DeckardCain6 = 521;
+const c_MonsterClassID_Tyrael2 = 522;						const cMCID_Tyrael2 = 522;
+const c_MonsterClassID_BarbarianFighter1 = 523;				const cMCID_BarbarianFighter1 = 523;
+const c_MonsterClassID_BarbarianFighter2 = 524;				const cMCID_BarbarianFighter2 = 524;
+const c_MonsterClassID_BarricadeWallRight = 525;			const cMCID_BarricadeWallRight = 525;
+const c_MonsterClassID_BarricadeWallLeft = 526;				const cMCID_BarricadeWallLeft = 526;
+const c_MonsterClassID_Nihlathak = 527;						const cMCID_Nihlathak = 527;
+const c_MonsterClassID_Anya = 528;							const cMCID_Anya = 528;
+const c_MonsterClassID_EvilDemonHut = 529;					const cMCID_EvilDemonHut = 529;
+const c_MonsterClassID_DeathMauler = 530;					const cMCID_DeathMauler = 530;
+const c_MonsterClassID_DeathBrawler = 531;					const cMCID_DeathBrawler = 531;
+const c_MonsterClassID_DeathSlasher = 532;					const cMCID_DeathSlasher = 532;
+const c_MonsterClassID_DeathBerserker = 533;				const cMCID_DeathBerserker = 533;
+const c_MonsterClassID_DeathBrigadier = 534;				const cMCID_DeathBrigadier = 534;
+const c_MonsterClassID_BarbarianCaptive = 535;				const cMCID_BarbarianCaptive = 535;
+const c_MonsterClassID_Act5Townguard1 = 536;				const cMCID_Act5Townguard1 = 536;
+const c_MonsterClassID_Act5Townguard2 = 537;				const cMCID_Act5Townguard2 = 537;
+const c_MonsterClassID_TalicStatue = 538;					const cMCID_TalicStatue = 538;
+const c_MonsterClassID_MadawcStatue = 539;					const cMCID_MadawcStatue = 539;
+const c_MonsterClassID_KorlicStatue = 540;					const cMCID_KorlicStatue = 540;
+const c_MonsterClassID_Talic = 541;							const cMCID_Talic = 541;
+const c_MonsterClassID_Madawc = 542;						const cMCID_Madawc = 542;
+const c_MonsterClassID_Korlic = 543;						const cMCID_Korlic = 543;
+const c_MonsterClassID_BaalThrone = 544;					const cMCID_BaalThrone = 544;
+const c_MonsterClassID_BaalCrab = 545;						const cMCID_BaalCrab = 545;
+const c_MonsterClassID_BaalTaunt = 546;						const cMCID_BaalTaunt = 546;
+const c_MonsterClassID_PutridDefiler = 547;					const cMCID_PutridDefiler = 547;
+const c_MonsterClassID_WretchedDefiler = 548;				const cMCID_WretchedDefiler = 548;
+const c_MonsterClassID_FetidDefiler = 549;					const cMCID_FetidDefiler = 549;
+const c_MonsterClassID_RancidDefiler = 550;					const cMCID_RancidDefiler = 550;
+const c_MonsterClassID_RankDefiler = 551;					const cMCID_RankDefiler = 551;
+const c_MonsterClassID_PainWorm = 552;						const cMCID_PainWorm = 552;
+const c_MonsterClassID_TormentWorm = 553;					const cMCID_TormentWorm = 553;
+const c_MonsterClassID_AgonyWorm = 554;						const cMCID_AgonyWorm = 554;
+const c_MonsterClassID_MenaceWorm = 555;					const cMCID_MenaceWorm = 555;
+const c_MonsterClassID_AnguishWorm = 556;					const cMCID_AnguishWorm = 556;
+const c_MonsterClassID_Bunny = 557;							const cMCID_Bunny = 557;
+const c_MonsterClassID_BaalCouncilMember = 558;				const cMCID_BaalCouncilMember = 558;
+const c_MonsterClassID_BaalVenomLord = 559;					const cMCID_BaalVenomLord = 559;
+const c_MonsterClassID_BaalCrabtoStairs = 560;				const cMCID_BaalCrabtoStairs = 560;
+const c_MonsterClassID_Act5Hireling1hs = 561;				const cMCID_Act5Hireling1hs = 561;
+const c_MonsterClassID_Act5Hireling2hs = 562;				const cMCID_Act5Hireling2hs = 562;
+const c_MonsterClassID_Act5Hireling = 562;					const cMCID_Act5Hireling = 562;
+const c_MonsterClassID_FesteringAppendages1 = 563;			const cMCID_FesteringAppendages1 = 563;
+const c_MonsterClassID_FesteringAppendages2 = 564;			const cMCID_FesteringAppendages2 = 564;
+const c_MonsterClassID_FesteringAppendages3 = 565;			const cMCID_FesteringAppendages3 = 565;
+const c_MonsterClassID_FesteringAppendages4 = 566;			const cMCID_FesteringAppendages4 = 566;
+const c_MonsterClassID_FesteringAppendages5 = 567;			const cMCID_FesteringAppendages5 = 567;
+const c_MonsterClassID_InjuredBarbarian1 = 568;				const cMCID_InjuredBarbarian1 = 568;
+const c_MonsterClassID_InjuredBarbarian2 = 569;				const cMCID_InjuredBarbarian2 = 569;
+const c_MonsterClassID_InjuredBarbarian3 = 570;				const cMCID_InjuredBarbarian3 = 570;
+const c_MonsterClassID_BaalCrabClone = 571;					const cMCID_BaalCrabClone = 571;
+const c_MonsterClassID_MinionofDestruction1 = 572;			const cMCID_MinionofDestruction1 = 572;
+const c_MonsterClassID_MinionofDestruction2 = 573;			const cMCID_MinionofDestruction2 = 573;
+const c_MonsterClassID_MinionofDestruction3 = 574;			const cMCID_MinionofDestruction3 = 574;
+const c_MonsterClassID_WorldstoneEffect = 575;				const cMCID_WorldstoneEffect = 575;
+
+
+//	missile.classid -- derived from Mousepad's d2maphack.vcb
+
+const c_MissileClassID_Arrowmissile = 1;					const cMiCID_Arrowmissile = 1;
+const c_MissileClassID_Javelinmissile = 2;					const cMiCID_Javelinmissile = 2;
+const c_MissileClassID_Bighead1 = 3;						const cMiCID_Bighead1 = 3;
+const c_MissileClassID_Bighead2 = 4;						const cMiCID_Bighead2 = 4;
+const c_MissileClassID_Bighead3 = 5;						const cMiCID_Bighead3 = 5;
+const c_MissileClassID_Bighead4 = 6;						const cMiCID_Bighead4 = 6;
+const c_MissileClassID_Bighead5 = 7;						const cMiCID_Bighead5 = 7;
+const c_MissileClassID_Spike1 = 8;							const cMiCID_Spike1 = 8;
+const c_MissileClassID_Spike2 = 9;							const cMiCID_Spike2 = 9;
+const c_MissileClassID_Spike3 = 10;							const cMiCID_Spike3 = 10;
+const c_MissileClassID_Spike4 = 11;							const cMiCID_Spike4 = 11;
+const c_MissileClassID_Spike5 = 12;							const cMiCID_Spike5 = 12;
+const c_MissileClassID_FireArrow = 13;						const cMiCID_FireArrow = 13;
+const c_MissileClassID_CRArrow1 = 14;						const cMiCID_CRArrow1 = 14;
+const c_MissileClassID_CRArrow2 = 15;						const cMiCID_CRArrow2 = 15;
+const c_MissileClassID_CRArrow3 = 16;						const cMiCID_CRArrow3 = 16;
+const c_MissileClassID_CRArrow4 = 17;						const cMiCID_CRArrow4 = 17;
+const c_MissileClassID_CRArrow5 = 18;						const cMiCID_CRArrow5 = 18;
+const c_MissileClassID_Blood1 = 19;							const cMiCID_Blood1 = 19;
+const c_MissileClassID_Blood2 = 20;							const cMiCID_Blood2 = 20;
+const c_MissileClassID_BigBlood1 = 21;						const cMiCID_BigBlood1 = 21;
+const c_MissileClassID_BigBlood2 = 22;						const cMiCID_BigBlood2 = 22;
+const c_MissileClassID_ShaFire1 = 23;						const cMiCID_ShaFire1 = 23;
+const c_MissileClassID_ShaFire2 = 24;						const cMiCID_ShaFire2 = 24;
+const c_MissileClassID_ShaFire3 = 25;						const cMiCID_ShaFire3 = 25;
+const c_MissileClassID_ShaFire4 = 26;						const cMiCID_ShaFire4 = 26;
+const c_MissileClassID_ShaFire5 = 27;						const cMiCID_ShaFire5 = 27;
+const c_MissileClassID_MagicArrow = 28;						const cMiCID_MagicArrow = 28;
+const c_MissileClassID_IceArrow = 29;						const cMiCID_IceArrow = 29;
+const c_MissileClassID_FireExplode = 30;					const cMiCID_FireExplode = 30;
+const c_MissileClassID_IceExplode = 31;						const cMiCID_IceExplode = 31;
+const c_MissileClassID_Boltmissile = 32;					const cMiCID_Boltmissile = 32;
+const c_MissileClassID_Andrial = 33;						const cMiCID_Andrial = 33;
+const c_MissileClassID_BigHeadExp = 34;						const cMiCID_BigHeadExp = 34;
+const c_MissileClassID_ShamanExp = 35;						const cMiCID_ShamanExp = 35;
+const c_MissileClassID_ThrowAxe = 36;						const cMiCID_ThrowAxe = 36;
+const c_MissileClassID_ThrowKnife = 37;						const cMiCID_ThrowKnife = 37;
+const c_MissileClassID_Glaivemissile = 38;					const cMiCID_Glaivemissile = 38;
+const c_MissileClassID_PoisonJav = 39;						const cMiCID_PoisonJav = 39;
+const c_MissileClassID_PoisonJavCloud = 40;					const cMiCID_PoisonJavCloud = 40;
+const c_MissileClassID_ColdArrow = 41;						const cMiCID_ColdArrow = 41;
+const c_MissileClassID_ExplodingArrow = 42;					const cMiCID_ExplodingArrow = 42;
+const c_MissileClassID_ExplodingArrowExplode = 43;			const cMiCID_ExplodingArrowExplode = 43;
+const c_MissileClassID_PlagueJavelin1 = 44;					const cMiCID_PlagueJavelin1 = 44;
+const c_MissileClassID_OilPotionmissile = 45;				const cMiCID_OilPotionmissile = 45;
+const c_MissileClassID_ExplosivePotion = 46;				const cMiCID_ExplosivePotion = 46;
+const c_MissileClassID_FulminatingPotionmissile = 47;		const cMiCID_FulminatingPotionmissile = 47;
+const c_MissileClassID_RancidGasPotionmissile = 48;			const cMiCID_RancidGasPotionmissile = 48;
+const c_MissileClassID_ChokingGasPotionmissile = 49;		const cMiCID_ChokingGasPotionmissile = 49;	
+const c_MissileClassID_StranglingGasPotionmissile = 50;		const cMiCID_StranglingGasPotionmissile = 50;
+const c_MissileClassID_NotUsed = 51;						const cMiCID_NotUsed = 51;
+const c_MissileClassID_ExplosivePotionExp = 52;				const cMiCID_ExplosivePotionExp = 52;
+const c_MissileClassID_ExplosivePotionDebris1 = 53;			const cMiCID_ExplosivePotionDebris1 = 53;
+const c_MissileClassID_ExplosivePotionDebris2 = 54;			const cMiCID_ExplosivePotionDebris2 = 54;
+const c_MissileClassID_ExplosivePotionDebris3 = 55;			const cMiCID_ExplosivePotionDebris3 = 55;
+const c_MissileClassID_HolyBolt = 56;						const cMiCID_HolyBolt = 56;
+const c_MissileClassID_ChargedBolt = 57;					const cMiCID_ChargedBolt = 57;
+const c_MissileClassID_SanctuaryBolt = 58;					const cMiCID_SanctuaryBolt = 58;
+const c_MissileClassID_FireBolt = 59;						const cMiCID_FireBolt = 59;
+const c_MissileClassID_IceBolt = 60;						const cMiCID_IceBolt = 60;
+const c_MissileClassID_InfernoFlame1 = 61;					const cMiCID_InfernoFlame1 = 61;
+const c_MissileClassID_InfernoFlame2 = 62;					const cMiCID_InfernoFlame2 = 62;
+const c_MissileClassID_FireBall = 63;						const cMiCID_FireBall = 63;
+const c_MissileClassID_Mummy1 = 64;							const cMiCID_Mummy1 = 64;
+const c_MissileClassID_Mummy2 = 65;							const cMiCID_Mummy2 = 65;
+const c_MissileClassID_Mummy3 = 66;							const cMiCID_Mummy3 = 66;
+const c_MissileClassID_Mummy4 = 67;							const cMiCID_Mummy4 = 67;
+const c_MissileClassID_Blaze = 68;							const cMiCID_Blaze = 68;
+const c_MissileClassID_FirewallMaker = 69;					const cMiCID_FirewallMaker = 69;
+const c_MissileClassID_Firewall = 70;						const cMiCID_Firewall = 70;
+const c_MissileClassID_GooSpit1 = 71;						const cMiCID_GooSpit1 = 71;
+const c_MissileClassID_GooSpit2 = 72;						const cMiCID_GooSpit2 = 72;
+const c_MissileClassID_GooSpit3 = 73;						const cMiCID_GooSpit3 = 73;
+const c_MissileClassID_GooSpit4 = 74;						const cMiCID_GooSpit4 = 74;
+const c_MissileClassID_GooSpit5 = 75;						const cMiCID_GooSpit5 = 75;
+const c_MissileClassID_GooSplat = 76;						const cMiCID_GooSplat = 76;
+const c_MissileClassID_SandPile = 77;						const cMiCID_SandPile = 77;
+const c_MissileClassID_UnHolyBolt1 = 78;					const cMiCID_UnHolyBolt1 = 78;
+const c_MissileClassID_UnHolyBolt2 = 79;					const cMiCID_UnHolyBolt2 = 79;
+const c_MissileClassID_UnHolyBolt3 = 80;					const cMiCID_UnHolyBolt3 = 80;
+const c_MissileClassID_UnHolyBolt4 = 81;					const cMiCID_UnHolyBolt4 = 81;
+const c_MissileClassID_SanctuaryCenter = 82;				const cMiCID_SanctuaryCenter = 82;
+const c_MissileClassID_FireExplosion1 = 83;					const cMiCID_FireExplosion1 = 83;
+const c_MissileClassID_StuckArrow = 84;						const cMiCID_StuckArrow = 84;
+const c_MissileClassID_FootPrint = 85;						const cMiCID_FootPrint = 85;
+const c_MissileClassID_ImmolationArrow = 86;				const cMiCID_ImmolationArrow = 86;
+const c_MissileClassID_GuidedArrow = 87;					const cMiCID_GuidedArrow = 87;
+const c_MissileClassID_FreezingArrow = 88;					const cMiCID_FreezingArrow = 88;
+const c_MissileClassID_FreezingArrowExplode1 = 89;			const cMiCID_FreezingArrowExplode1 = 89;
+const c_MissileClassID_FreezingArrowExplode2 = 90;			const cMiCID_FreezingArrowExplode2 = 90;
+const c_MissileClassID_Nova = 91;							const cMiCID_Nova = 91;
+const c_MissileClassID_IceBlast = 92;						const cMiCID_IceBlast = 92;
+const c_MissileClassID_BlessedHammer1 = 93;					const cMiCID_BlessedHammer1 = 93;
+const c_MissileClassID_ChainLightning1 = 94;				const cMiCID_ChainLightning1 = 94;
+const c_MissileClassID_FistOfAres = 95;						const cMiCID_FistOfAres = 95;
+const c_MissileClassID_ChillBlood = 96;						const cMiCID_ChillBlood = 96;
+const c_MissileClassID_GlacialSpike = 97;					const cMiCID_GlacialSpike = 97;
+const c_MissileClassID_Teleport = 98;						const cMiCID_Teleport = 98;
+const c_MissileClassID_LightningBolt = 99;					const cMiCID_LightningBolt = 99;
+const c_MissileClassID_LightningHit = 100;					const cMiCID_LightningHit = 100;
+const c_MissileClassID_Meteor = 101;						const cMiCID_Meteor = 101;
+const c_MissileClassID_MeteorCenter = 102;					const cMiCID_MeteorCenter = 102;
+const c_MissileClassID_MeteorTail = 103;					const cMiCID_MeteorTail = 103;
+const c_MissileClassID_MeteorExplode = 104;					const cMiCID_MeteorExplode = 104;
+const c_MissileClassID_FireSmall = 105;						const cMiCID_FireSmall = 105;
+const c_MissileClassID_FireMedium = 106;					const cMiCID_FireMedium = 106;
+const c_MissileClassID_MonBlizCenter = 107;					const cMiCID_MonBlizCenter = 107;
+const c_MissileClassID_MonBliz1 = 108;						const cMiCID_MonBliz1 = 108;
+const c_MissileClassID_MonBliz2 = 109;						const cMiCID_MonBliz2 = 109;
+const c_MissileClassID_MonBliz3 = 110;						const cMiCID_MonBliz3 = 110;
+const c_MissileClassID_MonBliz4 = 111;						const cMiCID_MonBliz4 = 111;
+const c_MissileClassID_MonBlizExplode1 = 112;				const cMiCID_MonBlizExplode1 = 112;
+const c_MissileClassID_MonBlizExplode2 = 113;				const cMiCID_MonBlizExplode2 = 113;
+const c_MissileClassID_MonBlizExplode3 = 114;				const cMiCID_MonBlizExplode3 = 114;
+const c_MissileClassID_Teeth = 115;							const cMiCID_Teeth = 115;
+const c_MissileClassID_CorpseExplosion = 116;				const cMiCID_CorpseExplosion = 116;
+const c_MissileClassID_PoisonCorpseExplosion = 117;			const cMiCID_PoisonCorpseExplosion = 117;
+const c_MissileClassID_MissileCorpseExplode = 118;			const cMiCID_MissileCorpseExplode = 118;
+const c_MissileClassID_PoisonNova = 119;					const cMiCID_PoisonNova = 119;
+const c_MissileClassID_FrostNova = 120;						const cMiCID_FrostNova = 120;
+const c_MissileClassID_Rogue1 = 121;						const cMiCID_Rogue1 = 121;
+const c_MissileClassID_Rogue2 = 122;						const cMiCID_Rogue2 = 122;
+const c_MissileClassID_Rogue3 = 123;						const cMiCID_Rogue3 = 123;
+const c_MissileClassID_BatLightningBolt = 124;				const cMiCID_BatLightningBolt = 124;
+const c_MissileClassID_BatLightningTrail = 125;				const cMiCID_BatLightningTrail = 125;
+const c_MissileClassID_SkMage1 = 126;						const cMiCID_SkMage1 = 126;
+const c_MissileClassID_SkMage2 = 127;						const cMiCID_SkMage2 = 127;
+const c_MissileClassID_SkMage3 = 128;						const cMiCID_SkMage3 = 128;
+const c_MissileClassID_SkMage4 = 129;						const cMiCID_SkMage4 = 129;
+const c_MissileClassID_VampireFireball = 130;				const cMiCID_VampireFireball = 130;
+const c_MissileClassID_VampireFirewallMaker = 131;			const cMiCID_VampireFirewallMaker = 131;
+const c_MissileClassID_VampireFirewall = 132;				const cMiCID_VampireFirewall = 132;
+const c_MissileClassID_VampireMeteor = 133;					const cMiCID_VampireMeteor = 133;
+const c_MissileClassID_VampireMeteorCenter = 134;			const cMiCID_VampireMeteorCenter = 134;
+const c_MissileClassID_VampireMeteorExplode = 135;			const cMiCID_VampireMeteorExplode = 135;
+const c_MissileClassID_Raven1 = 136;						const cMiCID_Raven1 = 136;
+const c_MissileClassID_Raven2 = 137;						const cMiCID_Raven2 = 137;
+const c_MissileClassID_AmphibianGoo1 = 138;					const cMiCID_AmphibianGoo1 = 138;
+const c_MissileClassID_AmphibianGoo2 = 139;					const cMiCID_AmphibianGoo2 = 139;
+const c_MissileClassID_TentacleGoo = 140;					const cMiCID_TentacleGoo = 140;
+const c_MissileClassID_AmphibianExplode = 141;				const cMiCID_AmphibianExplode = 141;
+const c_MissileClassID_PoisonPuff = 142;					const cMiCID_PoisonPuff = 142;
+const c_MissileClassID_CurseEffectRed = 143;				const cMiCID_CurseEffectRed = 143;
+const c_MissileClassID_SpiderGooLay = 144;					const cMiCID_SpiderGooLay = 144;
+const c_MissileClassID_FetishInferno1 = 145;				const cMiCID_FetishInferno1 = 145;
+const c_MissileClassID_FetishInferno2 = 146;				const cMiCID_FetishInferno2 = 146;
+const c_MissileClassID_SpiderGoo = 147;						const cMiCID_SpiderGoo = 147;
+const c_MissileClassID_CurseCast = 148;						const cMiCID_CurseCast = 148;
+const c_MissileClassID_Howl = 149;							const cMiCID_Howl = 149;
+const c_MissileClassID_Shout = 150;							const cMiCID_Shout = 150;
+const c_MissileClassID_Dust = 151;							const cMiCID_Dust = 151;
+const c_MissileClassID_RedLightMissile = 152;				const cMiCID_RedLightMissile = 152;
+const c_MissileClassID_GreenLightMissile = 153;				const cMiCID_GreenLightMissile = 153;
+const c_MissileClassID_BlueLightMissile = 154;				const cMiCID_BlueLightMissile = 154;
+const c_MissileClassID_WhiteLightMissile = 155;				const cMiCID_WhiteLightMissile = 155;
+const c_MissileClassID_CorpsePoisonCloud = 156;				const cMiCID_CorpsePoisonCloud = 156;
+const c_MissileClassID_ChillBloodCloud = 157;				const cMiCID_ChillBloodCloud = 157;
+const c_MissileClassID_ChillBloodPuff = 158;				const cMiCID_ChillBloodPuff = 158;
+const c_MissileClassID_BlizzardCenter = 159;				const cMiCID_BlizzardCenter = 159;
+const c_MissileClassID_Blizzard1 = 160;						const cMiCID_Blizzard1 = 160;
+const c_MissileClassID_Blizzard2 = 161;						const cMiCID_Blizzard2 = 161;
+const c_MissileClassID_Blizzard3 = 162;						const cMiCID_Blizzard3 = 162;
+const c_MissileClassID_Blizzard4 = 163;						const cMiCID_Blizzard4 = 163;
+const c_MissileClassID_BlizzardExplode1 = 164;				const cMiCID_BlizzardExplode1 = 164;
+const c_MissileClassID_BlizzardExplode2 = 165;				const cMiCID_BlizzardExplode2 = 165;
+const c_MissileClassID_BlizzardExplode3 = 166;				const cMiCID_BlizzardExplode3 = 166;
+const c_MissileClassID_ThunderStorm1 = 167;					const cMiCID_ThunderStorm1 = 167;
+const c_MissileClassID_ThunderStorm2 = 168;					const cMiCID_ThunderStorm2 = 168;
+const c_MissileClassID_ThunderStorm3 = 169;					const cMiCID_ThunderStorm3 = 169;
+const c_MissileClassID_ThunderStorm4 = 170;					const cMiCID_ThunderStorm4 = 170;
+const c_MissileClassID_MonsterLight = 171;					const cMiCID_MonsterLight = 171;
+const c_MissileClassID_PoisonBall = 172;					const cMiCID_PoisonBall = 172;
+const c_MissileClassID_DiabLight = 173;						const cMiCID_DiabLight = 173;
+const c_MissileClassID_Redemption = 174;					const cMiCID_Redemption = 174;
+const c_MissileClassID_RedemptionFail = 175;				const cMiCID_RedemptionFail = 175;
+const c_MissileClassID_HandOfGod = 176;						const cMiCID_HandOfGod = 176;
+const c_MissileClassID_DiabFire = 177;						const cMiCID_DiabFire = 177;
+const c_MissileClassID_FingerMageSpider = 178;				const cMiCID_FingerMageSpider = 178;
+const c_MissileClassID_ElectricThrowAxe = 179;				const cMiCID_ElectricThrowAxe = 179;
+const c_MissileClassID_DiabWallMaker = 180;					const cMiCID_DiabWallMaker = 180;
+const c_MissileClassID_DiabWall = 181;						const cMiCID_DiabWall = 181;
+const c_MissileClassID_CurseAmplifyDamage = 182;			const cMiCID_CurseAmplifyDamage = 182;
+const c_MissileClassID_CurseDimVision = 183;				const cMiCID_CurseDimVision = 183;
+const c_MissileClassID_CurseWeaken = 184;					const cMiCID_CurseWeaken = 184;
+const c_MissileClassID_CurseIronMaiden = 185;				const cMiCID_CurseIronMaiden = 185;
+const c_MissileClassID_CurseTerror = 186;					const cMiCID_CurseTerror = 186;
+const c_MissileClassID_CurseAttract = 187;					const cMiCID_CurseAttract = 187;
+const c_MissileClassID_CurseReverseVampire = 188;			const cMiCID_CurseReverseVampire = 188;
+const c_MissileClassID_CurseConfuse = 189;					const cMiCID_CurseConfuse = 189;
+const c_MissileClassID_CurseDecrpify = 190;					const cMiCID_CurseDecrpify = 190;
+const c_MissileClassID_CurseLowerResist = 191;				const cMiCID_CurseLowerResist = 191;
+const c_MissileClassID_CurseCenter = 192;					const cMiCID_CurseCenter = 192;
+const c_MissileClassID_BoneSpear = 193;						const cMiCID_BoneSpear = 193;
+const c_MissileClassID_BoneSpirit = 194;					const cMiCID_BoneSpirit = 194;
+const c_MissileClassID_ColdUnique = 195;					const cMiCID_ColdUnique = 195;
+const c_MissileClassID_LightUnique = 196;					const cMiCID_LightUnique = 196;
+const c_MissileClassID_SKBowArrow1 = 197;					const cMiCID_SKBowArrow1 = 197;
+const c_MissileClassID_SKBowArrow2 = 198;					const cMiCID_SKBowArrow2 = 198;
+const c_MissileClassID_SKBowArrow3 = 199;					const cMiCID_SKBowArrow3 = 199;
+const c_MissileClassID_SKBowArrow4 = 200;					const cMiCID_SKBowArrow4 = 200;
+const c_MissileClassID_SKBowArrow5 = 201;					const cMiCID_SKBowArrow5 = 201;
+const c_MissileClassID_Nova1 = 202;							const cMiCID_Nova1 = 202;
+const c_MissileClassID_Nova2 = 203;							const cMiCID_Nova2 = 203;
+const c_MissileClassID_AndyPoisonBolt = 204;				const cMiCID_AndyPoisonBolt = 204;
+const c_MissileClassID_TeethExplode = 205;					const cMiCID_TeethExplode = 205;
+const c_MissileClassID_LightningJavelin = 206;				const cMiCID_LightningJavelin = 206;
+const c_MissileClassID_LightningFury = 207;					const cMiCID_LightningFury = 207;
+const c_MissileClassID_BoneWallMaker = 208;					const cMiCID_BoneWallMaker = 208;
+const c_MissileClassID_NecroMage1 = 209;					const cMiCID_NecroMage1 = 209;
+const c_MissileClassID_NecroMage2 = 210;					const cMiCID_NecroMage2 = 210;
+const c_MissileClassID_NecroMage3 = 211;					const cMiCID_NecroMage3 = 211;
+const c_MissileClassID_NecroMage4 = 212;					const cMiCID_NecroMage4 = 212;
+const c_MissileClassID_Sparkle = 213;						const cMiCID_Sparkle = 213;
+const c_MissileClassID_MultipleShotArrow = 214;				const cMiCID_MultipleShotArrow = 214;
+const c_MissileClassID_MultipleShotBolt = 215;				const cMiCID_MultipleShotBolt = 215;
+const c_MissileClassID_ChargedStrikeBolt = 216;				const cMiCID_ChargedStrikeBolt = 216;
+const c_MissileClassID_BoneSpearExplode = 217;				const cMiCID_BoneSpearExplode = 217;
+const c_MissileClassID_PoisonExplosionCloud = 218;			const cMiCID_PoisonExplosionCloud = 218;
+const c_MissileClassID_BoneCast = 219;						const cMiCID_BoneCast = 219;
+const c_MissileClassID_BattleCry = 220;						const cMiCID_BattleCry = 220;
+const c_MissileClassID_PrimePoisonCloud = 221;				const cMiCID_PrimePoisonCloud = 221;
+const c_MissileClassID_PlagueJavCloud = 222;				const cMiCID_PlagueJavCloud = 222;
+const c_MissileClassID_RancidGasCloud = 223;				const cMiCID_RancidGasCloud = 223;
+const c_MissileClassID_ChokingGasCloud = 224;				const cMiCID_ChokingGasCloud = 224;
+const c_MissileClassID_StranglingGasCloud = 225;			const cMiCID_StranglingGasCloud = 225;
+const c_MissileClassID_BugLightning = 226;					const cMiCID_BugLightning = 226;
+const c_MissileClassID_PantherJav1 = 227;					const cMiCID_PantherJav1 = 227;
+const c_MissileClassID_PantherJav2 = 228;					const cMiCID_PantherJav2 = 228;
+const c_MissileClassID_PantherJav3 = 229;					const cMiCID_PantherJav3 = 229;
+const c_MissileClassID_PantherJav4 = 230;					const cMiCID_PantherJav4 = 230;
+const c_MissileClassID_ImmolationFire = 231;				const cMiCID_ImmolationFire = 231;
+const c_MissileClassID_FuryLightning = 232;					const cMiCID_FuryLightning = 232;
+const c_MissileClassID_LightningStrike = 233;				const cMiCID_LightningStrike = 233;
+const c_MissileClassID_FistoftheHeavensDelay = 234;			const cMiCID_FistoftheHeavensDelay = 234;
+const c_MissileClassID_FistoftheHeavensBolt = 235;			const cMiCID_FistoftheHeavensBolt = 235;
+const c_MissileClassID_Warcry = 236;						const cMiCID_Warcry = 236;
+const c_MissileClassID_BattleCommand = 237;					const cMiCID_BattleCommand = 237;
+const c_MissileClassID_BattleOrders = 238;					const cMiCID_BattleOrders = 238;
+const c_MissileClassID_PantherPotOrange = 239;				const cMiCID_PantherPotOrange = 239;
+const c_MissileClassID_PantherPotGreen = 240;				const cMiCID_PantherPotGreen = 240;
+const c_MissileClassID_MeteorFire = 241;					const cMiCID_MeteorFire = 241;
+const c_MissileClassID_TrapSpikeRight = 242;				const cMiCID_TrapSpikeRight = 242;
+const c_MissileClassID_TrapSpikeLeft = 243;					const cMiCID_TrapSpikeLeft = 243;
+const c_MissileClassID_TrapCursedSkullRight = 244;			const cMiCID_TrapCursedSkullRight = 244;
+const c_MissileClassID_TrapCursedSkullLeft = 245;			const cMiCID_TrapCursedSkullLeft = 245;
+const c_MissileClassID_TrapPoisonBallRight = 246;			const cMiCID_TrapPoisonBallRight = 246;
+const c_MissileClassID_TrapPoisonBallLeft = 247;			const cMiCID_TrapPoisonBallLeft = 247;
+const c_MissileClassID_Hydra = 248;							const cMiCID_Hydra = 248;
+const c_MissileClassID_BoneSpearTrail = 249;				const cMiCID_BoneSpearTrail = 249;
+const c_MissileClassID_GrimWardSmallStart = 250;			const cMiCID_GrimWardSmallStart = 250;
+const c_MissileClassID_GrimWardSmall = 251;					const cMiCID_GrimWardSmall = 251;
+const c_MissileClassID_GrimWardSmallStop = 252;				const cMiCID_GrimWardSmallStop = 252;
+const c_MissileClassID_GrimWardMediumStart = 253;			const cMiCID_GrimWardMediumStart = 253;
+const c_MissileClassID_GrimWardMedium = 254;				const cMiCID_GrimWardMedium = 254;
+const c_MissileClassID_GrimWardMediumStop = 255;			const cMiCID_GrimWardMediumStop = 255;
+const c_MissileClassID_GrimWardLargeStart = 256;			const cMiCID_GrimWardLargeStart = 256;
+const c_MissileClassID_GrimWardLarge = 257;					const cMiCID_GrimWardLarge = 257;
+const c_MissileClassID_GrimWardLargeStop = 258;				const cMiCID_GrimWardLargeStop = 258;
+const c_MissileClassID_ZakarumLight = 259;					const cMiCID_ZakarumLight = 259;
+const c_MissileClassID_GrimWardScare = 260;					const cMiCID_GrimWardScare = 260;
+const c_MissileClassID_FrozenOrb = 261;						const cMiCID_FrozenOrb = 261;
+const c_MissileClassID_FrozenOrbBolt = 262;					const cMiCID_FrozenOrbBolt = 262;
+const c_MissileClassID_FrozenOrbNova = 263;					const cMiCID_FrozenOrbNova = 263;
+const c_MissileClassID_FrozenOrbExplode = 264;				const cMiCID_FrozenOrbExplode = 264;
+const c_MissileClassID_ChillingArmorBolt = 265;				const cMiCID_ChillingArmorBolt = 265;
+const c_MissileClassID_FireExplosion2 = 266;				const cMiCID_FireExplosion2 = 266;
+const c_MissileClassID_BlowGun = 267;						const cMiCID_BlowGun = 267;
+const c_MissileClassID_ChainLightning2 = 268;				const cMiCID_ChainLightning2 = 268;
+const c_MissileClassID_ReviveSmall = 269;					const cMiCID_ReviveSmall = 269;
+const c_MissileClassID_ReviveMedium = 270;					const cMiCID_ReviveMedium = 270;
+const c_MissileClassID_ReviveLarge = 271;					const cMiCID_ReviveLarge = 271;
+const c_MissileClassID_MonGlacialSpike = 272;				const cMiCID_MonGlacialSpike = 272;
+const c_MissileClassID_IceBreakSmall = 273;					const cMiCID_IceBreakSmall = 273;
+const c_MissileClassID_IceBreakMedium = 274;				const cMiCID_IceBreakMedium = 274;
+const c_MissileClassID_IceBreakLarge = 275;					const cMiCID_IceBreakLarge = 275;
+const c_MissileClassID_IceBreakSmoke = 276;					const cMiCID_IceBreakSmoke = 276;
+const c_MissileClassID_Mephistomissile = 277;				const cMiCID_Mephistomissile = 277;
+const c_MissileClassID_Firehead = 278;						const cMiCID_Firehead = 278;
+const c_MissileClassID_Whilrwind = 279;						const cMiCID_Whilrwind = 279;
+const c_MissileClassID_ArcaneLightningBolt = 280;			const cMiCID_ArcaneLightningBolt = 280;
+const c_MissileClassID_FrogFire = 281;						const cMiCID_FrogFire = 281;
+const c_MissileClassID_FrogCold = 282;						const cMiCID_FrogCold = 282;
+const c_MissileClassID_FrogPois = 283;						const cMiCID_FrogPois = 283;
+const c_MissileClassID_DesertFireBall = 284;				const cMiCID_DesertFireBall = 284;
+const c_MissileClassID_BRDeathControl = 285;				const cMiCID_BRDeathControl = 285;
+const c_MissileClassID_BRDeathLightningBolt = 286;			const cMiCID_BRDeathLightningBolt = 286;
+const c_MissileClassID_BRDeathLightningHit = 287;			const cMiCID_BRDeathLightningHit = 287;
+const c_MissileClassID_DenOfEvilLight = 288;				const cMiCID_DenOfEvilLight = 288;
+const c_MissileClassID_CairnStones = 289;					const cMiCID_CairnStones = 289;
+const c_MissileClassID_CairnStonesSky = 290;				const cMiCID_CairnStonesSky = 290;
+const c_MissileClassID_CairnStonesGround = 291;				const cMiCID_CairnStonesGround = 291;
+const c_MissileClassID_TowerMist = 292;						const cMiCID_TowerMist = 292;
+const c_MissileClassID_TowerMistTrail = 293;				const cMiCID_TowerMistTrail = 293;
+const c_MissileClassID_BRDeathSmokeS1 = 294;				const cMiCID_BRDeathSmokeS1 = 294;
+const c_MissileClassID_BRDeathSmokeNU = 295;				const cMiCID_BRDeathSmokeNU = 295;
+const c_MissileClassID_BRDeathSmokeDT = 296;				const cMiCID_BRDeathSmokeDT = 296;
+const c_MissileClassID_BRDeathSpiritS1 = 297;				const cMiCID_BRDeathSpiritS1 = 297;
+const c_MissileClassID_BRDeathSpiritNU = 298;				const cMiCID_BRDeathSpiritNU = 298;
+const c_MissileClassID_BRDeathSpiritDT = 299;				const cMiCID_BRDeathSpiritDT = 299;
+const c_MissileClassID_MephistoDeathControl = 300;			const cMiCID_MephistoDeathControl = 300;
+const c_MissileClassID_MephistoFirewallMaker = 301;			const cMiCID_MephistoFirewallMaker = 301;
+const c_MissileClassID_MephistoFirewall = 302;				const cMiCID_MephistoFirewall = 302;
+const c_MissileClassID_MephistoFlyingRocksBig = 303;		const cMiCID_MephistoFlyingRocksBig = 303;
+const c_MissileClassID_MephistoExplosionBig = 304;			const cMiCID_MephistoExplosionBig = 304;
+const c_MissileClassID_MephistoFlyingRocksSmall = 305;		const cMiCID_MephistoFlyingRocksSmall = 305;
+const c_MissileClassID_MephistoExplosionSmall = 306;		const cMiCID_MephistoExplosionSmall = 306;
+const c_MissileClassID_MephistoDoNotDraw = 307;				const cMiCID_MephistoDoNotDraw = 307;
+const c_MissileClassID_AndyControl0 = 308;					const cMiCID_AndyControl0 = 308;
+const c_MissileClassID_AndyFirewallMaker = 309;				const cMiCID_AndyFirewallMaker = 309;
+const c_MissileClassID_AndyFirewall = 310;					const cMiCID_AndyFirewall = 310;
+const c_MissileClassID_AndyColumnFireBase = 311;			const cMiCID_AndyColumnFireBase = 311;
+const c_MissileClassID_AndyColumnFire = 312;				const cMiCID_AndyColumnFire = 312;
+const c_MissileClassID_AndyFallingDebris1 = 313;			const cMiCID_AndyFallingDebris1 = 313;
+const c_MissileClassID_AndyFallingDebris2 = 314;			const cMiCID_AndyFallingDebris2 = 314;
+const c_MissileClassID_AndyFallingDebris3 = 315;			const cMiCID_AndyFallingDebris3 = 315;
+const c_MissileClassID_AndyDebrisExplosion1 = 316;			const cMiCID_AndyDebrisExplosion1 = 316;
+const c_MissileClassID_AndyDebrisExplosion2 = 317;			const cMiCID_AndyDebrisExplosion2 = 317;
+const c_MissileClassID_AndyDebrisExplosion3 = 318;			const cMiCID_AndyDebrisExplosion3 = 318;
+const c_MissileClassID_AndyDebrisExplosion4 = 319;			const cMiCID_AndyDebrisExplosion4 = 319;
+const c_MissileClassID_AndyDebrisExplosion5 = 320;			const cMiCID_AndyDebrisExplosion5 = 320;
+const c_MissileClassID_WillowispLightningBolt = 321;		const cMiCID_WillowispLightningBolt = 321;
+const c_MissileClassID_QueenPoisonCloud = 322;				const cMiCID_QueenPoisonCloud = 322;
+const c_MissileClassID_DirtPile = 323;						const cMiCID_DirtPile = 323;
+const c_MissileClassID_UndeadMissile1 = 324;				const cMiCID_UndeadMissile1 = 324;
+const c_MissileClassID_UndeadMissile2 = 325;				const cMiCID_UndeadMissile2 = 325;
+const c_MissileClassID_UndeadMissile3 = 326;				const cMiCID_UndeadMissile3 = 326;
+const c_MissileClassID_UndeadMissile4 = 327;				const cMiCID_UndeadMissile4 = 327;
+const c_MissileClassID_BoneSpiritExplode = 328;				const cMiCID_BoneSpiritExplode = 328;
+const c_MissileClassID_DopplezonExplode = 329;				const cMiCID_DopplezonExplode = 329;
+const c_MissileClassID_MonBoneSpirit = 330;					const cMiCID_MonBoneSpirit = 330;
+const c_MissileClassID_TowerMistFade = 331;					const cMiCID_TowerMistFade = 331;
+const c_MissileClassID_CountessFirewall = 332;				const cMiCID_CountessFirewall = 332;
+const c_MissileClassID_TowerChestSpawner = 333;				const cMiCID_TowerChestSpawner = 333;
+const c_MissileClassID_HellMeteorLaunch1 = 334;				const cMiCID_HellMeteorLaunch1 = 334;
+const c_MissileClassID_HellMeteorLaunch2 = 335;				const cMiCID_HellMeteorLaunch2 = 335;
+const c_MissileClassID_HellMeteorUp = 336;					const cMiCID_HellMeteorUp = 336;
+const c_MissileClassID_HellMeteorDown = 337;				const cMiCID_HellMeteorDown = 337;
+const c_MissileClassID_HellMeteorBall = 338;				const cMiCID_HellMeteorBall = 338;
+const c_MissileClassID_HoradricStaffmissile = 339;			const cMiCID_HoradricStaffmissile = 339;
+const c_MissileClassID_HoradricLightning = 340;				const cMiCID_HoradricLightning = 340;
+const c_MissileClassID_HoradricLight = 341;					const cMiCID_HoradricLight = 341;
+const c_MissileClassID_RegurgitatorCorpse = 342;			const cMiCID_RegurgitatorCorpse = 342;
+const c_MissileClassID_RegurgitatorCorpseExplode = 343;		const cMiCID_RegurgitatorCorpseExplode = 343;
+const c_MissileClassID_HighPriestLightning1 = 344;			const cMiCID_HighPriestLightning1 = 344;
+const c_MissileClassID_IceBreakSmallMelt = 345;				const cMiCID_IceBreakSmallMelt = 345;
+const c_MissileClassID_IceBreakLargeMelt = 346;				const cMiCID_IceBreakLargeMelt = 346;
+const c_MissileClassID_LeapKnockBack = 347;					const cMiCID_LeapKnockBack = 347;
+const c_MissileClassID_RadamentDeath = 348;					const cMiCID_RadamentDeath = 348;
+const c_MissileClassID_RadamentHandOfGod = 349;				const cMiCID_RadamentHandOfGod = 349;
+const c_MissileClassID_RadamentHolyBolt = 350;				const cMiCID_RadamentHolyBolt = 350;
+const c_MissileClassID_TaintedSunControl = 351;				const cMiCID_TaintedSunControl = 351;
+const c_MissileClassID_TaintedSunFlash = 352;				const cMiCID_TaintedSunFlash = 352;
+const c_MissileClassID_TaintedSunBall = 353;				const cMiCID_TaintedSunBall = 353;
+const c_MissileClassID_QueenDeathCenter = 354;				const cMiCID_QueenDeathCenter = 354;
+const c_MissileClassID_QueenDeathGlob = 355;				const cMiCID_QueenDeathGlob = 355;
+const c_MissileClassID_QueenDeathSplat1 = 356;				const cMiCID_QueenDeathSplat1 = 356;
+const c_MissileClassID_QueenDeathSplat2 = 357;				const cMiCID_QueenDeathSplat2 = 357;
+const c_MissileClassID_HealingBolt = 358;					const cMiCID_HealingBolt = 358;
+const c_MissileClassID_MephistoHoleDelay = 359;				const cMiCID_MephistoHoleDelay = 359;
+const c_MissileClassID_MephistoHoleBirth = 360;				const cMiCID_MephistoHoleBirth = 360;
+const c_MissileClassID_MephistoHoleNeutral = 361;			const cMiCID_MephistoHoleNeutral = 361;
+const c_MissileClassID_MephistoHoleDeath = 362;				const cMiCID_MephistoHoleDeath = 362;
+const c_MissileClassID_MephistoHoleDead = 363;				const cMiCID_MephistoHoleDead = 363;
+const c_MissileClassID_DurielDeathControl = 364;			const cMiCID_DurielDeathControl = 364;
+const c_MissileClassID_DurielDeathRock = 365;				const cMiCID_DurielDeathRock = 365;
+const c_MissileClassID_DurielDeathDebris = 366;				const cMiCID_DurielDeathDebris = 366;
+const c_MissileClassID_DurielDeathSmoke = 367;				const cMiCID_DurielDeathSmoke = 367;
+const c_MissileClassID_MephistoExplosion = 368;				const cMiCID_MephistoExplosion = 368;
+const c_MissileClassID_OrbMist = 369;						const cMiCID_OrbMist = 369;
+const c_MissileClassID_OrbMistTrail = 370;					const cMiCID_OrbMistTrail = 370;
+const c_MissileClassID_OrbMistFade = 371;					const cMiCID_OrbMistFade = 371;
+const c_MissileClassID_Pilummissile = 372;					const cMiCID_Pilummissile = 372;
+const c_MissileClassID_DiabloAppears = 373;					const cMiCID_DiabloAppears = 373;
+const c_MissileClassID_HFControl = 374;						const cMiCID_HFControl = 374;
+const c_MissileClassID_HFFragment1 = 375;					const cMiCID_HFFragment1 = 375;
+const c_MissileClassID_HFFragment2 = 376;					const cMiCID_HFFragment2 = 376;
+const c_MissileClassID_HFFragment3 = 377;					const cMiCID_HFFragment3 = 377;
+const c_MissileClassID_HFSpirit1 = 378;						const cMiCID_HFSpirit1 = 378;
+const c_MissileClassID_HFReserved3 = 379;					const cMiCID_HFReserved3 = 379;
+const c_MissileClassID_IzualControl = 380;					const cMiCID_IzualControl = 380;
+const c_MissileClassID_IzualMistLoop = 381;					const cMiCID_IzualMistLoop = 381;
+const c_MissileClassID_IzualMistFade = 382;					const cMiCID_IzualMistFade = 382;
+const c_MissileClassID_IzualLightning = 383;				const cMiCID_IzualLightning = 383;
+const c_MissileClassID_IzualLightningTrail = 384;			const cMiCID_IzualLightningTrail = 384;
+const c_MissileClassID_CairnStonesBolt = 385;				const cMiCID_CairnStonesBolt = 385;
+const c_MissileClassID_BombinAir = 386;						const cMiCID_BombinAir = 386;
+const c_MissileClassID_BombonGround = 387;					const cMiCID_BombonGround = 387;
+const c_MissileClassID_BombExplosion = 388;					const cMiCID_BombExplosion = 388;
+const c_MissileClassID_ShockFieldInAir = 389;				const cMiCID_ShockFieldInAir = 389;
+const c_MissileClassID_ShockFieldOnGround = 390;			const cMiCID_ShockFieldOnGround = 390;
+const c_MissileClassID_ThrowingStar = 391;					const cMiCID_ThrowingStar = 391;
+const c_MissileClassID_AcidSpray = 392;						const cMiCID_AcidSpray = 392;
+const c_MissileClassID_BladeCreeper = 393;					const cMiCID_BladeCreeper = 393;
+const c_MissileClassID_Distraction = 394;					const cMiCID_Distraction = 394;
+const c_MissileClassID_DistractionFog = 395;				const cMiCID_DistractionFog = 395;
+const c_MissileClassID_DistractionPuff = 396;				const cMiCID_DistractionPuff = 396;
+const c_MissileClassID_DistractionStart = 397;				const cMiCID_DistractionStart = 397;
+const c_MissileClassID_DistractionEnd = 398;				const cMiCID_DistractionEnd = 398;
+const c_MissileClassID_ImpInfernoFlame1 = 399;				const cMiCID_ImpInfernoFlame1 = 399;
+const c_MissileClassID_ImpInfernoFlame2 = 400;				const cMiCID_ImpInfernoFlame2 = 400;
+const c_MissileClassID_BaalLightningBolt1 = 401;			const cMiCID_BaalLightningBolt1 = 401;
+const c_MissileClassID_BaalLightningTrail1 = 402;			const cMiCID_BaalLightningTrail1 = 402;
+const c_MissileClassID_BaalLightningBolt2 = 403;			const cMiCID_BaalLightningBolt2 = 403;
+const c_MissileClassID_BaalLightningTrail2 = 404;			const cMiCID_BaalLightningTrail2 = 404;
+const c_MissileClassID_ImpFireball = 405;					const cMiCID_ImpFireball = 405;
+const c_MissileClassID_ImpFireballExplode = 406;			const cMiCID_ImpFireballExplode = 406;
+const c_MissileClassID_CatapultChargedBallOnCatapult = 407;	const cMiCID_CatapultChargedBallOnCatapult = 407;
+const c_MissileClassID_CatapultChargedBall = 408;			const cMiCID_CatapultChargedBall = 408;
+const c_MissileClassID_CatapultChargedBallBolt = 409;		const cMiCID_CatapultChargedBallBolt = 409;
+const c_MissileClassID_ImpSpawnMonsters = 410;				const cMiCID_ImpSpawnMonsters = 410;
+const c_MissileClassID_CatapultSpikeBallOnCatapult = 411;	const cMiCID_CatapultSpikeBallOnCatapult = 411;
+const c_MissileClassID_CatapultSpikeBall = 412;				const cMiCID_CatapultSpikeBall = 412;
+const c_MissileClassID_CatapultSpikeInAir = 413;			const cMiCID_CatapultSpikeInAir = 413;
+const c_MissileClassID_CatapultSpikeOnGround = 414;			const cMiCID_CatapultSpikeOnGround = 414;
+const c_MissileClassID_CatapultSpikeExplosion = 415;		const cMiCID_CatapultSpikeExplosion = 415;
+const c_MissileClassID_CatapultColdBallOnCatapult = 416;	const cMiCID_CatapultColdBallOnCatapult = 416;
+const c_MissileClassID_CatapultColdBall = 417;				const cMiCID_CatapultColdBall = 417;
+const c_MissileClassID_CatapultColdExplosion = 418;			const cMiCID_CatapultColdExplosion = 418;
+const c_MissileClassID_CatapultPlagueBallOnCatapult = 419;	const cMiCID_CatapultPlagueBallOnCatapult = 419;
+const c_MissileClassID_CatapultPlagueBall = 420;			const cMiCID_CatapultPlagueBall = 420;
+const c_MissileClassID_CatapultPlagueCloud = 421;			const cMiCID_CatapultPlagueCloud = 421;
+const c_MissileClassID_CatapultMeteorBallOnCatapult = 422;	const cMiCID_CatapultMeteorBallOnCatapult = 422;
+const c_MissileClassID_CatapultMeteorBall = 423;			const cMiCID_CatapultMeteorBall = 423;
+const c_MissileClassID_CatapultMeteorFire = 424;			const cMiCID_CatapultMeteorFire = 424;
+const c_MissileClassID_TowerDeath = 425;					const cMiCID_TowerDeath = 425;
+const c_MissileClassID_HealingVortex = 426;					const cMiCID_HealingVortex = 426;
+const c_MissileClassID_SuicideCorpseExplode = 427;			const cMiCID_SuicideCorpseExplode = 427;
+const c_MissileClassID_SuicideFireExplode = 428;			const cMiCID_SuicideFireExplode = 428;
+const c_MissileClassID_SuicideIceExplode = 429;				const cMiCID_SuicideIceExplode = 429;
+const c_MissileClassID_ExplodingJavalin = 430;				const cMiCID_ExplodingJavalin = 430;
+const c_MissileClassID_ExplodingJavalinExplosion = 431;		const cMiCID_ExplodingJavalinExplosion = 431;
+const c_MissileClassID_LightingTrailingJavalin = 432;		const cMiCID_LightingTrailingJavalin = 432;
+const c_MissileClassID_LightJavalinTrail = 433;				const cMiCID_LightJavalinTrail = 433;
+const c_MissileClassID_LightJavalinExplosion = 434;			const cMiCID_LightJavalinExplosion = 434;
+const c_MissileClassID_IceJavalin = 435;					const cMiCID_IceJavalin = 435;
+const c_MissileClassID_IceJavalinExplode = 436;				const cMiCID_IceJavalinExplode = 436;
+const c_MissileClassID_PlagueJavelin2 = 437;				const cMiCID_PlagueJavelin2 = 437;
+const c_MissileClassID_PlagueJavlinExplode = 438;			const cMiCID_PlagueJavlinExplode = 438;
+const c_MissileClassID_AdvLightTrailingJav1 = 439;			const cMiCID_AdvLightTrailingJav1 = 439;
+const c_MissileClassID_AdvLightTrailingJav2 = 440;			const cMiCID_AdvLightTrailingJav2 = 440;
+const c_MissileClassID_AdvLightJavExplode = 441;			const cMiCID_AdvLightJavExplode = 441;
+const c_MissileClassID_SucFireBall = 442;					const cMiCID_SucFireBall = 442;
+const c_MissileClassID_SucFireBallExplode = 443;			const cMiCID_SucFireBallExplode = 443;
+const c_MissileClassID_SucFireBallTrail = 444;				const cMiCID_SucFireBallTrail = 444;
+const c_MissileClassID_SucShockFieldMissile = 445;			const cMiCID_SucShockFieldMissile = 445;
+const c_MissileClassID_SucShockFieldMissileExp = 446;		const cMiCID_SucShockFieldMissileExp = 446;
+const c_MissileClassID_SucShockField = 447;					const cMiCID_SucShockField = 447;
+const c_MissileClassID_HellFireMissile = 448;				const cMiCID_HellFireMissile = 448;
+const c_MissileClassID_HellFireExA = 449;					const cMiCID_HellFireExA = 449;
+const c_MissileClassID_HellFireExB = 450;					const cMiCID_HellFireExB = 450;
+const c_MissileClassID_ImpChargedBolt = 451;				const cMiCID_ImpChargedBolt = 451;
+const c_MissileClassID_ImpTeleport = 452;					const cMiCID_ImpTeleport = 452;
+const c_MissileClassID_Moltenboulder = 453;					const cMiCID_Moltenboulder = 453;
+const c_MissileClassID_MoltenBoulderEmerge = 454;			const cMiCID_MoltenBoulderEmerge = 454;
+const c_MissileClassID_MoltenBoulderExplode = 455;			const cMiCID_MoltenBoulderExplode = 455;
+const c_MissileClassID_MoltenBoulderFirePath = 456;			const cMiCID_MoltenBoulderFirePath = 456;
+const c_MissileClassID_MoltenBoulderFlyingRocks = 457;		const cMiCID_MoltenBoulderFlyingRocks = 457;
+const c_MissileClassID_FireStorm = 458;						const cMiCID_FireStorm = 458;
+const c_MissileClassID_FireStormMaker = 459;				const cMiCID_FireStormMaker = 459;
+const c_MissileClassID_ArcticBlast1 = 460;					const cMiCID_ArcticBlast1 = 460;
+const c_MissileClassID_ArcticBlast2 = 461;					const cMiCID_ArcticBlast2 = 461;
+const c_MissileClassID_ErruptionCenter = 462;				const cMiCID_ErruptionCenter = 462;
+const c_MissileClassID_ErruptionCrack1 = 463;				const cMiCID_ErruptionCrack1 = 463;
+const c_MissileClassID_ErruptionCrack2 = 464;				const cMiCID_ErruptionCrack2 = 464;
+const c_MissileClassID_ErruptionSmoke1 = 465;				const cMiCID_ErruptionSmoke1 = 465;
+const c_MissileClassID_ErruptionSmoke2 = 466;				const cMiCID_ErruptionSmoke2 = 466;
+const c_MissileClassID_VineBeastWalk1 = 467;				const cMiCID_VineBeastWalk1 = 467;
+const c_MissileClassID_VineBeastWalk2 = 468;				const cMiCID_VineBeastWalk2 = 468;
+const c_MissileClassID_VineBeastNeutral = 469;				const cMiCID_VineBeastNeutral = 469;
+const c_MissileClassID_VineBeastAttack = 470;				const cMiCID_VineBeastAttack = 470;
+const c_MissileClassID_VineBeastDeath = 471;				const cMiCID_VineBeastDeath = 471;
+const c_MissileClassID_Vines = 472;							const cMiCID_Vines = 472;
+const c_MissileClassID_VinesTrail = 473;					const cMiCID_VinesTrail = 473;
+const c_MissileClassID_VinesWither = 474;					const cMiCID_VinesWither = 474;
+const c_MissileClassID_PlagueVines = 475;					const cMiCID_PlagueVines = 475;
+const c_MissileClassID_PlagueVinesTrail = 476;				const cMiCID_PlagueVinesTrail = 476;
+const c_MissileClassID_PlagueVinesWither = 477;				const cMiCID_PlagueVinesWither = 477;
+const c_MissileClassID_Twister = 478;						const cMiCID_Twister = 478;
+const c_MissileClassID_Tornado = 479;						const cMiCID_Tornado = 479;
+const c_MissileClassID_Volcano = 480;						const cMiCID_Volcano = 480;
+const c_MissileClassID_VolcanoOverlayFire = 481;			const cMiCID_VolcanoOverlayFire = 481;
+const c_MissileClassID_VolcanoDebris2 = 482;				const cMiCID_VolcanoDebris2 = 482;
+const c_MissileClassID_VolcanoExplosion = 483;				const cMiCID_VolcanoExplosion = 483;
+const c_MissileClassID_VolcanoSmallFire = 484;				const cMiCID_VolcanoSmallFire = 484;
+const c_MissileClassID_DragonBreathMissile = 485;			const cMiCID_DragonBreathMissile = 485;
+const c_MissileClassID_LureProjectile = 486;				const cMiCID_LureProjectile = 486;
+const c_MissileClassID_LureCenter = 487;					const cMiCID_LureCenter = 487;
+const c_MissileClassID_LureCloud = 488;						const cMiCID_LureCloud = 488;
+const c_MissileClassID_ImpMiss1 = 489;						const cMiCID_ImpMiss1 = 489;
+const c_MissileClassID_ImpMiss2 = 490;						const cMiCID_ImpMiss2 = 490;
+const c_MissileClassID_ImpMiss3 = 491;						const cMiCID_ImpMiss3 = 491;
+const c_MissileClassID_ImpMiss4 = 492;						const cMiCID_ImpMiss4 = 492;
+const c_MissileClassID_ImpMiss5 = 493;						const cMiCID_ImpMiss5 = 493;
+const c_MissileClassID_FrozenHorrorArcticBlast1 = 494;		const cMiCID_FrozenHorrorArcticBlast1 = 494;
+const c_MissileClassID_FrozenHorrorArcticBlast2 = 495;		const cMiCID_FrozenHorrorArcticBlast2 = 495;
+const c_MissileClassID_SentryChargedBolt = 496;				const cMiCID_SentryChargedBolt = 496;
+const c_MissileClassID_SentrySpikeInAir = 497;				const cMiCID_SentrySpikeInAir = 497;
+const c_MissileClassID_SentrySpikeOnGround = 498;			const cMiCID_SentrySpikeOnGround = 498;
+const c_MissileClassID_RecyclerDelay = 499;					const cMiCID_RecyclerDelay = 499;
+const c_MissileClassID_RecyclerVine = 500;					const cMiCID_RecyclerVine = 500;
+const c_MissileClassID_RecyclerFade = 501;					const cMiCID_RecyclerFade = 501;
+const c_MissileClassID_RecyclerExplosion = 502;				const cMiCID_RecyclerExplosion = 502;
+const c_MissileClassID_DeathMaulermissile = 503;			const cMiCID_DeathMaulermissile = 503;
+const c_MissileClassID_DeathMaulerTrail = 504;				const cMiCID_DeathMaulerTrail = 504;
+const c_MissileClassID_DeathMaulerTrailFade = 505;			const cMiCID_DeathMaulerTrailFade = 505;
+const c_MissileClassID_BladeFury1 = 506;					const cMiCID_BladeFury1 = 506;
+const c_MissileClassID_BladeFragment1 = 507;				const cMiCID_BladeFragment1 = 507;
+const c_MissileClassID_BladeFury2 = 508;					const cMiCID_BladeFury2 = 508;
+const c_MissileClassID_BladeFragment2 = 509;				const cMiCID_BladeFragment2 = 509;
+const c_MissileClassID_BladeFury3 = 510;					const cMiCID_BladeFury3 = 510;
+const c_MissileClassID_BladeFragment3 = 511;				const cMiCID_BladeFragment3 = 511;
+const c_MissileClassID_ShockWave = 512;						const cMiCID_ShockWave = 512;
+const c_MissileClassID_LightningTalons = 513;				const cMiCID_LightningTalons = 513;
+const c_MissileClassID_LightningTalonsTrail = 514;			const cMiCID_LightningTalonsTrail = 514;
+const c_MissileClassID_PhoenixTrail = 515;					const cMiCID_PhoenixTrail = 515;
+const c_MissileClassID_RabiesPlague = 516;					const cMiCID_RabiesPlague = 516;
+const c_MissileClassID_RabiesContagion = 517;				const cMiCID_RabiesContagion = 517;
+const c_MissileClassID_WakeofDestructionmaker = 518;		const cMiCID_WakeofDestructionmaker = 518;
+const c_MissileClassID_WakeofDestruction = 519;				const cMiCID_WakeofDestruction = 519;
+const c_MissileClassID_DeathSentryExplode = 520;			const cMiCID_DeathSentryExplode = 520;
+const c_MissileClassID_TigerFury = 521;						const cMiCID_TigerFury = 521;
+const c_MissileClassID_TigerFuryTrail1 = 522;				const cMiCID_TigerFuryTrail1 = 522;
+const c_MissileClassID_TigerFuryTrail2 = 523;				const cMiCID_TigerFuryTrail2 = 523;
+const c_MissileClassID_InfernoSentry1 = 524;				const cMiCID_InfernoSentry1 = 524;
+const c_MissileClassID_InfernoSentry2 = 525;				const cMiCID_InfernoSentry2 = 525;
+const c_MissileClassID_Ancientthrowingaxe = 526;			const cMiCID_Ancientthrowingaxe = 526;
+const c_MissileClassID_SentryLightningBolt1 = 527;			const cMiCID_SentryLightningBolt1 = 527;
+const c_MissileClassID_SentryLightningHit1 = 528;			const cMiCID_SentryLightningHit1 = 528;
+const c_MissileClassID_AnyaCenter = 529;					const cMiCID_AnyaCenter = 529;
+const c_MissileClassID_AnyaIcicle = 530;					const cMiCID_AnyaIcicle = 530;
+const c_MissileClassID_AnyaIceImpact = 531;					const cMiCID_AnyaIceImpact = 531;
+const c_MissileClassID_AnyaIceSteam = 532;					const cMiCID_AnyaIceSteam = 532;
+const c_MissileClassID_AnyaIceMagic = 533;					const cMiCID_AnyaIceMagic = 533;
+const c_MissileClassID_DragonTailMissile = 534;				const cMiCID_DragonTailMissile = 534;
+const c_MissileClassID_DragonFlight = 535;					const cMiCID_DragonFlight = 535;
+const c_MissileClassID_DragonFlightMaker = 536;				const cMiCID_DragonFlightMaker = 536;
+const c_MissileClassID_ProgressiveRadiusDamage = 537;		const cMiCID_ProgressiveRadiusDamage = 537;
+const c_MissileClassID_VineBeastWalk1Fade = 538;			const cMiCID_VineBeastWalk1Fade = 538;
+const c_MissileClassID_VineBeastWalk2Fade = 539;			const cMiCID_VineBeastWalk2Fade = 539;
+const c_MissileClassID_VineBeastNeutralFade = 540;			const cMiCID_VineBeastNeutralFade = 540;
+const c_MissileClassID_VineRecyclerDelay = 541;				const cMiCID_VineRecyclerDelay = 541;
+const c_MissileClassID_AncientDeathCenter = 542;			const cMiCID_AncientDeathCenter = 542;
+const c_MissileClassID_AncientDeathCloud = 543;				const cMiCID_AncientDeathCloud = 543;
+const c_MissileClassID_lightningchargeupnova = 544;			const cMiCID_lightningchargeupnova = 544;
+const c_MissileClassID_ChainLightningChargeup = 545;		const cMiCID_ChainLightningChargeup = 545;
+const c_MissileClassID_PainWormAppear = 546;				const cMiCID_PainWormAppear = 546;
+const c_MissileClassID_BaalTauntControl = 547;				const cMiCID_BaalTauntControl = 547;
+const c_MissileClassID_BaalTauntLightning = 548;			const cMiCID_BaalTauntLightning = 548;
+const c_MissileClassID_BaalTauntLightningTrail = 549;		const cMiCID_BaalTauntLightningTrail = 549;
+const c_MissileClassID_BaalTauntPoison = 550;				const cMiCID_BaalTauntPoison = 550;
+const c_MissileClassID_BaalSpawnMonsters = 551;				const cMiCID_BaalSpawnMonsters = 551;
+const c_MissileClassID_MindblastHit = 552;					const cMiCID_MindblastHit = 552;
+const c_MissileClassID_BladeShieldMissile = 553;			const cMiCID_BladeShieldMissile = 553;
+const c_MissileClassID_BladeShieldAttachment = 554;			const cMiCID_BladeShieldAttachment = 554;
+const c_MissileClassID_BaalInferno = 555;					const cMiCID_BaalInferno = 555;
+const c_MissileClassID_BaalNova = 556;						const cMiCID_BaalNova = 556;
+const c_MissileClassID_FistsOfFireExplode = 557;			const cMiCID_FistsOfFireExplode = 557;
+const c_MissileClassID_FistsOfFireFirewall = 558;			const cMiCID_FistsOfFireFirewall = 558;
+const c_MissileClassID_ClawsOfThunderBolt = 559;			const cMiCID_ClawsOfThunderBolt = 559;
+const c_MissileClassID_ClawsOfThunderNova = 560;			const cMiCID_ClawsOfThunderNova = 560;
+const c_MissileClassID_BladesOfIceExplode = 561;			const cMiCID_BladesOfIceExplode = 561;
+const c_MissileClassID_BladesOfIceCubes = 562;				const cMiCID_BladesOfIceCubes = 562;
+const c_MissileClassID_BladesOfIceCubesMelt = 563;			const cMiCID_BladesOfIceCubesMelt = 563;
+const c_MissileClassID_RoyalStrikeMeteor = 564;				const cMiCID_RoyalStrikeMeteor = 564;
+const c_MissileClassID_RoyalStrikeMeteorCenter = 565;		const cMiCID_RoyalStrikeMeteorCenter = 565;
+const c_MissileClassID_RoyalStrikeMeteorTail = 566;			const cMiCID_RoyalStrikeMeteorTail = 566;
+const c_MissileClassID_RoyalStrikeMeteorExplode = 567;		const cMiCID_RoyalStrikeMeteorExplode = 567;
+const c_MissileClassID_RoyalStrikeMeteorFire = 568;			const cMiCID_RoyalStrikeMeteorFire = 568;
+const c_MissileClassID_RoyalStrikeChainLightning = 569;		const cMiCID_RoyalStrikeChainLightning = 569;
+const c_MissileClassID_RoyalStrikeChaosIce = 570;			const cMiCID_RoyalStrikeChaosIce = 570;
+const c_MissileClassID_WorldStoneChip1 = 571;				const cMiCID_WorldStoneChip1 = 571;
+const c_MissileClassID_WorldStoneChip2 = 572;				const cMiCID_WorldStoneChip2 = 572;
+const c_MissileClassID_WorldStoneChip3 = 573;				const cMiCID_WorldStoneChip3 = 573;
+const c_MissileClassID_WorldStoneChip4 = 574;				const cMiCID_WorldStoneChip4 = 574;
+const c_MissileClassID_HighPriestLightning2 = 575;			const cMiCID_HighPriestLightning2 = 575;
+const c_MissileClassID_InfernoFlame3 = 576;					const cMiCID_InfernoFlame3 = 576;
+const c_MissileClassID_MindblastCenter = 577;				const cMiCID_MindblastCenter = 577;
+const c_MissileClassID_ArmageddonControl = 578;				const cMiCID_ArmageddonControl = 578;
+const c_MissileClassID_ArmageddonRock = 579;				const cMiCID_ArmageddonRock = 579;
+const c_MissileClassID_ArmageddonTail = 580;				const cMiCID_ArmageddonTail = 580;
+const c_MissileClassID_ArmageddonExplosion = 581;			const cMiCID_ArmageddonExplosion = 581;
+const c_MissileClassID_HurricaneSwoosh = 582;				const cMiCID_HurricaneSwoosh = 582;
+const c_MissileClassID_HurricaneCart = 583;					const cMiCID_HurricaneCart = 583;
+const c_MissileClassID_HurricaneRock = 584;					const cMiCID_HurricaneRock = 584;
+const c_MissileClassID_HurricaneSack = 585;					const cMiCID_HurricaneSack = 585;
+const c_MissileClassID_HurricaneTree = 586;					const cMiCID_HurricaneTree = 586;
+const c_MissileClassID_HurricaneVase = 587;					const cMiCID_HurricaneVase = 587;
+const c_MissileClassID_BaalCorpseExplodeDelay = 588;		const cMiCID_BaalCorpseExplodeDelay = 588;
+const c_MissileClassID_BaalCorpseExplodeExplosion = 589;	const cMiCID_BaalCorpseExplodeExplosion = 589;
+const c_MissileClassID_BaalColdMaker = 590;					const cMiCID_BaalColdMaker = 590;
+const c_MissileClassID_BaalColdTrail = 591;					const cMiCID_BaalColdTrail = 591;
+const c_MissileClassID_BaalSpawnMonstersExplode = 592;		const cMiCID_BaalSpawnMonstersExplode = 592;
+const c_MissileClassID_ImpMiss21 = 593;						const cMiCID_ImpMiss21 = 593;
+const c_MissileClassID_ImpMiss22 = 594;						const cMiCID_ImpMiss22 = 594;
+const c_MissileClassID_ImpMiss23 = 595;						const cMiCID_ImpMiss23 = 595;
+const c_MissileClassID_ImpMiss24 = 596;						const cMiCID_ImpMiss24 = 596;
+const c_MissileClassID_ImpMiss25 = 597;						const cMiCID_ImpMiss25 = 597;
+const c_MissileClassID_AnyaSteam1 = 598;					const cMiCID_AnyaSteam1 = 598;
+const c_MissileClassID_AnyaSteam2 = 599;					const cMiCID_AnyaSteam2 = 599;
+const c_MissileClassID_AncientsGuide = 600;					const cMiCID_AncientsGuide = 600;
+const c_MissileClassID_AncientsMarker = 601;				const cMiCID_AncientsMarker = 601;
+const c_MissileClassID_AncientsControl = 602;				const cMiCID_AncientsControl = 602;
+const c_MissileClassID_OverseerControl = 603;				const cMiCID_OverseerControl = 603;
+const c_MissileClassID_Nihlithak1 = 604;					const cMiCID_Nihlithak1 = 604;
+const c_MissileClassID_Nihlithak2 = 605;					const cMiCID_Nihlithak2 = 605;
+const c_MissileClassID_Nihlithak3 = 606;					const cMiCID_Nihlithak3 = 606;
+const c_MissileClassID_NehlithakControl = 607;				const cMiCID_NehlithakControl = 607;
+const c_MissileClassID_NehlithakSwoosh = 608;				const cMiCID_NehlithakSwoosh = 608;
+const c_MissileClassID_NehlithakDebris1 = 609;				const cMiCID_NehlithakDebris1 = 609;
+const c_MissileClassID_NehlithakDebris2 = 610;				const cMiCID_NehlithakDebris2 = 610;
+const c_MissileClassID_NehlithakDebris3 = 611;				const cMiCID_NehlithakDebris3 = 611;
+const c_MissileClassID_NehlithakDebris4 = 612;				const cMiCID_NehlithakDebris4 = 612;
+const c_MissileClassID_NehlithakGlow = 613;					const cMiCID_NehlithakGlow = 613;
+const c_MissileClassID_BaalTeleport = 614;					const cMiCID_BaalTeleport = 614;
+const c_MissileClassID_BaalCloneDeath = 615;				const cMiCID_BaalCloneDeath = 615;
+const c_MissileClassID_AnyaSteamVent = 616;					const cMiCID_AnyaSteamVent = 616;
+const c_MissileClassID_AnyaSteam = 617;						const cMiCID_AnyaSteam = 617;
+const c_MissileClassID_NehlithakHole = 618;					const cMiCID_NehlithakHole = 618;
+const c_MissileClassID_NehlithakHoleLight = 619;			const cMiCID_NehlithakHoleLight = 619;
+const c_MissileClassID_VolcanoFireTrail = 620;				const cMiCID_VolcanoFireTrail = 620;
+const c_MissileClassID_NehlithakGlow2 = 621;				const cMiCID_NehlithakGlow2 = 621;
+const c_MissileClassID_NehlithakBoneChips = 622;			const cMiCID_NehlithakBoneChips = 622;
+const c_MissileClassID_BaalCorpseExplodeFade = 623;			const cMiCID_BaalCorpseExplodeFade = 623;
+const c_MissileClassID_ArmageddonFire = 624;				const cMiCID_ArmageddonFire = 624;
+const c_MissileClassID_IceSparkle = 625;					const cMiCID_IceSparkle = 625;
+const c_MissileClassID_BaalFXControl = 626;					const cMiCID_BaalFXControl = 626;
+const c_MissileClassID_BaalFXSpirit1 = 627;					const cMiCID_BaalFXSpirit1 = 627;
+const c_MissileClassID_BaalFXSpirit2 = 628;					const cMiCID_BaalFXSpirit2 = 628;
+const c_MissileClassID_BaalFXSpirit3 = 629;					const cMiCID_BaalFXSpirit3 = 629;
+const c_MissileClassID_BaalFXSpirit4 = 630;					const cMiCID_BaalFXSpirit4 = 630;
+const c_MissileClassID_BaalFXSpirit5 = 631;					const cMiCID_BaalFXSpirit5 = 631;
+const c_MissileClassID_BaalFXBaalHeadAppear = 632;			const cMiCID_BaalFXBaalHeadAppear = 632;
+const c_MissileClassID_BaalFXBaalHead1 = 633;				const cMiCID_BaalFXBaalHead1 = 633;
+const c_MissileClassID_BaalFXBaalHead2 = 634;				const cMiCID_BaalFXBaalHead2 = 634;
+const c_MissileClassID_BaalFXBaalHead3 = 635;				const cMiCID_BaalFXBaalHead3 = 635;
+const c_MissileClassID_BaalFXTyrealDebris1 = 636;			const cMiCID_BaalFXTyrealDebris1 = 636;
+const c_MissileClassID_BaalFXTyrealDebris2 = 637;			const cMiCID_BaalFXTyrealDebris2 = 637;
+const c_MissileClassID_BaalFXTyrealDebris3 = 638;			const cMiCID_BaalFXTyrealDebris3 = 638;
+const c_MissileClassID_BaalFXTyrealDebrisBreak = 639;		const cMiCID_BaalFXTyrealDebrisBreak = 639;
+const c_MissileClassID_Worldstoneshake = 640;				const cMiCID_Worldstoneshake = 640;
+const c_MissileClassID_BlessedHammer2 = 641;				const cMiCID_BlessedHammer2 = 641;
+const c_MissileClassID_SentryLightningBolt2 = 642;			const cMiCID_SentryLightningBolt2 = 642;
+const c_MissileClassID_SentryLightningHit2 = 643;			const cMiCID_SentryLightningHit2 = 643;
+const c_MissileClassID_LightningTowerNova = 644;			const cMiCID_LightningTowerNova = 644;
+
+
+
+// screen.color
+
+const c_ScreenColor_White = 0;								const cSC_White = 0;
+const c_ScreenColor_Red = 1;								const cSC_Red = 1;
+const c_ScreenColor_Green1 = 2;								const cSC_Green1 = 2;
+const c_ScreenColor_Green = 2;								const cSC_Green = 2;
+const c_ScreenColor_Blue = 3;								const cSC_Blue = 3;
+const c_ScreenColor_Brown = 4;								const cSC_Brown = 4;
+const c_ScreenColor_Grey = 5;								const cSC_Grey = 5;
+const c_ScreenColor_Gray = 5;								const cSC_Gray = 5;
+const c_ScreenColor_Black = 6;								const cSC_Black = 6;
+const c_ScreenColor_Gold = 7;								const cSC_Gold = 7;
+const c_ScreenColor_Orange = 8;								const cSC_Orange = 8;
+const c_ScreenColor_Yellow = 9;								const cSC_Yellow = 9;
+const c_ScreenColor_Green2 = 10;							const cSC_Green2 = 10;
+const c_ScreenColor_Purple = 11;							const cSC_Purple = 11;
+const c_ScreenColor_Green3 = 12;							const cSC_Green3 = 12;
+
+// corresponding color strings
+
+const c_ColorString_White = "ÿc0";							const cCS_White = "ÿc0";
+const c_ColorString_Red = "ÿc1";							const cCS_Red = "ÿc1";
+const c_ColorString_Green1 = "ÿc2";							const cCS_Green1 = "ÿc2";
+const c_ColorString_Green = "ÿc2";							const cCS_Green = "ÿc2";
+const c_ColorString_Blue = "ÿc3";							const cCS_Blue = "ÿc3";
+const c_ColorString_Gold1 = "ÿc4";							const cCS_Gold1 = "ÿc4";
+const c_ColorString_Gold = "ÿc4";							const cCS_Gold = "ÿc4";
+const c_ColorString_Grey = "ÿc5";							const cCS_Grey = "ÿc5";
+const c_ColorString_Gray = "ÿc5";							const cCS_Gray = "ÿc5";
+const c_ColorString_Black = "ÿc6";							const cCS_Black = "ÿc6";
+const c_ColorString_Gold2 = "ÿc7";							const cCS_Gold2 = "ÿc7";
+const c_ColorString_Orange = "ÿc8";							const cCS_Orange = "ÿc8";
+const c_ColorString_Yellow = "ÿc9";							const cCS_Yellow = "ÿc9";
+const c_ColorString_Green2 = "ÿc:";							const cCS_Green2 = "ÿc:";
+const c_ColorString_Purple = "ÿc;";							const cCS_Purple = "ÿc;";
+const c_ColorString_Green3 = "ÿc<";							const cCS_Green3 = "ÿc<";
+
+const c_ColorChangeEscape = "ÿc";							const cCCE = "ÿc";
+
+// Font faces for screen hooks
+
+const c_FontFace_12_Point_Bold = 0;							const cFF_12_Bold = 0;
+const c_FontFace_12_Point_Caps = 1;							const cFF_12_Caps = 1;
+const c_FontFace_20_Point_Caps = 2;							const cFF_20_Caps = 2;
+const c_FontFace_32_Point_Caps = 3;							const cFF_32_Caps = 3;
+const c_FontFace_12_Point = 4;								const cFF_12 = 4;
+const c_FontFace_16_Point = 5;								const cFF_16 = 5;
+const c_FontFace_9_Point = 6;								const cFF_9 = 6;
+const c_FontFace_18_Point_Caps = 7;							const cFF_18_Caps = 7;
+const c_FontFace_14_Point = 8;								const cFF_14 = 8;
+const c_FontFace_16_Point_Caps_Outline = 9;					const cFF_16_Caps_Outline = 9;
+const c_FontFace_12_Point_Caps_Outline = 10;				const cFF_12_Caps_Outline = 10;
+const c_FontFace_8_Point_Caps_Bold = 11;					const cFF_8_Caps_Bold = 11;
+const c_FontFace_10_Point = 12;								const cFF_10 = 12;
+const c_FontFace_14_Point_Bold = 13;						const cFF_14_Bold = 13;
+
+// obj.area for shrines
+
+const c_ShrineType_Refilling = 1;							const cST_Refilling = 1;
+const c_ShrineType_Health = 2;								const cST_Health = 2;
+const c_ShrineType_Mana = 3;								const cST_Mana = 3;
+const c_ShrineType_HealthExchange = 4;						const cST_HealthExchange = 4;
+const c_ShrineType_ManaExchange = 5;						const cST_ManaExchange = 5;
+const c_ShrineType_Armor = 6;								const cST_Armor = 6;
+const c_ShrineType_Combat = 7;								const cST_Combat = 7;
+const c_ShrineType_ResistFire = 8;							const cST_ResistFire = 8;
+const c_ShrineType_ResistCold = 9;							const cST_ResistCold = 9;
+const c_ShrineType_ResistLightning = 10;					const cST_ResistLightning = 10;
+const c_ShrineType_ResistPoison = 11;						const cST_ResistPoison = 11;
+const c_ShrineType_Skill = 12;								const cST_Skill = 12;
+const c_ShrineType_ManaRecharge = 13;						const cST_ManaRecharge = 13;
+const c_ShrineType_Stamina = 14;							const cST_Stamina = 14;
+const c_ShrineType_Experience = 15;							const cST_Experience = 15;
+const c_ShrineType_Enirhs = 16;								const cST_Enirhs = 16;
+const c_ShrineType_Portal = 17;								const cST_Portal = 17;
+const c_ShrineType_Gem = 18;								const cST_Gem = 18;
+const c_ShrineType_Fire = 19;								const cST_Fire = 19;
+const c_ShrineType_Monster = 20;							const cST_Monster = 20;
+const c_ShrineType_Exploding = 21;							const cST_Exploding = 21;
+const c_ShrineType_Poison = 22;								const cST_Poison = 22;
+
+var c_ShrineNames = new Array(
+	"null",
+	"Refilling",
+	"Health",
+	"Mana",
+	"Health Exchange",
+	"Mana Exchange",
+	"Armor",
+	"Combat",
+	"Resist Fire",
+	"Resist Cold",
+	"Resist Lightning",
+	"Resist Poison",
+	"Skill",
+	"Mana recharge",
+	"Stamina",
+	"Experience",
+	"Enirhs",
+	"Portal",
+	"Gem",
+	"Fire",
+	"Monster",
+	"Exploding",
+	"Poison"
+);
+
+// me.diff
+
+const c_Difficulty_Normal = 1;								const cD_Normal = 1;
+const c_Difficulty_Nightmare = 2;							const cD_Nightmare = 2;
+const c_Difficulty_Hell = 3;								const cD_Hell = 3;
+
+// me.gametype
+
+const c_GameType_Classic = 0;								const cGT_Classic = 0;
+const c_GameType_Expansion = 1;								const cGT_Expansion = 1;
+
+// item.itemloc
+
+// FIXME -- TBD -- d2jsp documentation needs updating
+
+// item.itemclass
+
+const c_ItemClass_Normal = 0;								const cIC_Normal = 0;
+const c_ItemClass_Exceptional = 1;							const cIC_Exceptional = 1;
+const c_ItemClass_Elite = 2;								const cIC_Elite = 2;
+
+// item.itemtype
+
+const c_ItemType_Shield = 2;								const cIT_Shield = 2;
+const c_ItemType_Armor = 3;									const cIT_Armor = 3;
+const c_ItemType_Gold = 4;									const cIT_Gold = 4;
+const c_ItemType_BowQuiver = 5;								const cIT_BowQuiver = 5;
+const c_ItemType_CrossbowQuiver = 6;						const cIT_CrossbowQuiver = 6;
+const c_ItemType_PlayerBodyPart = 7;						const cIT_PlayerBodyPart = 7;
+const c_ItemType_Herb = 8;									const cIT_Herb = 8;
+const c_ItemType_Potion = 9;								const cIT_Potion = 9;
+const c_ItemType_Ring = 10;									const cIT_Ring = 10;
+const c_ItemType_Elixir = 11;								const cIT_Elixir = 11;
+const c_ItemType_Amulet = 12;								const cIT_Amulet = 12;
+const c_ItemType_Charm = 13;								const cIT_Charm = 13;
+const c_ItemType_Boots = 15;								const cIT_Boots = 15;
+const c_ItemType_Gloves = 16;								const cIT_Gloves = 16;
+const c_ItemType_Book = 18;									const cIT_Book = 18;
+const c_ItemType_Belt = 19;									const cIT_Belt = 19;
+const c_ItemType_Gem = 20;									const cIT_Gem = 20;
+const c_ItemType_Torch = 21;								const cIT_Torch = 21;
+const c_ItemType_Scroll = 22;								const cIT_Scroll = 22;
+const c_ItemType_Scepter = 24;								const cIT_Scepter = 24;
+const c_ItemType_Wand = 25;									const cIT_Wand = 25;
+const c_ItemType_Staff = 26;								const cIT_Staff = 26;
+const c_ItemType_Bow = 27;									const cIT_Bow = 27;
+const c_ItemType_Axe = 28;									const cIT_Axe = 28;
+const c_ItemType_Club = 29;									const cIT_Club = 29;
+const c_ItemType_Sword = 30;								const cIT_Sword = 30;
+const c_ItemType_Hammer = 31;								const cIT_Hammer = 31;
+const c_ItemType_Knife = 32;								const cIT_Knife = 32;
+const c_ItemType_Spear = 33;								const cIT_Spear = 33;
+const c_ItemType_Polearm = 34;								const cIT_Polearm = 34;
+const c_ItemType_Crossbow = 35;								const cIT_Crossbow = 35;
+const c_ItemType_Mace = 36;									const cIT_Mace = 36;
+const c_ItemType_Helm = 37;									const cIT_Helm = 37;
+const c_ItemType_MissilePotion = 38;						const cIT_MissilePotion = 38;
+const c_ItemType_Quest = 39;								const cIT_Quest = 39;
+const c_ItemType_BodyPart = 40;								const cIT_BodyPart = 40;
+const c_ItemType_Key = 41;									const cIT_Key = 41;
+const c_ItemType_ThrowingKnife = 42;						const cIT_ThrowingKnife = 42;
+const c_ItemType_ThrowingAxe = 43;							const cIT_ThrowingAxe = 43;
+const c_ItemType_Javelin = 44;								const cIT_Javelin = 44;
+const c_ItemType_Weapon = 45;								const cIT_Weapon = 45;
+const c_ItemType_MeleeWeapon = 46;							const cIT_MeleeWeapon = 46;
+const c_ItemType_MissileWeapon = 47;						const cIT_MissileWeapon = 47;
+const c_ItemType_ThrownWeapon = 48;							const cIT_ThrownWeapon = 48;
+const c_ItemType_ComboWeapon = 49;							const cIT_ComboWeapon = 49;
+const c_ItemType_AnyArmor = 50;								const cIT_AnyArmor = 50;
+const c_ItemType_AnyShield = 51;							const cIT_AnyShield = 51;
+const c_ItemType_Miscellaneous = 52;						const cIT_Miscellaneous = 52;
+const c_ItemType_SocketFiller = 53;							const cIT_SocketFiller = 53;
+const c_ItemType_SecondHand = 54;							const cIT_SecondHand = 54;
+const c_ItemType_StavesAndRods = 55;						const cIT_StavesAndRods = 55;
+const c_ItemType_Missile = 56;								const cIT_Missile = 56;
+const c_ItemType_Blunt = 57;								const cIT_Blunt = 57;
+const c_ItemType_Jewel = 58;								const cIT_Jewel = 58;
+const c_ItemType_ClassSpecific = 59;						const cIT_ClassSpecific = 59;
+const c_ItemType_AmazonItem = 60;							const cIT_AmazonItem = 60;
+const c_ItemType_BarbarianItem = 61;						const cIT_BarbarianItem = 61;
+const c_ItemType_NecromancerItem = 62;						const cIT_NecromancerItem = 62;
+const c_ItemType_PaladinItem = 63;							const cIT_PaladinItem = 63;
+const c_ItemType_SorceressItem = 64;						const cIT_SorceressItem = 64;
+const c_ItemType_AssassinItem = 65;							const cIT_AssassinItem = 65;
+const c_ItemType_DruidItem = 66;							const cIT_DruidItem = 66;
+const c_ItemType_HandtoHand = 67;							const cIT_HandtoHand = 67;
+const c_ItemType_Orb = 68;									const cIT_Orb = 68;
+const c_ItemType_VoodooHeads = 69;							const cIT_VoodooHeads = 69;
+const c_ItemType_AuricShields = 70;							const cIT_AuricShields = 70;
+const c_ItemType_PrimalHelm = 71;							const cIT_PrimalHelm = 71;
+const c_ItemType_Pelt = 72;									const cIT_Pelt = 72;
+const c_ItemType_Cloak = 73;								const cIT_Cloak = 73;
+const c_ItemType_Rune = 74;									const cIT_Rune = 74;
+const c_ItemType_Circlet = 75;								const cIT_Circlet = 75;
+const c_ItemType_HealingPotion = 76;						const cIT_HealingPotion = 76;
+const c_ItemType_ManaPotion = 77;							const cIT_ManaPotion = 77;
+const c_ItemType_RejuvPotion = 78;							const cIT_RejuvPotion = 78;
+const c_ItemType_StaminaPotion = 79;						const cIT_StaminaPotion = 79;
+const c_ItemType_AntidotePotion = 80;						const cIT_AntidotePotion = 80;
+const c_ItemType_ThawingPotion = 81;						const cIT_ThawingPotion = 81;
+const c_ItemType_SmallCharm = 82;							const cIT_SmallCharm = 82;
+const c_ItemType_MediumCharm = 83;							const cIT_MediumCharm = 83;
+const c_ItemType_LargeCharm = 84;							const cIT_LargeCharm = 84;
+const c_ItemType_AmazonBow = 85;							const cIT_AmazonBow = 85;
+const c_ItemType_AmazonSpear = 86;							const cIT_AmazonSpear = 86;
+const c_ItemType_AmazonJavelin = 87;						const cIT_AmazonJavelin = 87;
+const c_ItemType_HandtoHand2 = 88;							const cIT_HandtoHand2 = 88;
+const c_ItemType_MagicBowQuiv = 89;							const cIT_MagicBowQuiv = 89;
+const c_ItemType_MagicXbowQuiv = 90;						const cIT_MagicXbowQuiv = 90;
+const c_ItemType_ChippedGem = 91;							const cIT_ChippedGem = 91;
+const c_ItemType_FlawedGem = 92;							const cIT_FlawedGem = 92;
+const c_ItemType_StandardGem = 93;							const cIT_StandardGem = 93;
+const c_ItemType_FlawlessGem = 94;							const cIT_FlawlessGem = 94;
+const c_ItemType_PerfectGem = 95;							const cIT_PerfectGem = 95;
+const c_ItemType_Amethyst = 96;								const cIT_Amethyst = 96;
+const c_ItemType_Diamond = 97;								const cIT_Diamond = 97;
+const c_ItemType_Emerald = 98;								const cIT_Emerald = 98;
+const c_ItemType_Ruby = 99;									const cIT_Ruby = 99;
+const c_ItemType_Sapphire = 100;							const cIT_Sapphire = 100;
+const c_ItemType_Topaz = 101;								const cIT_Topaz = 101;
+const c_ItemType_Skull = 102;								const cIT_Skull = 102;
+
+var c_ItemTypeNames = new Array(
+	"None",
+	"None",
+	"Shield",
+	"Armor",
+	"Gold",
+	"Bow Quiver",
+	"Crossbow Quiver",
+	"Player Body Part",
+	"Herb",
+	"Potion",
+	"Ring",
+	"Elixir",
+	"Amulet",
+	"Charm",
+	"Not Used",
+	"Boots",
+	"Gloves",
+	"Not Used",
+	"Book",
+	"Belt",
+	"Gem",
+	"Torch",
+	"Scroll",
+	"Not Used",
+	"Scepter",
+	"Wand",
+	"Staff",
+	"Bow",
+	"Axe",
+	"Club",
+	"Sword",
+	"Hammer",
+	"Knife",
+	"Spear",
+	"Polearm",
+	"Crossbow",
+	"Mace",
+	"Helm",
+	"Missile Potion",
+	"Quest",
+	"Body Part",
+	"Key",
+	"Throwing Knife",
+	"Throwing Axe",
+	"Javelin",
+	"Weapon",
+	"Melee Weapon",
+	"Missile Weapon",
+	"Thrown Weapon",
+	"Combo Weapon",
+	"Any Armor",
+	"Any Shield",
+	"Miscellaneous",
+	"Socket Filler",
+	"Second Hand",
+	"Staves And Rods",
+	"Missile",
+	"Blunt",
+	"Jewel",
+	"Class Specific",
+	"Amazon Item",
+	"Barbarian Item",
+	"Necromancer Item",
+	"Paladin Item",
+	"Sorceress Item",
+	"Assassin Item",
+	"Druid Item",
+	"Hand to Hand",
+	"Orb",
+	"Voodoo Heads",
+	"Auric Shields",
+	"Primal Helm",
+	"Pelt",
+	"Cloak",
+	"Rune",
+	"Circlet",
+	"Healing Potion",
+	"Mana Potion",
+	"Rejuv Potion",
+	"Stamina Potion",
+	"Antidote Potion",
+	"Thawing Potion",
+	"Small Charm",
+	"Medium Charm",
+	"Large Charm",
+	"Amazon Bow",
+	"Amazon Spear",
+	"Amazon Javelin",
+	"Hand to Hand 2",
+	"Magic Bow Quiv",
+	"Magic Xbow Quiv",
+	"Chipped Gem",
+	"Flawed Gem",
+	"Standard Gem",
+	"Flawless Gem",
+	"Perfect Gem",
+	"Amethyst",
+	"Diamond",
+	"Emerald",
+	"Ruby",
+	"Sapphire",
+	"Topaz",
+	"Skull" );
+
+var c_ItemTypeCodes = new Array(
+	"",
+	"",
+	"shie",
+	"tors",
+	"gold",
+	"bowq",
+	"xboq",
+	"play",
+	"herb",
+	"poti",
+	"ring",
+	"elix",
+	"amul",
+	"char",
+	"",
+	"boot",
+	"glov",
+	"",
+	"book",
+	"belt",
+	"gem ",
+	"torc",
+	"scro",
+	"",
+	"scep",
+	"wand",
+	"staf",
+	"bow ",
+	"axe ",
+	"club",
+	"swor",
+	"hamm",
+	"knif",
+	"spea",
+	"pole",
+	"xbow",
+	"mace",
+	"helm",
+	"tpot",
+	"ques",
+	"body",
+	"key ",
+	"tkni",
+	"taxe",
+	"jave",
+	"weap",
+	"mele",
+	"miss",
+	"thro",
+	"comb",
+	"armo",
+	"shld",
+	"misc",
+	"sock",
+	"seco",
+	"rod ",
+	"misl",
+	"blun",
+	"jewl",
+	"clas",
+	"amaz",
+	"barb",
+	"necr",
+	"pala",
+	"sorc",
+	"assn",
+	"drui",
+	"h2h ",
+	"orb ",
+	"head",
+	"ashd",
+	"phlm",
+	"pelt",
+	"cloa",
+	"rune",
+	"circ",
+	"hpot",
+	"mpot",
+	"rpot",
+	"spot",
+	"apot",
+	"wpot",
+	"scha",
+	"mcha",
+	"lcha",
+	"abow",
+	"aspe",
+	"ajav",
+	"h2h2",
+	"mboq",
+	"mxbq",
+	"gem0",
+	"gem1",
+	"gem2",
+	"gem3",
+	"gem4",
+	"gema",
+	"gemd",
+	"geme",
+	"gemr",
+	"gems",
+	"gemt",
+	"gemz" );
+
+// missile.ownertype
+
+const c_MissileOwnerType_Player = 0;						const cMOT_Player = 0;
+const c_MissileOwnerType_MonsterNPC = 1;					const cMOT_MonsterNPC = 1;
+
+// me.playertype
+
+const c_PlayerType_Softcore = 0;							const cPT_Softcore = 0;
+const c_PlayerType_Hardcore = 1;							const cPT_Hardcore = 1;
+
+// item.quality
+
+const c_ItemQuality_Low = 1;								const cIQ_Low = 1;
+const c_ItemQuality_Normal = 2;								const cIQ_Normal = 2;
+const c_ItemQuality_Superior = 3;							const cIQ_Superior = 3;
+const c_ItemQuality_Magic = 4;								const cIQ_Magic = 4;
+const c_ItemQuality_Set = 5;								const cIQ_Set = 5;
+const c_ItemQuality_Rare = 6;								const cIQ_Rare = 6;
+const c_ItemQuality_Unique = 7;								const cIQ_Unique = 7;
+const c_ItemQuality_Crafted = 8;							const cIQ_Crafted = 8;
+
+// me.runwalk
+
+const c_MeRunWalk_Walking = 0;								const cMRW_Walking = 0;
+const c_MeRunWalk_Running = 1;								const cMRW_Running = 1;
+
+// me.screensize
+
+const c_ScreenSize_640x480 = 0;								const cSS_640x480 = 0;
+const c_ScreenSize_800x600 = 1;								const cSS_800x600 = 1;
+
+// unit.mode
+
+//   unit.mode (player)
+
+const c_UnitMode_Player_Death = 0;							const cUMP_Death = 0;
+const c_UnitMode_Player_StandingOutsideTown = 1;			const cUMP_StandingOutsideTown = 1;
+const c_UnitMode_Player_Walking = 2;						const cUMP_Walking = 2;
+const c_UnitMode_Player_Running = 3;						const cUMP_Running = 3;
+const c_UnitMode_Player_GettingHit = 4;						const cUMP_GettingHit = 4;
+const c_UnitMode_Player_StandingInTown = 5;					const cUMP_StandingInTown = 5;
+const c_UnitMode_Player_WalkingInTown = 6;					const cUMP_WalkingInTown = 6;
+const c_UnitMode_Player_Attack1 = 7;						const cUMP_Attack1 = 7;
+const c_UnitMode_Player_Attack2 = 8;						const cUMP_Attack2 = 8;
+const c_UnitMode_Player_Blocking = 9;						const cUMP_Blocking = 9;
+const c_UnitMode_Player_Casting = 10;						const cUMP_Casting = 10;
+const c_UnitMode_Player_Throwing = 11;						const cUMP_Throwing = 11;
+const c_UnitMode_Player_Kicking = 12;						const cUMP_Kicking = 12;
+const c_UnitMode_Player_Skill1 = 13;						const cUMP_Skill1 = 13;
+const c_UnitMode_Player_Skill2 = 14;						const cUMP_Skill2 = 14;
+const c_UnitMode_Player_Skill3 = 15;						const cUMP_Skill3 = 15;
+const c_UnitMode_Player_Skill4 = 16;						const cUMP_Skill4 = 16;
+const c_UnitMode_Player_Dead = 17;							const cUMP_Dead = 17;
+const c_UnitMode_Player_Sequence = 18;						const cUMP_Sequence = 18;
+const c_UnitMode_Player_Knockback = 19;						const cUMP_Knockback = 19;
+
+//   unit.mode (NPC/Monster/Hireling)
+
+const c_UnitMode_NPC_Death = 0;								const cUMN_Death = 0;
+const c_UnitMode_NPC_Standing = 1;							const cUMN_Standing = 1;
+const c_UnitMode_NPC_Walking = 2;							const cUMN_Walking = 2;
+const c_UnitMode_NPC_GettingHit = 3;						const cUMN_GettingHit = 3;
+const c_UnitMode_NPC_Attack1 = 4;							const cUMN_Attack1 = 4;
+const c_UnitMode_NPC_Attack2 = 5;							const cUMN_Attack2 = 5;
+const c_UnitMode_NPC_Blocking = 6;							const cUMN_Blocking = 6;
+const c_UnitMode_NPC_Casting = 7;							const cUMN_Casting = 7;
+const c_UnitMode_NPC_Skill1 = 8;							const cUMN_Skill1 = 8;
+const c_UnitMode_NPC_Skill2 = 9;							const cUMN_Skill2 = 9;
+const c_UnitMode_NPC_Skill3 = 10;							const cUMN_Skill3 = 10;
+const c_UnitMode_NPC_Skill4 = 11;							const cUMN_Skill4 = 11;
+const c_UnitMode_NPC_Dead = 12;								const cUMN_Dead = 12;
+const c_UnitMode_NPC_Knockback = 13;						const cUMN_Knockback = 13;
+const c_UnitMode_NPC_Sequence = 14;							const cUMN_Sequence = 14;
+
+//   unit.mode (Object)
+
+const c_UnitMode_Object_Idle = 0;							const cUMO_Idle = 0;
+const c_UnitMode_Object_Operating = 1;						const cUMO_Operating = 1;
+const c_UnitMode_Object_Opened = 2;							const cUMO_Opened = 2;
+const c_UnitMode_Object_Special1 = 3;						const cUMO_Special1 = 3;
+const c_UnitMode_Object_Special2 = 4;						const cUMO_Special2 = 4;
+const c_UnitMode_Object_Special3 = 5;						const cUMO_Special3 = 5;
+const c_UnitMode_Object_Special4 = 6;						const cUMO_Special4 = 6;
+const c_UnitMode_Object_Special5 = 7;						const cUMO_Special5 = 7;
+
+//   unit.mode (Item)
+
+const c_UnitMode_Item_Held = 0; 							const cUMI_Held = 0; 	// in Inventory/stash/cube/store
+const c_UnitMode_Item_Equipped = 1;							const cUMI_Equipped = 1;
+const c_UnitMode_Item_InBelt = 2;							const cUMI_InBelt = 2;
+const c_UnitMode_Item_OnGround = 3;							const cUMI_OnGround = 3;
+const c_UnitMode_Item_OnCursor = 4;							const cUMI_OnCursor = 4;
+const c_UnitMode_Item_BeingDropped = 5;						const cUMI_BeingDropped = 5;
+const c_UnitMode_Item_SocketedInItem = 6;					const cUMI_SocketedInItem = 6;
+
+// unit.type
+
+const c_UnitType_Player = 0;								const cUT_Player = 0;
+const c_UnitType_Monster = 1;								const cUT_Monster = 1;
+const c_UnitType_Object = 2;								const cUT_Object = 2;
+const c_UnitType_Missile = 3;								const cUT_Missile = 3;
+const c_UnitType_Item = 4;									const cUT_Item = 4;
+const c_UnitType_RoomTile = 5;								const cUT_RoomTile = 5;
+
+// me.weaponswitch
+
+const c_WeaponSwitch_I = 0;									const cWS_I = 0;
+const c_WeaponSwitch_II = 1;								const cWS_II = 1;
+
+// getUIFlag()
+
+const c_UIFlag_Inventory = 0x01;							const cUIF_Inventory = 0x01;
+const c_UIFlag_Character = 0x02;							const cUIF_Character = 0x02;
+const c_UIFlag_QuickSkill = 0x03;							const cUIF_QuickSkill = 0x03;
+const c_UIFlag_Skills = 0x04;								const cUIF_Skills = 0x04;
+const c_UIFlag_TypingInChat = 0x05;							const cUIF_TypingInChat = 0x05;
+const c_UIFlag_NPC = 0x08;									const cUIF_NPC = 0x08;
+const c_UIFlag_ESCMenu = 0x09;								const cUIF_ESCMenu = 0x09;
+const c_UIFlag_Automap = 0x0A;								const cUIF_Automap = 0x0A;
+const c_UIFlag_ConfigureControls = 0x0B;					const cUIF_ConfigureControls = 0x0B;
+const c_UIFlag_Shop = 0x0C;									const cUIF_Shop = 0x0C;
+const c_UIFlag_AltShowItems = 0x0D;							const cUIF_AltShowItems = 0x0D;
+const c_UIFlag_Cash = 0x0E;									const cUIF_Cash = 0x0E;
+const c_UIFlag_Quest = 0x0F;								const cUIF_Quest = 0x0F;
+const c_UIFlag_QuestLogButton = 0x11;						const cUIF_QuestLogButton = 0x11;
+const c_UIFlag_StatusArea = 0x12;							const cUIF_StatusArea = 0x12;
+const c_UIFlag_Waypoint = 0x14;								const cUIF_Waypoint = 0x14;
+const c_UIFlag_MiniPanel = 0x15;							const cUIF_MiniPanel = 0x15;
+const c_UIFlag_Party = 0x16;								const cUIF_Party = 0x16;
+const c_UIFlag_Trade = 0x17;								const cUIF_Trade = 0x17;
+const c_UIFlag_Messages = 0x18;								const cUIF_Messages = 0x18;
+const c_UIFlag_Stash = 0x19;								const cUIF_Stash = 0x19;
+const c_UIFlag_Cube = 0x1A;									const cUIF_Cube = 0x1A;
+const c_UIFlag_ShowBelt = 0x1F;								const cUIF_ShowBelt = 0x1F;
+const c_UIFlag_Help = 0x21;									const cUIF_Help = 0x21;
+const c_UIFlag_Mercenary = 0x24;							const cUIF_Mercenary = 0x24;
+const c_UIFlag_Scroll = 0x25;								const cUIF_Scroll = 0x25;
+
+// npc.useMenu()
+// Thanks to Dishonru
+const c_NPCMenu_Talk = 0x0D35;								const cNPCM_Talk = 0x0D35;
+const c_NPCMenu_Trade = 0x0D44;								const cNPCM_Trade = 0x0D44;
+const c_NPCMenu_Repair = 0x0D06;							const cNPCM_Repair = 0x0D06;
+const c_NPCMenu_Imbue = 0x0FB1;								const cNPCM_Imbue = 0x0FB1;
+const c_NPCMenu_Gamble = 0x0D46;							const cNPCM_Gamble = 0x0D46;
+const c_NPCMenu_Hire = 0x0D45;								const cNPCM_Hire = 0x0D45;
+const c_NPCMenu_goEast = 0x0D36;							const cNPCM_goEast = 0x0D36;
+const c_NPCMenu_goWest = 0x0D37;							const cNPCM_goWest = 0x0D37;
+const c_NPCMenu_Identify = 0x0FB4;							const cNPCM_Identify = 0x0FB4;
+const c_NPCMenu_SailEast = 0x0D38;							const cNPCM_SailEast = 0x0D38;
+const c_NPCMenu_SailWest = 0x0D39;							const cNPCM_SailWest = 0x0D39;
+const c_NPCMenu_Resurrect = 0x1507;							const cNPCM_Resurrect = 0x1507;
+const c_NPCMenu_Socket = 0x58DC;							const cNPCM_Socket = 0x58DC;
+const c_NPCMenu_Personalize = 0x58DD;						const cNPCM_Personalize = 0x58DD;
+const c_NPCMenu_Harrogath = 0x58D2;							const cNPCM_Harrogath = 0x58D2;
+
+// waypoint IDs
+// credit to Gayak and njaguar
+var c_WaypointIDs = [
+	[0x01,0x03,0x04,0x05,0x06,0x1b,0x1d,0x20,0x23],
+	[0x28,0x30,0x2a,0x39,0x2b,0x2c,0x34,0x4a,0x2e],
+	[0x4b,0x4c,0x4d,0x4e,0x4f,0x50,0x51,0x53,0x65],
+	[0x67,0x6a,0x6b],
+	[0x6d,0x6f,0x70,0x71,0x73,0x7b,0x75,0x76,0x81]
+];
+
+// me.getQuest()
+// FIXME: Cow King quest not properly accounted for
+
+var c_QuestIDs = [
+		1, 2, 4, 5, 3, 6,
+		9, 10, 11, 12, 13, 14,
+		20, 19, 18, 17, 21, 22,
+		25, 27, 26, 0, 0, 0,
+		35, 36, 37, 38, 39, 40
+];
+
+// look up via c_QuestIDs value
+// thanks to Pachelbel
+var c_QuestNames = [
+	"",                          // 0   // Act 1
+	"Den of Evil",               // 1
+	"Sister's Burial Grounds",   // 2
+	"Tools of the Trade",        // 3
+	"The Search For Cain",       // 4
+	"The Forgotten Tower",       // 5
+	"Sisters to the Slaughter",  // 6
+	"",                          // 7
+	"",                          // 8   // Act 2
+	"Radament's Lair",           // 9
+	"The Horadric Staff",        // 10
+	"Tainted Sun",               // 11
+	"Arcane Sanctuary",          // 12
+	"The Summoner",              // 13
+	"The Seven Tombs",           // 14
+	"",                          // 15
+	"",                          // 16   // Act 3
+	"Lam Esen's Tome",           // 17
+	"Khalim's Will",             // 18
+	"Blade of the Old Religion", // 19
+	"The Golden Bird",           // 20
+	"The Blackened Temple",      // 21
+	"The Guardian",              // 22
+	"",                          // 23
+	"",                          // 24   // Act 4
+	"The Fallen Angel",          // 25
+	"Terror's End",              // 26
+	"Hell's Forge",              // 27
+	"",                          // 28
+	"",                          // 29
+	"",                          // 30
+	"",                          // 31
+	"",                          // 32
+	"",                          // 33
+	"",                          // 34   // Act 5
+	"Siege on Harrogath",        // 35
+	"Rescue on Mount Arreat",    // 36
+	"Prison of Ice",             // 37
+	"Betrayal of Harrogath",     // 38
+	"Rite of Passage",           // 39
+	"Eve of Destruction",        // 40
+	""                           // 41
+];
+
+// Experience
+// Credit to Pachelbel
+var c_XpPerLevel = new Array(
+	0,			// 0
+	0,			// 1
+	500,
+	1500,
+	3750,
+	7875,
+	14175,
+	22680,
+	32886,
+	44396,
+	57715,		// 10
+	72144,
+	90180,
+	112725,
+	140906,
+	176132,
+	220165,
+	275207,
+	344008,
+	430010,
+	537513,		// 20
+	671891,
+	839864,
+	1049830,
+	1312287,
+	1640359,
+	2050449,
+	2563061,
+	3203826,
+	3902260,
+	4663553,	// 30
+	5493363,
+	6397855,
+	7383752,
+	8458379,
+	9629723,
+	10906488,
+	12298162,
+	13815086,
+	15468534,
+	17270791,	// 40
+	19235252,
+	21376515,
+	23710491,
+	26254525,
+	29027522,
+	32050088,
+	35344686,
+	38935798,
+	42850109,
+	47116709,	// 50
+	51767302,
+	56836449,
+	62361819,
+	68384473,
+	74949165,
+	82104680,
+	89904191,
+	98405658,
+	107672256,
+	117772849,	// 60
+	128782495,
+	140783010,
+	153863570,
+	168121381,
+	183662396,
+	200602101,
+	219066380,
+	239192444,
+	261129853,
+	285041630,	// 70
+	311105466,
+	339515048,
+	370481492,
+	404234916,
+	441026148,
+	481128591,
+	524840254,
+	572485967,
+	624419793,
+	681027665,	// 80
+	742730244,
+	809986056,
+	883294891,
+	963201521,
+	1050299747,
+	1145236814,
+	1248718217,
+	1361512946,
+	1484459201,
+	1618470619,	// 90
+	1764543065,
+	1923762030,
+	2097310703,
+	2286478756,
+	2492671933,
+	2717422497,
+	2962400612,
+	3229426756,
+	3520485254,
+	3837739017	// 100
+);
+
+// Credit to HPB_Forever
+var c_XpNextLevel = [
+	0,			// 0
+	500,		// 1
+	1500,
+	3750,
+	7875,
+	14175,
+	22680,
+	32886,
+	44396,
+	57715,
+	72144,		// 10
+	90180,
+	112725,
+	140906,
+	176132,
+	220165,
+	275207,
+	344008,
+	430010,
+	537513,
+	671891,		// 20
+	839864,
+	1049830,
+	1312287,
+	1640359,
+	2050449,
+	2563061,
+	3203826,
+	3902260,
+	4663553,
+	5493363,	// 30
+	6397855,
+	7383752,
+	8458379,
+	9629723,
+	10906488,
+	12298162,
+	13815086,
+	15468534,
+	17270791,
+	19235252,	// 40
+	21376515,
+	23710491,
+	26254525,
+	29027522,
+	32050088,
+	35344686,
+	38935798,
+	42850109,
+	47116709,
+	51767302,	// 50
+	56836449,
+	62361819,
+	68384473,
+	74949165,
+	82104680,
+	89904191,
+	98405658,
+	107672256,
+	117772849,
+	128782495,	// 60
+	140783010,
+	153863570,
+	168121381,
+	183662396,
+	200602101,
+	219066380,
+	239192444,
+	261129853,
+	285041630,
+	311105466,	// 70
+	339515048,
+	370481492,
+	404234916,
+	441026148,
+	481128591,
+	524840254,
+	572485967,
+	624419793,
+	681027665,
+	742730244,	// 80
+	809986056,
+	883294891,
+	963201521,
+	1050299747,
+	1145236814,
+	1248718217,
+	1361512946,
+	1484459201,
+	1618470619,
+	1764543065,	// 90
+	1923762030,
+	2097310703,
+	2286478756,
+	2492671933,
+	2717422497,
+	2962400612,
+	3229426756,
+	3520485254,
+	3837739017	// 99
+];

@@ -1,0 +1,274 @@
+
+charplugin[4] = true;
+var lastcasttime = new Date();
+
+include("Gshock/AutoSkills.d2l");
+var barb = new oSkill();
+
+function plugIKplayer(instname)
+{
+	this.temp = oPlugin;
+	this.temp("BarbarianPlugin", mlPLUGINBYTIME, 1000, "Barbarian Char Plugin", "0.0.1a", "arathorn", instname);
+	delete this.temp;
+	this.BarbarianPlugin = function()
+	{
+		if((new Date() - lastcasttime) < 5000)
+			return;
+
+		if(!InTown(me) && me.getSkill("Battle Orders") && (!me.getState(32) || (new Date() - lastcasttime) > 60000) && !MonsterQueue.getClosest(me.x,me.y,3) && !isattacking)
+		{
+			if(!me.getState(51) && me.getSkill("Battle Command"))
+				TaskQueue.Insert(new oTaskCommon(921, "Cast", {Skill:"Battle Command"}));
+			TaskQueue.Insert(new oTaskCommon(920, "Cast", {Skill:"Battle Orders"}));
+			lastcasttime = new Date();
+		}
+		if(!InTown(me) && !me.getState(26) && me.getSkill("Shout") && !MonsterQueue.getClosest(me.x,me.y,3) && !isattacking) {
+			if(!me.getState(51) && me.getSkill("Battle Command"))
+				TaskQueue.Insert(new oTaskCommon(921, "Cast", {Skill:"Battle Command"}));
+			TaskQueue.Insert(new oTaskCommon(920, "Cast", {Skill:"Shout"}));
+			lastcasttime = new Date();
+		}
+	}
+}
+
+function oTaskAttack(_p, _function, _data, _object, _tag)
+{
+	//inherit oTask
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+	
+	var _range = 0;
+	var _specific = false;
+	var _bossunique = false;
+	var _started = false;
+
+	//**********************************
+	// Now using one attack function :D
+	//**********************************
+
+	this.Kill = oTaskAttack_kill;
+	this.Attack = oTaskAttack_attack;
+	this.CharAttack = oTaskAttack_charattack;
+
+	//this.walkattack = oTaskAttack_walkattack;
+
+	function oTaskAttack_kill()
+	{
+		if(!playerkill(this.Data))
+			TaskQueue.Insert(this);
+		return;
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ASSESMENT PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_attack()
+	{
+		if(!_started) {
+			_started = true;
+			if(this.Data.Target) {
+				_specific = true;
+			}
+			else if(this.Data.Boss) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Boss:_data.Boss}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.Unique) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Unique:_data.Unique}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.ByName) {
+				_specific = true;
+				//add in a get for name
+			}
+			else if(this.Data.Range) {
+				_range = true;
+			}
+			else {
+				//raise error and return
+				return;
+			}
+				
+				
+		}
+		
+		
+		if(_range) {
+			//Check for raising first
+			this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS, Abilities:mlBITRAISES}).getClosest();
+			if(!this.Data.Target) //now check for other types
+				this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS}).getClosest();
+
+			if(!this.Data.Target) return;
+			
+			
+			if(this.Data.Target.IEA & 0x1) {
+				var _mon = MonsterQueue.getMonsters({Range:6, NotIEA:0x1}).getClosest();
+				if(_mon)
+					this.Data.Target = _mon;
+			}
+					
+					
+		}
+		
+		if(_specific && (!this.Data.Target || this.Data.Target.Monster.hp <= 0)) return;
+		
+		sctarget.UpdateText("Last target: " + this.Data.Target.Monster.name + " (" + this.Data.Target.Monster.hp/1.28 + "% hp)");
+	
+		//if(!this.charattack(mon)) {}
+		this.CharAttack(this.Data.Target);
+
+		this.Insert();
+
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ACTUAL ATTACKING PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_charattack(mon) {
+		var xmod = 5;
+		var ymod = 5;
+
+		var leftw = false;
+		var rightw = false;
+		var dualw = false;
+
+		var attack = barb.FindSkill(null, mon.Monster);
+
+		var move_reason = "Position good: Holding";
+
+		//if(mon.Dist > 10 || !Map.LOS(me.x, me.y, mon.Monster.x, mon.Monster.y)) {
+		//	new oGoalMove(800, "PathToXY", {dx:mon.Monster.x, dy:mon.Monster.x, p:799}).Insert();
+		//	return;
+		//}
+	//		ikApproach({p:805, Target:mon.Monster, Range:10});
+		
+		if (attack.Skill == "Whirlwind")
+		{
+			if (mon.Monster.x - me.x < 0)
+				xmod += -10;
+			if (mon.Monster.y - me.y < 0)
+				ymod += -10;
+			new oTaskSkill(this.p+1, "UseSkill", {Skill:"Whirlwind", x:(mon.Monster.x+xmod), y:(mon.Monster.y+ymod)}).Insert();
+			//TaskQueue.Insert(new oTaskCommon(800, "Cast", {Skill:"Whirlwind", x:(mon.Monster.x+xmod), y:(mon.Monster.y+ymod)}));
+		} else
+			TaskQueue.Insert(new oTaskCommon(this.p+1, "Cast", {Skill:attack.Skill, Target:mon.Monster}));
+
+	}
+	
+	
+}
+
+
+function playerwalkattack()
+{
+	if(!moveattackkillall)
+		var _range = 3;
+	return playerkill({Range:_range});
+}
+
+function playerkill(_data)
+{
+	if(!_data.x || !_data.y) {_data.x = me.x;_data.y = me.y;}
+	if(!_data.Range) _data.Range = 128;
+
+	if(!_data.Boss && !_data.Unique)
+	{
+		var _mon = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, LOSColl:true, Abilities:mlBITRAISES}).getClosest();
+		if(!_mon || !_mon.Monster)
+			var _mon = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Dead:false}).getClosest();
+	} else {
+		var _mon = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Boss:_data.Boss, Unique:_data.Unique, Dead:false}).getClosest();
+	}
+	return playerkillmon(_mon);
+}
+
+function playerkillmon(target)
+{
+	if (!target || !target.Monster)
+		return true;
+
+	sctarget.UpdateText("Last target: " + target.Monster.name + " (" + target.Monster.hp/1.28 + "% hp)");
+
+	if(target.Monster.getStat(36) > 99) {
+		_mon = MonsterQueue.getMonsters({Range:6, NotIEA:0x1}).getClosest();
+		if(_mon && _mon.Monster)
+			playerkillmon(_mon);
+	}
+
+
+}
+
+function BarbAttack(mon)
+{
+	var xmod = 5;
+	var ymod = 5;
+
+	var leftw = false;
+	var rightw = false;
+	var dualw = false;
+
+	if(!mon || !mon.Monster || AI.IsAttacking || AI.IsPositioning)
+		return;
+
+	check = getUnit(4);
+	if (check) do
+	{
+		owner = check.getParent();
+		if(owner) if(owner.name==me.name)
+		{
+			if(check.itemloc == 4 && check.mode == 1 && check.itemtype > 23 && check.itemtype < 37)
+				leftw = true;
+			if(check.itemloc == 5 && check.mode == 1 && check.itemtype > 23 && check.itemtype < 37)
+				rightw = true;
+		}
+	} while (check.getNext());
+
+	if(leftw && rightw)
+		dualw = true;
+
+	//if(mon.Dist > 10 || !Map.LOS(me.x, me.y, mon.Monster.x, mon.Monster.y)) {
+	//	new oGoalMove(800, "PathToXY", {dx:mon.Monster.x, dy:mon.Monster.x, p:799}).Insert();
+	//	return;
+	//}
+//		ikApproach({p:805, Target:mon.Monster, Range:10});
+
+	if(mon.Monster.getStat(36) > 99)
+		new oTaskSkill(800, "UseSkill", {Skill:oMe.skills.elementalattack, Target:mon, Position:2}).Insert();
+		//TaskQueue.Insert(new oTaskCommon(800, "Cast", {Skill:oMe.skills.elementalattack, Target:mon.Monster}));
+	else if (!dualw) {
+		if (oMe.skills.attack == "Whirlwind")
+		{
+			if (mon.Monster.x - me.x < 0)
+				xmod += -10;
+			if (mon.Monster.y - me.y < 0)
+				ymod += -10;
+			new oTaskSkill(800, "UseSkill", {Skill:"Whirlwind", x:(mon.Monster.x+xmod), y:(mon.Monster.y+ymod)}).Insert();
+			//TaskQueue.Insert(new oTaskCommon(800, "Cast", {Skill:"Whirlwind", x:(mon.Monster.x+xmod), y:(mon.Monster.y+ymod)}));
+		} else
+			TaskQueue.Insert(new oTaskCommon(800, "Cast", {Skill:oMe.skills.attack, Target:mon.Monster}));
+	}
+	else {
+		if (oMe.skills.dualattack == "Whirlwind")
+		{
+			if (mon.Monster.x - me.x < 0)
+				xmod += -10;
+			if (mon.Monster.y - me.y < 0)
+				ymod += -10;
+			TaskQueue.Insert(new oTaskCommon(800, "Cast", {Skill:"Whirlwind", x:(mon.Monster.x+xmod), y:(mon.Monster.y+ymod)}));
+		} else
+			TaskQueue.Insert(new oTaskCommon(800, "Cast", {Skill:oMe.skills.dualattack, Target:mon.Monster}));
+	}
+
+	new oTaskAI(795, "SetIsAttacking", {Val:false}).Insert();
+	AI.IsAttacking = true;
+}

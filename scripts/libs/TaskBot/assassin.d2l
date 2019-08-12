@@ -1,0 +1,157 @@
+//ASSASSIN
+charplugin[6] = true;
+
+include("Gshock/AutoSkills.d2l");
+var assn = new oSkill();
+
+var timebetweencasts = 2000; //in milliseconds
+var lastcasttime = new Date();
+
+
+function plugIKplayer(instname)
+{
+	this.temp = oPlugin;
+	this.temp("AssassinPlugin", mlPLUGINBYTIME, 1000, "Assassin Char Plugin", "0.0.1", "Gshock", instname);
+	delete this.temp;
+	this.AssassinPlugin = function()
+	{
+		if (new Date() - lastcasttime > timebetweencasts)
+		{
+			//if(energyshield && !me.getState(30) && me.setSkill("Energy Shield", 0))
+			//	new oTaskCommon(980, "Cast", {Skill:"Energy Shield"}).Insert();
+
+			delete lastcasttime;
+			lastcasttime = new Date();
+		}
+	}
+}
+
+function oTaskAttack(_p, _function, _data, _object, _tag)
+{
+	//inherit oTask
+	this.temp = oTask;
+	this.temp(_p, _function, _data, _object, _tag);
+	delete this.temp;
+	
+	var _range = 0;
+	var _specific = false;
+	var _bossunique = false;
+	var _started = false;
+
+	//**********************************
+	// Now using one attack function :D
+	//**********************************
+
+	this.Kill = oTaskAttack_kill;
+	this.Attack = oTaskAttack_attack;
+	this.CharAttack = oTaskAttack_charattack;
+
+	//this.walkattack = oTaskAttack_walkattack;
+
+	function oTaskAttack_kill()
+	{
+		if(!playerkill(this.Data))
+			TaskQueue.Insert(this);
+		return;
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ASSESMENT PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_attack()
+	{
+		if(!_started) {
+			_started = true;
+			if(this.Data.Target) {
+				_specific = true;
+			}
+			else if(this.Data.Boss) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Boss:_data.Boss}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.Unique) {
+				_specific = true;
+				this.Data.Target = MonsterQueue.getMonsters({x:_data.x, y:_data.y, Range:_data.Range, LOS:_data.LOS, Unique:_data.Unique}).getClosest();
+				if(!this.Data.Target) {
+					//return error somehow
+					return;
+				}
+			}
+			else if(this.Data.ByName) {
+				_specific = true;
+				//add in a get for name
+			}
+			else if(this.Data.Range) {
+				_range = true;
+			}
+			else {
+				//raise error and return
+				return;
+			}
+				
+				
+		}
+		
+		
+		if(_range) {
+			//Check for raising first
+			this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS, Abilities:mlBITRAISES}).getClosest();
+			if(!this.Data.Target) //now check for other types
+				this.Data.Target = MonsterQueue.getMonsters({x:this.Data.x, y:this.Data.y, Range:this.Data.Range, LOS:this.Data.LOS}).getClosest();
+			if(!this.Data.Target) return;
+		}
+		
+		if(_specific && (!this.Data.Target || this.Data.Target.Monster.hp <= 0)) return;
+		
+		sctarget.UpdateText("Last target: " + this.Data.Target.Monster.name + " (" + this.Data.Target.Monster.hp/1.28 + "% hp)");
+	
+		//if(!this.charattack(mon)) {}
+		this.CharAttack(this.Data.Target);
+
+		this.Insert();
+
+	}
+	
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	//ACTUAL ATTACKING PORTION
+	//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	function oTaskAttack_charattack(mon) {
+		var trap = assn.FindSkill({Type: gTrap}, mon.Monster);
+		var charge = assn.FindSkill({Special: gCharge}, mon.Monster);
+		var finish = assn.FindSkill({Special: gFinish}, mon.Monster);
+
+
+		if(trap.Weight > charge.Weight && cTest() != 3)
+		{
+			new oTaskSkill(this.p+1, "UseSkill", {Skill:trap.Skill, Target:mon}).Insert();
+		}
+		else
+		{
+			if(cTest() < 3)
+			{
+				new oTaskSkill(this.p+1, "UseSkill", {Skill:charge.Skill, Target:mon}).Insert();
+				me.overhead("Using " + charge.Skill + " to charge!");
+			}
+			else
+			{
+				new oTaskSkill(this.p+1, "UseSkill", {Skill:finish.Skill, Target:mon}).Insert();
+				me.overhead("Boom Baby!");
+			}
+		}
+
+		//check status of fade / burst of speed
+
+
+	}
+	
+	
+}
+
+function cTest(){
+	return me.getStat(318) + me.getStat(319) + me.getStat(320) + me.getStat(321) + me.getStat(322) + me.getStat(323)
+}
+

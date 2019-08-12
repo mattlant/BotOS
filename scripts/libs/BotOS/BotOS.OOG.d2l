@@ -1,0 +1,26 @@
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG) != 'function') {
+	BotOS.Pathing = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+function BotOS.OOG.Control = function (type, x, y, xs, ys) {
+	//abstract control class
+
+	this.Type = type;
+	this.X = x;
+	this.Y = y;
+	this.XSize = xs;
+	this.YSize = ys;
+
+}
+
+

@@ -1,0 +1,14 @@
+//mlGameLogReader
+
+function ReadLastGameNumber () {
+	var logfile = fileOpen("d2jsploader.log", 0);
+	var line, gamenum, lastline = null;
+	while(!logfile.eof) {
+		line = logfile.readLine();
+		if(line.indexOf("#") < 0) continue;
+		lastline = line;
+	}
+	if(!lastline) return null;
+	var myvals = lastline.Split("#");
+	return (myvals[1]+1);
+}

@@ -1,0 +1,206 @@
+// progress bar object .d2l
+// written entirely by njaguar
+// version 1.0
+// July 7th, 2003 (4:20pm CST)
+
+//Modified by mattlant - encapsulated into an object
+//July 17th 2003
+
+
+
+function oProgressBar(_h, _w, _ox, _oy, _colb, _Col) {
+
+
+	this.Move = moveProgressBar;
+	this.Create = createProgressBar;
+	this.Set = setProgressBar;
+	
+	var pb = new Object();
+
+	// set the height of the progress bar in pixels
+	var pb_height = _h;
+	// set the width of progress bar in pixels
+	var pb_width = _w;
+
+	// set the offset x and y of the progress bar
+	var pb_xoff = _ox;
+	var pb_yoff = _oy;
+
+	// set the colors of the progress bar
+	var pb_color_border = 0x97;	// blue
+	var pb_color = 0xff; 		// white
+
+	// internal progress
+	var pb_current_progress = 0;
+		pb.border = new Array(4);
+		pb.progress = new Array(pb_height);
+
+		// initialize the border
+		for(var i=0;i<4;i++) {
+			pb.border[i] = createProgressBarLine();
+		}
+
+		// initialize the progress bar
+		for(i=0;i<pb_height-1;i++) {
+			pb.progress[i] = createProgressBarLine();
+		}
+
+		// move it to our default position
+		moveProgressBar(pb);
+
+	/*
+		This function will move your project bar
+		To use, set the global pb_xoff and pb_yoff variables, then call this passing your progressbar object
+		Alternately, if you want to modify the colors after this is already created, simply update your color global var, and call this function
+		This function also allows you to resize the progress bar's width, however you cannot adjust the height at run time.
+	*/
+	function moveProgressBar() {
+		// position the border
+		for(i=0;i<4;i++) pb.border[i].color = pb_color_border;
+		// top
+		pb.border[0].x = pb_xoff;
+		pb.border[0].y = pb_yoff;
+		pb.border[0].x2 = pb_xoff + pb_width;
+		pb.border[0].y2 = pb_yoff;
+		// right
+		pb.border[1].x = pb_xoff + pb_width;
+		pb.border[1].y = pb_yoff;
+		pb.border[1].x2 = pb_xoff + pb_width;
+		pb.border[1].y2 = pb_yoff + pb_height;
+		// bottom
+		pb.border[2].x = pb_xoff;
+		pb.border[2].y = pb_yoff + pb_height;
+		pb.border[2].x2 = pb_xoff + pb_width;
+		pb.border[2].y2 = pb_yoff + pb_height;
+		// left
+		pb.border[3].x = pb_xoff;
+		pb.border[3].y = pb_yoff;
+		pb.border[3].x2 = pb_xoff;
+		pb.border[3].y2 = pb_yoff + pb_height;
+
+		// position the progress bar
+		for(i=0;i<pb_height-1;i++) {
+			pb.progress[i].x = pb_xoff+1;
+			pb.progress[i].y = pb_yoff+1+i;
+			pb.progress[i].y2 = pb_yoff+1+i;
+			pb.progress[i].color = pb_color;
+		}
+
+		setProgressBar(pb, pb_current_progress);
+	}
+
+	/*
+		This is the function that creates your progress bar. Once you create a progress bar, you cannot modify the height at runtime.
+	*/
+	function createProgressBar() {
+		return pb;
+	}
+
+	/*
+		Use this function to set the percent of the progress bar. Pass 0 to 100 to set the appropriate display.
+		This function allows floats from 0 to 100.
+	*/
+	function setProgressBar(percent) {
+		percent = pb_current_progress = (percent<0 || percent>100 ? 0 : percent);
+		// set the progress of the progress bar	
+		var cp = (!percent ? 0 : parseInt((pb_width-2) * (percent/100)));
+		for(var spb_i=0;spb_i<pb_height-1;spb_i++) {
+			pb.progress[spb_i].x2 = pb_xoff+1 + cp;
+		}
+	}
+
+	/*
+		This is an internal function creates a progress bar line, and returns the projectbar object
+	*/
+	function createProgressBarLine() {
+		var pb_line = getScreenHook();
+		pb_line.x=1; pb_line.y=1; pb_line.x2=1; pb_line.y2=1; pb_line.text="";
+		return pb_line;
+	}
+}
+
+
+function oMeter(_ox, _oy, _w, _h) {
+	var base = getScreenHook();
+	base.x = _ox;
+	base.y = _oy;
+	base.x2 = _ox + _w-1;
+	base.y2 = _oy;
+	base.text="";
+	base.color = 0x97;
+	
+	var w = _w;
+	
+	var mLines = new Array();
+	mLines.length = _w;
+	for(var i = 0; i < _w; i++) {
+		mLines[i] = getScreenHook();
+		mLines[i].x=_ox+i; mLines[i].y=_oy; mLines[i].x2=_ox+i; mLines[i].y2=_oy; mLines[i].text=""; mLines[i].color = 0xff;
+	}
+	
+	this.Update = oMeter_update;
+	
+	function oMeter_update(_p) {
+		//print(_w);
+		_p = _p/100*_h;
+		
+		var temp = mLines.shift();
+		for(var i=0; i < _w-1; i++) {
+			mLines[i].x=_ox+i-1; mLines[i].x2=_ox+i-1; 
+			mLines[i].text=""; mLines[i].color = 0xff;
+		}
+		
+		temp.x=_ox+w-1; temp.x2=_ox+w-1; 
+		temp.y2=_oy-_p; temp.text=""; temp.color = 0xff;
+		mLines[mLines.length] = temp;
+		
+		
+	}
+		
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+function main () {
+	var m = new oMeter(100, 400, 300, 100);
+	for(var z = 0; z < 10000; z++) {
+		var hppercent = me.hp/(me.hpmax + me.hpmax * (me.getStat(76) / 100))*100;
+		m.Update(hppercent);
+		delay(2);
+	}
+	
+	pic = new Array();
+	for(var x = 0; x < 100; x++) {
+		pic[x] = new Array();
+		for(var y = 0; y < 100; y++) {
+			pic[x][y] = getScreenHook();
+			pic[x][y].x = 10 + x; pic[x][y].y = 10 + y; pic[x][y].x2 = 10 + x+1; pic[x][y].y2 = 10 + y+1; 
+			pic[x][y].color = 0x00; pic[x][y].text = "";
+		}
+	}
+	
+	var text = getScreenHook();
+	text.text = "Hello";
+	text.x = 20;
+	text.y = 20;
+	text.color = 2;
+	delay(134987);
+	
+	
+			
+	
+}
+*/
+

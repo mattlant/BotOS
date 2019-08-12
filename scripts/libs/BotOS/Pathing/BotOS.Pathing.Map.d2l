@@ -1,0 +1,261 @@
+//##################################################
+//####   Matts Pathing Framework Library 3.0   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+----------------------------------------------------
+*/
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.Pathing) != 'function') {
+	BotOS.Pathing = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+BotOS.Pathing.Map = function(_info) {
+
+	if(!_info) _info = new Object();
+	if(!_info.Area) _info.Area = me.area;
+	if(!_info.Name) _info.Name = "Map"+_info.Area;
+	if(!_info.Logger) _info.NoLogger = true;
+
+	//inherit from Pathable
+	BotOS.Pathing.Pathable.call(this, _info);
+
+	//a reference array to Area objects
+	this.Areas = new Array();
+	//hold the area numbers for this map
+	this.AreaNumbers = new Array();
+	//This might be deprecated
+	this.PresetUnits = new Array();
+	//this hold the area linkage data for a single area map
+	this.AreaLinks = false;
+
+	this.Area = _info.Area;
+
+	//setup the Methods particular to Map
+	this.InitializeRooms = Map_InitializeRooms;
+	//this.Prepare = Map_Prepare;
+	this.Initialize = Map_Initialize;
+	//this.AreaExists = Map_AreaExists;
+
+	//find out what type of data was passed to the constructor and handle appropriately
+	if(!BotOS.Variable.IsArray(_info.Area)) {
+ //  	print("NotArray");
+		if(!BotOS.Variable.IsNumber(_info.Area)) {
+			_info.Area = me.area;
+		}
+		if(_info.Area < 1 || _info.Area > 180) {
+			throw new BotOS.ArgumentException("BotOS.Pathing.Map.ctor -> parameter passed must contain nothing or a valid area number.", 1, "Map.d2l");
+		}
+		this.AreaNumbers.push(_info.Area);
+	}
+	else {
+		this.AreaNumbers = _info.Area;
+	}
+
+
+	var _incr = false;
+
+	//throw an exception if there are no areanumbers which should NEVER happen
+	if(!this.AreaNumbers.length)
+		throw new BotOS.MappingException("BotOS.Pathing.Map.ctor -> Internal Error, this.AreaNumbers.length == 0. Please report to mattlant", 1, "Map.d2l");
+
+	//if we have only one area than we take care of building adjacent areas and parsing linkage data
+	if(this.AreaNumbers.length == 1) {
+		this.AreaLinks = BotOS.Pathing.AreaLinker.Areas[this.Area].Links;
+		//check the area linkage and get only Contingeous linked areas
+		this.AreaNumbers = BotOS.Pathing.AreaLinker.GetContingeousNeighbours(this.AreaNumbers[0]);
+	}
+
+	
+	
+	//Add the needed areas to the Areas refrence array
+	for(var i = 0; i < this.AreaNumbers.length; i++) {
+		this.Areas.push(new BotOS.Pathing.Area({AreaNumber:this.AreaNumbers[i], NoCollisionData:true, Logger:_info.Logger}));
+	}
+	//go through the areas and add the rooms, presets to our own room array
+	for(var i = 0; i < this.Areas.length; i++) {
+		this.Rooms = this.Rooms.concat(this.Areas[i].Rooms);
+		this.PresetUnits = this.PresetUnits.concat(this.Areas[i].PresetUnits);
+		//this.Areas[i].Rooms.CollisionData = null;
+		this.Areas[i].CollisionData = null;
+	}
+
+	this.Number = this.Areas[0].Number
+	//at this point we have our area(s) ready.
+	if(!_info.Low2)
+		this.InitializeRooms();
+	
+
+	//////////////////////////////////////////////////////////////////////
+	// Map Methods
+	// -------------------------------------------------------------------
+	//////////////////////////////////////////////////////////////////////
+
+
+	function Map_InitializeRooms(_coll) 
+	{
+		//print("this.Rooms.length: " + this.Rooms.length);
+		if(!this.Rooms || !this.Rooms.length) 
+			throw new BotOS.MappingException("Map.InitializeRooms(internal error) -> this.Rooms is not set", 5000, "Area.d2l");
+		
+		var currareanum = 0;
+
+		for(var i = 0; i < this.Rooms.length; i++) {
+			//print(i);
+			if(this.Rooms[i].x < this.x)
+				this.x = this.Rooms[i].x;
+			if(this.Rooms[i].y < this.y)
+				this.y = this.Rooms[i].y;
+			if(this.Rooms[i].MaxX > this.MaxX)
+				this.MaxX = this.Rooms[i].MaxX;
+			if(this.Rooms[i].MaxY > this.MaxY)
+				this.MaxY = this.Rooms[i].MaxY;
+
+			//this.PresetUnits = this.PresetUnits.concat(this.Rooms[this.Rooms.length-1].PresetUnits);
+
+		}
+
+
+		this.Width = this.MaxX - this.x;
+		this.Height = this.MaxY - this.y;
+		this.MaxX -= 1;
+		this.MaxY -= 1;
+
+ //   	print(this.Width, this.Height);
+
+		var hgt = this.Height - 1;
+		var wdt = this.Width - 1;
+
+		if(!this.CollisionData) 
+		{
+			this.CollisionData = new Array();
+			this.CollisionData.length = this.Height;
+			for(var i = 0; i<this.Height; i++)
+			{
+				this.CollisionData[i] = new Array();
+				this.CollisionData[i].length = this.Width;
+			}
+
+		}
+
+		//added back in area boxing for proper cross area pathing
+		if(this.Areas.length > 1) {
+
+			for(var a = 0; a < this.Areas.length; a++) {
+				hgt = this.Areas[a].Height - 1;
+				wdt = this.Areas[a].Width - 1;
+
+				var xoff = this.Areas[a].x - this.x;
+				var yoff = this.Areas[a].y - this.y;
+
+				for(var y = 0; y<this.Areas[a].Height; y++)
+				{
+						for(var x = 0; x<this.Areas[a].Width; x++) this.CollisionData[y + yoff][x + xoff] = 0xFF;
+						this.CollisionData[y+yoff][xoff] = 0xFF;
+						this.CollisionData[y+yoff][wdt+xoff] = 0xFF;
+				}
+			}
+
+		}
+
+
+//		print("this.Rooms.length: " + this.Rooms.length)
+	}
+
+	function Map_Initialize () {
+		if(!this.Rooms) 
+			throw new BotOS.MappingException("Map.Initialize -> this.Rooms is not set", 1, "Area.d2l");
+		
+		if(this.IsInitialized) return true;
+		
+		if(_incr) 
+		{
+			if(this.IncrementCount == this.Rooms.length) 
+			{
+				this.IsInitialized = true;
+				runGC();
+				return true;
+			}
+			BotOS.Pathing.Pathable.ArrayCopy2D(this.CollisionData, this.Rooms[this.IncrementCount].CollisionData, this.Rooms[this.IncrementCount].x-this.x, this.Rooms[this.IncrementCount].y-this.y);
+			this.Rooms[this.IncrementCount].CollisionData = null;
+			this.IncrementCount++;
+			
+			if(!(IncrementCount%200)) {
+				runGC();
+			}
+			
+
+
+		}
+		else
+		{
+
+			for(var i = 0; i<this.Rooms.length; i++) 
+			{
+				BotOS.Pathing.Pathable.ArrayCopy2D(this.CollisionData, this.Rooms[i].CollisionData, this.Rooms[i].x-this.x, this.Rooms[i].y-this.y);
+				this.Rooms[i].CollisionData = null;
+				
+				if(!(i%200)) {
+					runGC();
+				}
+				
+			}
+			this.IsInitialized = true;
+			runGC();
+			return true;
+		}
+		//runGC();
+		return false;
+	}
+
+
+}
+
+BotOS.Pathing.Map.prototype = new BotOS.Pathing.Pathable;
+
+//Deprecated
+//BotOS.Pathing.Map.ContingeousAreas = [[1,2,3,4,17], [5, 6, 7, 26, 27, 28], [40,41,42,43,44,45], [75, 76, 77, 78, 79, 80, 81, 82, 83], [103,104,105, 106], [107,108], [109,110,111,112]];
+
+
+

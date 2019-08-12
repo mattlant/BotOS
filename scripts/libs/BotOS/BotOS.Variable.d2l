@@ -1,0 +1,95 @@
+//##################################################
+//####  Matts Variable Framework Library 0.1   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+Just some static methods for variable stuff
+
+also adds trim to the String object.
+
+this library WILL grow
+
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+*/
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+
+
+BotOS.Variable = function() {
+	throw new BotOS.InstanceException("Cannot instantiate BotOS.Variable at this time");
+}
+
+
+BotOS.Variable.IsAlien = function(a) {
+   return BotOS.Variable.IsObject(a) && typeof a.constructor != 'function';
+}
+
+BotOS.Variable.IsArray = function(a) {
+    return BotOS.Variable.IsObject(a) && a.constructor == Array;
+}
+BotOS.Variable.IsBoolean = function(a) {
+    return typeof a == 'boolean';
+}
+BotOS.Variable.IsEmpty = function(o) {
+    var i, v;
+    if (BotOS.Variable.IsObject(o)) {
+        for (i in o) {
+            v = o[i];
+            if (BotOS.Variable.IsUndefined(v) && BotOS.Variable.IsFunction(v)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+BotOS.Variable.IsFunction = function(a) {
+    return typeof a == 'function';
+}
+BotOS.Variable.IsNull = function(a) {
+    return typeof a == 'object' && !a;
+}
+BotOS.Variable.IsNumber = function(a) {
+    return typeof a == 'number' && isFinite(a);
+}
+BotOS.Variable.IsObject = function(a) {
+    return (a && typeof a == 'object') || BotOS.Variable.IsFunction(a);
+}
+BotOS.Variable.IsString = function(a) {
+    return typeof a == 'string';
+}
+BotOS.Variable.IsUndefined = function(a) {
+    return typeof a == 'undefined';
+} 
+
+String.prototype.trim = function () {
+    return this.replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1");
+}
+

@@ -1,0 +1,24 @@
+//follow.d2l
+
+//Task Based Follow Plugin
+
+
+
+
+function plugFollow(instname)
+{
+	this.temp = oPlugin;
+	this.temp("FollowCore", mlPLUGINBYTIME, 250, "Follow Bot Plugin", "1.0.0", "Darien", instname);
+	delete this.temp;
+	
+	function FollowCore() {
+		
+	}
+	
+}
+
+
+
+
+
+

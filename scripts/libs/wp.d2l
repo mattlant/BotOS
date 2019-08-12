@@ -1,0 +1,167 @@
+/*
+functions:
+initialize() // should be called after creating the object
+update() // should be called if the char activated a new waypoint
+
+getArea(wp-number)
+// returns the area which belongs to a waypoint
+// usage like this: area = wplib.getArea(wpnum).area;
+
+getWPbyArea(area)
+// returns the waypoint that belongs to an area
+// returns WP for this area. can use .internal for one digit WP or .act and .waypoint for two-digit wp
+
+getWP(wp-number)
+// returns the waypoint with the one-digit number "number". See getWaypoint() in d2jsp's HISTORY.TXT to see how they are numbered
+// also good to use to convert from one digit to two:
+// converts a one-digit number as use in getWaypoint() to a act, waypoint one like Sc_TownWP() uses
+// use the .act and .waypoint attributes of the object that is returned
+
+getOneDigitWP(act, wp)
+// same as above but other way round
+// use the .internal attribute
+
+to check if a waypoint is available, get a waypoint object by using one of the above shown methods and then check the boolean attribute .available
+
+*/
+
+
+function oWPLib() {
+	this.waypoints = new Array();
+	
+	this.getArea = fgetArea;
+	this.getWPbyArea = fgetWPbyArea;
+	this.getOneDigitWP = fgetOneDigitWP;
+	this.init = initialize;
+	this.update = fUpdate;
+	this.getWP = fgetWP;
+	
+	this.init();
+
+	function initialize() {
+		for(var i=0; i<39; i++) {
+			this.waypoints.push(new oWP());
+			this.waypoints[i].available = getWaypoint(i);
+			if(i>=0 && i <9) {
+				this.waypoints[i].setWP(i, 1, i+1, null);
+				switch(i) {
+					case 0: this.waypoints[i].area = 1; break;
+					case 1: this.waypoints[i].area = 3; break;
+					case 2: this.waypoints[i].area = 4; break;
+					case 3: this.waypoints[i].area = 5; break;
+					case 4: this.waypoints[i].area = 6; break;
+					case 5: this.waypoints[i].area = 27; break;
+					case 6: this.waypoints[i].area = 29; break;
+					case 7: this.waypoints[i].area = 32; break;
+					case 8: this.waypoints[i].area = 35; break;
+				}
+			} else if(i>=9 && i<18) {
+				this.waypoints[i].setWP(i, 2, i-8, null);
+				switch(i) {
+					case 9: this.waypoints[i].area = 40; break;
+					case 10: this.waypoints[i].area = 48; break;
+					case 11: this.waypoints[i].area = 42; break;
+					case 12: this.waypoints[i].area = 57; break;
+					case 13: this.waypoints[i].area = 43; break;
+					case 14: this.waypoints[i].area = 44; break;
+					case 15: this.waypoints[i].area = 52; break;
+					case 16: this.waypoints[i].area = 74; break;
+					case 17: this.waypoints[i].area = 46; break;
+				}
+			} else if(i>=18 && i<27) {
+				this.waypoints[i].setWP(i, 3, i-17, null);
+				switch(i) {
+					case 18: this.waypoints[i].area = 75; break;
+					case 19: this.waypoints[i].area = 76; break;
+					case 20: this.waypoints[i].area = 77; break;
+					case 21: this.waypoints[i].area = 78; break;
+					case 22: this.waypoints[i].area = 79; break;
+					case 23: this.waypoints[i].area = 80; break;
+					case 24: this.waypoints[i].area = 81; break;
+					case 25: this.waypoints[i].area = 83; break;
+					case 26: this.waypoints[i].area = 101; break;
+				}
+			} else if(i>=27 && i<30) {
+				this.waypoints[i].setWP(i, 4, i-26, null);
+				switch(i) {
+					case 27: this.waypoints[i].area = 103; break;
+					case 28: this.waypoints[i].area = 106; break;
+					case 29: this.waypoints[i].area = 107; break;
+				}
+			} else if(i>=30 && i<39) {
+				this.waypoints[i].setWP(i, 5, i-29, null);
+				switch(i) {
+					case 30: this.waypoints[i].area = 109; break;
+					case 31: this.waypoints[i].area = 111; break;
+					case 32: this.waypoints[i].area = 112; break;
+					case 33: this.waypoints[i].area = 113; break;
+					case 34: this.waypoints[i].area = 115; break;
+					case 35: this.waypoints[i].area = 123; break;
+					case 36: this.waypoints[i].area = 117; break;
+					case 37: this.waypoints[i].area = 118; break;
+					case 38: this.waypoints[i].area = 129; break;
+				}
+			}
+		}
+	}
+	
+	function fUpdate() {
+		for(var i=0; i<39; i++) {
+			this.waypoints[i].available = getWaypoint(i);
+		}
+	}
+	
+	function fgetArea(number) {
+	// returns the area which belongs to a waypoint
+	// usage like this: area = wplib.getArea(wpnum).area;
+		return this.waypoints[number];
+	}
+	
+	function fgetWPbyArea(area) {
+	// returns the waypoint that belongs to an area
+	// returns WP for this area. can use .internal for one digit WP or .act and .waypoint for two-digit wp
+		for(var i=0; i<39; i++) {
+			if(this.waypoints[i].area == area) return this.waypoints[i];
+		}
+		return false;
+	}
+	
+	function fgetWP(number) {
+	// converts a one-digit number as use in getWaypoint() to a act, waypoint one like Sc_TownWP() uses
+	// use the .act and .waypoint attributes of the object that is returned
+		return this.waypoints[number];
+	}
+	
+	function fgetWP(number) {
+		return this.waypoints[number];
+	}
+	
+	function fgetOneDigitWP(act, number) {
+	// same as above but other way round
+	// use the .internal attribute
+		switch(act) {
+			case 1: return this.waypoints[number-1]; break;
+			case 2: return this.waypoints[number+8]; break;
+			case 3: return this.waypoints[number+17]; break;
+			case 4: return this.waypoints[number+26]; break;
+			case 5: return this.waypoints[number+29]; break;
+		}
+	}
+}
+
+function oWP() {
+	this.area = null;
+	this.act = null;
+	this.internal = null;
+	this.waypoint = null;
+	this.available = null;
+	
+	this.setWP = fsetWP;
+	
+	function fsetWP(internal, act, waypoint, area) {
+		this.internal = internal;
+		this.act = act;
+		this.waypoint = waypoint;
+		this.area = area;
+	}
+}

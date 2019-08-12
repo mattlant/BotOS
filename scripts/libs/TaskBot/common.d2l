@@ -1,0 +1,279 @@
+//Common functions
+
+const _SH_MIN_Y = 0;
+
+
+
+function corpsecollect()
+{
+	mycorpse = getUnit(0, me.name,17);
+	if (mycorpse) {
+		idied = true;
+		say("!Shit, I died again!");
+		//delay(250);
+		for (c = 1; c <= 10; c++) {
+			mycorpse = getUnit(0, me.name,17);
+			if (mycorpse) {
+				mycorpse.move();
+				delay(1000);
+				mycorpse.interact();
+				delay(1000);
+			}
+			else {
+				say("!I got my body back");
+				delay(500);
+				return;
+			}
+		}
+		mycorpse = getUnit(0, me.name,17);
+		if (mycorpse) quitmessage("Cannot retrieve body!");
+
+		Log.Write(mlLOGGENERAL, "Body recovered", boLOGCRITICALINFO);
+		//delay(500);
+	}
+}
+
+function clearcursor()
+{
+	if (me.itemoncursor) {
+		delay(250);
+		cursoritem = locateitem(null, null, 4);
+		if (cursoritem)	{
+//			print("Removing item '" + cursoritem.code + "' from cursor");
+			Log.Write(mlLOGGENERAL, "Removing item '" + cursoritem.code + "' from cursor", boLOGWARNING);
+			cursoritem.cancel();
+			delay(500);
+		}
+	}
+}
+
+function getID()
+{
+	return parseInt(rnd(1,65535));
+}
+
+function mlRnd(r)
+{
+	return parseInt(Math.random()*r);
+}
+
+function checkfortarget(name)
+{
+	var target = getUnit(1, name);
+
+	if(target) print(name + " detected!");
+	return target;
+	if(!target) return null;
+}
+
+
+
+
+function Dist(x1, y1, x2, y2) {
+	return Math.floor(Math.sqrt(Dist2(x1, y1, x2, y2))); }
+
+function Dist2(x1, y1, x2, y2) {
+	return Math.floor((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)); }
+
+
+
+function locateItem(who, itemcode, loc) {
+	start=getUnit(4, null, loc);
+	if(start) do {
+		if(!itemcode || itemcode==start.code) {
+			if(who) { if(start.state<3) { // lets grab the owner
+				punit=start.getParent();
+				if(punit) if(punit.name==who.name) return start; // it's me, goodie
+			} } else return start;
+		}
+	} while(start.getNext(null, loc));
+}
+
+function getCurrentTimeString() {
+	var _now = new Date();
+	return (_now.getHours() + ":" + _now.getMinutes() + ":" + _now.getSeconds() + ":" + _now.getMilliseconds());
+}
+
+function IsInRoom(_x, _y, _room) {
+	var roomx = _room.x*5;
+	var roomy = _room.y*5;
+	var roommaxx = _room.x*5 + _room.getStat(11);
+	var roommaxy = _room.y*5 + _room.getStat(12);
+	//Log.Write(mlLOGGENERAL, _x + " " + _y + " " + _room.x*5 + " " + _room.y*5, boLOGINFO);
+	
+	if(_x >= roomx && _y >= roomy && _x <= roommaxx && _y <= roommaxy) {
+		return true;
+	}
+	
+	return false;
+}
+
+function getPresetInRoom (_pu, _type, _id, _room) {
+	for (var w = 0; w < _pu.length; w++) {
+		if(_pu[w].type == _type && _pu[w].id == _id && IsInRoom(_pu[w].x, _pu[w].y, _room)) {
+			return _pu[w];
+		}
+	}
+	return false;
+}
+
+
+// ////////////////////////////////////////////////////////////////////////////
+// Thanks TDW
+function TDW_CloneObject(source_obj)
+{
+	var destination_obj;
+	var this_property;
+
+
+	if (source_obj == null)
+		destination_obj = null;
+	else {
+		destination_obj = new source_obj.constructor();
+//		if (typeof(source_obj[this_property]) == "object") {
+		if (source_obj instanceof Boolean)
+			destination_obj = new Boolean(source_obj);
+		else if (source_obj instanceof Date)
+			destination_obj = new Date(source_obj.valueOf());
+		else if (source_obj instanceof String)
+			destination_obj = new String(source_obj);
+		else if (typeof(source_obj) == "object") {
+			for (this_property in source_obj)
+				destination_obj[this_property] = 
+					(typeof(source_obj[this_property]) == "object") ?
+					D2JSP_UTIL_GEN_CloneObject(source_obj[this_property]) :
+					source_obj[this_property];
+		}
+		else
+			destination_obj = source_obj;
+	}
+
+	return(destination_obj);
+}
+// ////////////////////////////////////////////////////////////////////////////
+
+
+//SNAGIT RELATED MATERIAL
+//Created by Bluemind, HPB_Forever, and FruitBar
+
+/* ææææææææææææææææææææææææææææææææææææææææææææææææ
+randomizations to avoid detection
+ææææææææææææææææææææææææææææææææææææææææææææææææ */
+// OnlyPickStand=true/false	If true, you will only grab items while you are not moving
+// BasicCancel=true/false	true to have a normal cancel, false if having problems with cancelling interaction
+// HtmlLogging=true/false	Set this to true to use html logging.
+// RandomDel=true/false		This will randomize all delays to make the script harder to detect by blizz
+// walkdel=xx			This is the delay between steps.  Change this if you are having problems with black walls
+// SnagDel=xxx			This is the amount of time in between checking items.
+// charsnag="ini"		This is the snagit file to load for your character
+
+var OnlyPickStand=false;
+var BasicCancel=true;
+var HtmlLogging=true;
+var RandomDel=true;
+var walkdel=250;
+var SnagDel=100;
+
+function ScreenHook(text, x, y, color, font) {
+	var hook = null;
+	if (me.version < "0.26") {
+		hook = new Object();
+	} else if (!hook) {
+		hook = getScreenHook();
+	}
+
+	this.Init         = ScreenHook_Init;
+	this.Update       = ScreenHook_Update;
+	this.UpdateText   = ScreenHook_UpdateText;
+	this.UpdateX      = ScreenHook_UpdateX;
+	this.UpdateY      = ScreenHook_UpdateY;
+	this.UpdateColor  = ScreenHook_UpdateColor;
+	this.UpdateFont   = ScreenHook_UpdateFont;
+	this.Move         = ScreenHook_Move;
+	this.Remove       = ScreenHook_Remove;
+	this.GetHookProps = ScreenHook_GetHookProps;
+
+	this.Init();
+	this.Update(text, x, y, color, font);
+
+	function ScreenHook_Init() {
+		this.Update(" ", 0, _SH_MIN_Y, 0, 0);
+	}
+
+	function ScreenHook_Update(text, x, y, color, font) {
+		this.UpdateText(text);
+		this.UpdateX(x);
+		this.UpdateY(y);
+		this.UpdateColor(color);
+		this.UpdateFont(font);
+	}
+
+	function ScreenHook_UpdateText(text) {
+		if (hook && text && text.length > 0)  { hook.text = text; }
+	}
+
+	function ScreenHook_UpdateX(x) {
+		if (hook && x >= 0 && x < 800)        { hook.x = x; }
+	}
+
+	function ScreenHook_UpdateY(y) {
+		if (hook && y >= _SH_MIN_Y && y < 600){ hook.y = y; }
+	}
+
+	function ScreenHook_UpdateColor(color) {
+		if (hook && color >= 0 && color <= 15) { hook.color = color; }
+	}
+
+	function ScreenHook_UpdateFont(font) {
+		if (hook && font >= 0 && font <= 13) { hook.font = font; }
+	}
+
+	function ScreenHook_Move(x, y) {
+		this.UpdateX(x);
+		this.UpdateY(y);
+	}
+
+	function ScreenHook_Remove() {
+		if (!hook) { return; }
+		hook.text = "";
+		hook = null;
+	}
+
+	function ScreenHook_GetHookProps() {
+		if (!hook) { return; }
+		o = new Object;
+		o.text  = hook.text;
+		o.x     = hook.x;
+		o.y     = hook.y; // if 'y' is < 12 the text won't print
+		o.color = hook.color;
+		o.font  = hook.font;
+		return o;
+	}
+}
+
+
+
+function itemCountTotal(itemcode) {
+
+	count=0;
+	item=getUnit(4, itemcode, 100);
+	do {
+		if(item) {
+			punit=item.getParent();
+			if(!punit || (punit && punit.name==me.name)) {
+				count += item.getStat(70);
+			}
+		}
+	} while(item && item.getNext(itemcode, 100));
+	
+	item=getUnit(4, itemcode, 1);
+	do {
+		if(item && (item.itemloc == 4 || item.itemloc == 5)) {
+			punit=item.getParent();
+			if(!punit || (punit && punit.name==me.name)) {
+				count += item.getStat(70);
+			}
+		}
+	} while(item && item.getNext(itemcode, 1));
+	return count;
+}

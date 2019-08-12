@@ -1,0 +1,293 @@
+//##################################################
+//####   Matts Console Framework Library 0.1   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+----------------------------------------------------
+History
+Version 1.0.0
+- Initial Release
+
+----------------------------------------------------
+
+*/
+
+
+include("BotOS/BotOS.Exceptions.d2l");
+include("BotOS/BotOS.Variable.d2l");
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1);
+	}
+}
+
+if(typeof(BotOS.Console) != 'function'){
+	BotOS.Console = function () {
+		throw new BotOS.NamespaceException("BotOS.Console Cannot be instantiated", 1);
+	}
+}
+
+BotOS.Console.Image = function (filename, col, x, y) {
+
+	var SHArray = new Array();
+	var X = 0;
+	var Y = 0;
+	var FileName = null;
+	var Color = 0xff;
+
+	//X property
+	this.X setter = function (value) {
+		if(!(BotOS.Variable.IsNumber(value) && value >= 0 && value < 800)) 
+			throw new BotOS.ArgumentException("BotOS.Console.Image.X requires a valid number to be passed", 1, "BotOS.Console.GFX.d2l");
+		X = value;
+		//TODO, ad in position changing functionality
+	}
+	this.X getter = function() { return X; }
+
+	//Y property
+	this.Y setter = function (value) {
+		if(!(BotOS.Variable.IsNumber(value) && value >= 0 && value < 600)) 
+			throw new BotOS.ArgumentException("BotOS.Console.Image.Y requires a valid number to be passed", 1, "BotOS.Console.GFX.d2l");
+		Y = value;
+		//TODO, ad in position changing functionality
+	}
+	this.Y getter = function() { return Y; }
+	
+	//FileName property
+	this.FileName setter = function (value) {
+		var tf;
+		if(!(BotOS.Variable.IsString(value) && (tf = fileOpen(value, 0))))
+			throw new BotOS.ArgumentException("BotOS.Console.Image.FileName requires a valid file", 1, "BotOS.Console.GFX.d2l");
+		tf.close();
+		FileName = value;
+	}
+	this.FileName getter = function() { return FileName; }
+	
+	//Color
+	this.Color setter = function (value) {
+		if(!(BotOS.Variable.IsNumber(value) && value >= 0 && value < 256)) 
+			throw new BotOS.ArgumentException("BotOS.Console.Image.Color requires a valid number to be passed", 1, "BotOS.Console.GFX.d2l");
+		Color = value;
+	}
+	this.Color getter = function() { return Color; }
+
+	this.X = x;
+	this.Y = y;
+	this.FileName = filename;
+	this.Color = col;
+
+	this.Load = function () {
+
+		var ImageFile = fileOpen(FileName, 0);
+		if(!ImageFile) {
+			throw new BotOS.Exception("Could not open file: " + FileName);
+		}
+
+
+		var line = ImageFile.readLine();
+		var lines = line.split("|");
+//		print("Lines in file: " + lines.length);
+
+		for(var i = 0; i < lines.length; i++) {
+
+			SHArray[i] = new Array();
+
+			if(!lines[i].length) {
+				continue;
+			}
+
+			var ha = lines[i].split(";");
+
+			for(var j = 0; j < ha.length; j++) {
+				//if(!ha[j].length) continue;
+				var ca = ha[j].split(",");
+				var sh = getScreenHook();
+				sh.text = "";
+				sh.x = parseInt(ca[0]) + X;
+				sh.y = i + Y;
+				sh.x2 = parseInt(ca[1]) + X;
+				sh.y2 = -1;
+				//sh.my = i + Y;
+				sh.color = ca[2]?parseInt(ca[2]):Color;
+				SHArray[i].push(sh);
+				//print("Got Hook " + sh.x + " " + sh.y + " " + sh.x2 + " " + sh.y2);
+
+			}
+		}
+		ImageFile.close();
+	}
+
+	this.LoadColor = function () {
+
+		var ImageFile = fileOpen(FileName, 0);
+		if(!ImageFile) {
+			throw new BotOS.Exception("Could not open file: " + FileName);
+		}
+
+
+		var line = ImageFile.readLine();
+		var lines = line.split("|");
+//		print("Lines in file: " + lines.length);
+
+		for(var i = 0; i < lines.length; i++) {
+
+			SHArray[i] = new Array();
+
+			if(!lines[i].length) {
+				continue;
+			}
+
+			var ha = lines[i].split(";");
+
+			for(var j = 0; j < ha.length; j++) {
+				//if(!ha[j].length) continue;
+				var ca = ha[j].split(",");
+				var sh = getScreenHook();
+				sh.text = "";
+				sh.x = parseInt(ca[0]) + X;
+				sh.y = i + Y;
+				sh.x2 = sh.x;
+				//sh.x2 = parseInt(ca[1]) + X;
+				sh.y2 = -1;
+				//sh.my = i + Y;
+				sh.color = parseInt(ca[2]);
+				SHArray[i].push(sh);
+				//print("Got Hook " + sh.x + " " + sh.y + " " + sh.x2 + " " + sh.y2);
+
+			}
+		}
+		ImageFile.close();
+	}
+
+
+	this.ChangeColor = function(col) {
+		for(var i = 0; i < SHArray.length; i++) {
+			for(var j = 0; j < SHArray[i].length; j++) {
+				SHArray[i][j].color = col;
+			}
+		}
+	}
+	
+	this.ChangePosition = function(x,y) {
+		for(var i = 0; i < SHArray.length; i++) {
+			for(var j = 0; j < SHArray[i].length; j++) {
+				//print(SHArray[i].x2, SHArray[i].x);
+				//delay(5000);
+				var dis = SHArray[i][j].x2 - SHArray[i][j].x;
+				var disy = SHArray[i][j].y;
+				SHArray[i][j].x = x;
+				SHArray[i][j].y = y;
+				SHArray[i][j].x2 = x + dis;
+				SHArray[i][j].y2 = y;
+			}
+		}
+	}
+
+	this.Show = function() {
+		for(var i = 0; i < SHArray.length; i++) {
+			for(var j = 0; j < SHArray[i].length; j++) {
+				SHArray[i][j].y2 = SHArray[i][j].y;
+			}
+		}
+	}
+	
+	this.Hide = function() {
+		for(var i = 0; i < SHArray.length; i++) {
+			for(var j = 0; j < SHArray[i].length; j++) {
+				SHArray[i][j].y2 = -1;
+			}
+		}
+	}
+}
+
+BotOS.Console.DrawPallete = function (del) {
+	var i = 0;
+	var SHArray = new Array();
+	while(i < 256)
+	{
+		var sh = getScreenHook();
+		sh.x = 0;
+		sh.x2 = 800;
+		sh.y = i;
+		sh.y2 = i
+		sh.text = "";
+		sh.color = i;
+		SHArray.push(sh);
+		i++
+	 }
+	 delay(del);
+}
+
+BotOS.Console.ScreenTest = function (x1, y1, x2, y2, col, del) {
+	
+	var SHArray = new Array();
+
+	for(var x = x1; x < x2; x++) {
+		for(var y = y1; y < y2; y++) {
+			var sh = getScreenHook();
+			sh.text = "";
+			sh.x = x;
+			sh.x2 = x+1;
+			sh.y = y;
+			sh.y2 = y;
+			sh.color = col;
+			SHArray.push(sh);
+		}
+	}
+
+	delay(del);
+
+}
+
+BotOS.Console.ImageFlipper = function () {
+
+	this.ImageList = new Array();
+
+	this.LoadList = function (loc, bfilename, l, h, ext, posx, posy) {
+		print("Starting Load");
+		var d = new Date();
+
+		for (var i = l; i < h+1; i++)
+		{
+			var fname = (loc  + "/" + bfilename + "" + i + "." + ext);
+			this.ImageList.push(new BotOS.Console.Image(fname, 0xff, 10, 10));
+			this.ImageList[this.ImageList.length-1].Load();
+		}
+		print("Done Load: " + (new Date() - d));
+
+	}
+
+	this.Flip = function (del, del2) {
+		
+		for(var i = 0; i < this.ImageList.length; i++) {
+			this.ImageList[i].Show();
+			print("Showing Image: " + i);
+			delay(del);
+			this.ImageList[i].Hide();
+		}
+
+		delay(del2);
+	}
+
+}

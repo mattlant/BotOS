@@ -1,0 +1,262 @@
+
+
+/*
+bit 0 : block walk - 1
+bit 1 : block light - 2
+bit 2 : Block LOS (block jump too) - 4
+bit 3 : block Player's walk but not Mercenary's walk (weird) - 8
+bit 4 : ? - 16
+bit 5 : block light only (not LOS) ?  - 32
+bit 6 : ?
+bit 7 : ?
+*/
+
+include("taskbot/threat.d2l");
+include("BotOS/BotOS.Logging.d2l");
+include("BotOS/Console/BotOS.Console.GFX.d2l");
+include("BotOS/Console/BotOS.Console.Screen.d2l");
+include("Terminal.d2l");
+
+print("Done Includes");
+
+var logger = new BotOS.Logging.Log("output/gidtest.log");
+logger.Initialize();
+
+function main ()
+{
+	var r = getRoom(2);
+
+	while(1) {
+		var p = r.getStat(11);
+	}
+/*
+//     t = new oGridDisplay(20, 50, 7, 80, null, null,null);
+//     delay(5000);
+//     t.print("mattlant & IProto are making the 1337est shiznit");
+//     t.print("The quick brown fox jumped over the lazy dog");
+//     t.print("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+//     t.print("abcdefghijklmnopqrstuvwxyz");
+//     t.print("The quick brown fox jumped over the lazy dog");
+//     t.print("The quick brown fox jumped over the lazy dog");
+//     delay(20000);
+
+	try{
+		var Console = new BotOS.Console.TextConsole(10, 10, 7, 80, 200);
+		 Console.Write("mattlant & IProto are making the 1337est shiznitABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ");
+		 delay(1000);
+		 Console.Write("The quick brown fox jumped over the lazy dog");
+		 delay(1000);
+		 Console.Write("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+		 delay(1000);
+		 Console.Write("abcdefghijklmnopqrstuvwxyz");
+		 delay(1000);
+		 Console.Write("The quick brown fox jumped over the lazy dog");
+		 delay(1000);
+		 Console.Write("mattlant & IProto are making the 1337est shiznit");
+		 delay(1000);
+		 Console.Write("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+		 delay(1000);
+		 Console.Write("abcdefghijklmnopqrstuvwxyz");
+		 delay(1000);
+		 Console.Write("The quick brown fox jumped over the lazy dog");
+		 delay(1000);
+		 Console.Write("mattlant & IProto are making the 1337est shiznit");
+		 delay(20000);
+	}
+	catch(e) {
+		var l = new BotOS.Logging.Log("output/screentest.log");
+		l.WriteException(e);
+		stop();
+	}
+//
+*/
+		
+	/*
+		print("Starting");
+		d = new Date();
+		m = new BotOS.Console.Image("libs/BotOS/images/cleft.bif", 0, 10, 1);
+	    m.Load();
+	    m.Show();
+		print("Date: " + (new Date() - d));
+		delay(100000);
+
+		BotOS.Console.DrawPallete(2000000);
+		stop();
+		*/
+	m = new BotOS.Console.ImageFlipper();
+	m.LoadList ("libs/BotOS/images", "C", 1, 20, "txt", 10, 10);
+	backar = new Array();
+	for(var i = 0; i < 600; i++) {
+		backar[backar.length] = getScreenHook();
+		backar[backar.length - 1].text = "";
+		backar[backar.length - 1].x = 0;
+		backar[backar.length - 1].x2 = 800;
+		backar[backar.length - 1].y = i;
+		backar[backar.length - 1].y2 = i;
+		backar[backar.length - 1].color = 0;
+	}
+
+         // m = new BotOS.Console.ImageFlipper();
+         // m.LoadList ("libs/BotOS/images", "C", 1, 20, "txt", 10, 10);
+           while(1){
+               var d = new Date();
+               m.Flip(80, 1000);
+               print(new Date() - d);
+           }
+//         m.Flip(100, 1000);
+//         m.Flip(150, 1000);
+//         m.Flip(200, 1000);
+//         m.Flip(250, 1000);
+//         m.Flip(300, 1000);
+//         m.Flip(350, 1000);
+//         m.Flip(400, 1000);
+//         m.Flip(450, 1000);
+//         m.Flip(500, 1000);
+//         m.Flip(550, 1000);
+       print("Done");
+//         stop();
+
+
+		delay(20000);
+		for(var i = 5; i > 0; i--) {
+			m.Hide();
+			delay(500);
+			m.Show();
+			delay(500);
+		}
+		for(var i = 255; i > 0; i--) {
+			m.ChangeColor(i);
+			delay(5);
+		}
+
+		delay(500);
+		for(var i = 1; i < 100; i += 10) {
+			m.ChangePosition(i, i); 
+			delay(5000);
+		}
+		delay(30000000);
+
+/*
+	while (1)
+	{
+		var mon = getUnit(1);
+		if(mon) do {
+//            if(mon.spectype == 0x4) {
+            if(mon.name == "Storm Eye") {
+				print ("FOUND THE UNIQUE: " + mon.name);
+				print("Its GID is: " + mon.gid);
+
+				var mongid = mon.gid;
+
+				while(1) {
+
+					
+					print(mongid);
+					var mon2 = getUnit(1, null, null, mongid);
+
+					if(mon2) {
+						print("mon2.name: "  + mon2.name);
+					}
+					else {
+						print("mon2 not found :( ");
+					}
+					
+
+					
+					var mon2 = getUnit(1);
+					if(mon2) do {
+						if(mon.name == mon2.name) {
+//						if(mon2.spectype == mon.spectype && mon.name == mon2.name) {
+							print("refound the monster " + mon2.name + ". Its GID is: " + mon2.gid);
+							print(" the old GID was: " + mon.gid);
+						}
+					}while(mon.getNext());
+					
+					delay(1000);
+					
+				}
+
+
+
+			}
+		}while (mon.getNext());
+		delay(2000);
+	}
+*/
+
+		var done = false;
+		var mon = getUnit(1);
+		if(mon) do {
+			if(!done) {
+				var mon2 = getUnit(1);
+				if(mon2) do {
+					logger.Write("Inner getUnit() -> Monster: " + mon2.name + ", GID: " + mon2.gid);
+                }while(mon2.getNext());
+				done = true;
+			}
+			logger.Write("Outter getUnit() -> Monster: " + mon.name + ", GID: " + mon.gid);
+        }while (mon.getNext());
+		delay(2000);
+
+
+}
+
+
+
+function GetClosestMonster32(x, y, r, n)
+{
+	var monsterid = 0;
+	var mon = getUnit(1,n); 
+	if ( mon ) do {
+		if (!mon.hp || mon.name == "Pindleskin" || mon.name == "Hydra" || (mon.getParent() && mon.getParent().name == me.name)) continue;
+		var dist = BotOS_Pathing_Pather_DiagShortcut(mon.x, mon.y, x, y);
+		if ( dist < r ) {
+			r = dist;
+			monstergid = mon.gid;
+		}
+
+	}while (mon.getNext(n));
+	return monsterid?getUnit(1,null, null, monsterid):false;
+}
+
+function BotOS_Pathing_Pather_DiagShortcut (x1, y1, x2, y2) {
+	var dy = Math.abs(y2-y1);
+	var dx = Math.abs(x2-x1);
+	if (dy <= dx) return dy*0.414 + dx; else return dx*0.414 + dy;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function OptionList(optionarray) 
+{
+	this.Options = optionarray;
+
+	this.Add = function (option) {
+		if(!(option instanceof Option)) throw exception;
+		this.Options.push(option);
+	}
+}
+
+function Option(text, func)
+{
+	this.OptionText = text;
+	this.ActionFunction = (func && typeof(func) == 'function')?func:null;
+
+	this.NextOptionList = (func && func instanceof OptionList)?func:null;
+
+	if(this.ActionFunction === null && this.NextOptionList === null) throw;
+}
+
+myoptions = new OptionList([new Option("What is your name", nameoptions), new Option("What is yuour age", nameactionfunction)]);
+
+
+

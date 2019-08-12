@@ -1,0 +1,75 @@
+//mlD2Info
+// getBaseStats for other objects
+
+
+
+
+function oD2Info(_filename) {
+
+
+	this.HeaderLine
+	this.Units = new Array();
+	this.NumberOfLines = 0;
+
+	this.BaseUnit = new Object();
+
+	this.UnitProperties = null;
+	this.Initialize = oD2Info_init;
+
+	this.Initialize(_filename);
+
+	function oD2Info_init(_file) {
+		var infile = fileOpen(_file, 0);
+		if(!infile) {
+			print("oD2Info - CANT OPEN FILE: " + _file);
+			return false;
+		}
+
+		this.NumberOfLines = parseInt(infile.readLine());
+		this.HeaderLine = infile.readLine();
+		//print(this.HeaderLine);
+
+		this.UnitProperties = this.HeaderLine.split(",");
+
+		while(!infile.eof) {
+			this.Units[this.Units.length] = new Object();
+			var objline = infile.readLine();
+			objline = objline.split(",");
+			for(var i = 0; i < this.UnitProperties.length; i++) {
+				var objpropval = objline[i];
+				var num = parseInt(objpropval);
+				if(isNaN(num)) {
+					this.Units[this.Units.length-1][this.UnitProperties[i]] = objline[i];
+				} else {
+					this.Units[this.Units.length-1][this.UnitProperties[i]] = num;
+				}
+			}
+		}
+	}
+}
+
+if(0) {
+
+
+
+function main() {
+
+	var d2Objects = new oD2Info("settings/objects.csv");
+
+	print(d2Objects.Units[13].Name);
+	print(d2Objects.Units[13].description);
+	print(d2Objects.Units[13].SizeX);
+	print(d2Objects.Units[13].SizeY);
+}
+
+
+
+}
+
+
+
+
+
+
+
+

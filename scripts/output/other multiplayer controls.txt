@@ -1,0 +1,7 @@
+Text	Type	X	Y	XSize	YSize	visible	disabled	Extended Text
+null	2	0	599	800	600	false	undefined	undefined
+null	2	400	120	181	170	false	undefined	undefined
+null	2	400	120	188	177	false	undefined	undefined
+OPEN BATTLE.NET	6	264	310	272	35	false	false	undefined
+TCP/IP GAME	6	264	350	272	35	false	false	undefined
+CANCEL	6	264	568	272	35	false	false	undefined

@@ -1,0 +1,20 @@
+function LoadSkill()
+{
+	me.overhead("Loading Necromancer Skills");
+
+	var cList = new Array(
+	
+// Skill Name         Type       Element    Scope      Special   Weight   Mana	 Range
+
+["Attack",			  gMelee,    gPhys,     gSingle,   gNone,    .8,      0,     0  ],
+["Teeth",			  gMelee,    gPhys,     gNarrow,   gNone,    1,       0,	 0  ],
+["Poison Dagger",     gDagger,   gPsn,      gNarrow,   gNone,    1,       0,     0  ],
+["Corpse Explosion",  gCorpse,   gFire,     gWide,     gNone,    1,       0,     25   ],
+["Poison Explosion",  gCorpse,   gPsn,      gNarrow,   gNone,    1,       0,     25   ],
+["Bone Spear",        gSpell,    gPhys,     gNarrow,   gNone,    1,       0,     15 ],
+["Poison Nova",       gSpell,    gPsn,      gWide,     gNone,    1,       0,     30   ],
+["Bone Spirit",       gSpell,    gPhys,     gSingle,   gNone,    1,       0,     30   ]
+		
+);
+	return cList;
+}

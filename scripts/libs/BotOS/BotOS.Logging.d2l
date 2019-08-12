@@ -1,0 +1,260 @@
+//##################################################
+//####   Matts Logging Framework Library 0.1   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+This is the Logging framework used in BotOS.
+
+A lot of the stuff in here is proprietary to BotOS.
+
+However, the BotOS.Logging.Log is a general Log object.
+
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+*/
+
+
+const mlLOGPOTIONS = "tlPotions";
+const mlLOGMOVEMENT = "tlMovement";
+const mlLOGTASKS = "tlTasks";
+const mlLOGAI = "tlAI";
+const mlLOGGENERAL = "tlGeneral";
+
+const boLOGTYPESTRING = ["**GENERAL**", "**INFO**", "**CRITICAL INFO**", "**WARNING**", "**ERROR**", "**CRITICAL ERROR**"] 
+
+const boLOGCRITICALERROR = 5;
+const boLOGERROR = 4;
+const boLOGWARNING = 3;
+const boLOGCRITICALINFO = 2;
+const boLOGINFO = 1;
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "BotOS.Logging.d2l");
+	}
+}
+if(typeof(BotOS.Logging) != 'function') {
+	BotOS.Logging = function () {
+		throw new BotOS.NamespaceException("BotOS.Logging Cannot be instantiated", 1, "BotOS.Logging.d2l");
+	}
+}
+
+
+
+const mlLOGLOCATION = "output/Taskbot/";
+
+
+BotOS.Logging.BotOSLog = function (_print, _write) {
+	
+	this.InitializeLogs = BotOSLog_initlogs;
+	this.Write = BotOSLog_write;
+	this.Clear = BotOSLog_clear;
+	this.CloseLogs - BotOSLog_closelogs;
+	
+	this.Logs = [mlLOGPOTIONS, mlLOGMOVEMENT, mlLOGTASKS, mlLOGAI, mlLOGGENERAL];
+	this.LogFiles = new Object();
+	this.LogLevel = 0;
+	this.PrintLevel = 0;
+	this.WriteLevel = 0;
+	
+	if(!isNaN(_print))
+		this.PrintLevel = _print;
+	if(!isNaN(_write))
+		this.WriteLevel = _write;
+
+	function BotOSLog_initlogs () {
+		for(var i = 0; i<this.Logs.length; i++) {
+			this.LogFiles[this.Logs[i]] = fileOpen((mlLOGLOCATION + this.Logs[i] + ".log"), 1);
+			this.LogFiles[this.Logs[i]].writeLine(this.Logs[i] + " Log File Initialized at: " + BotOS.Logging.GetCurrentTimeString());
+			this.LogFiles[this.Logs[i]].close();
+		}
+	}
+	
+	function BotOSLog_write(_log, _val, _type) {
+		if(!_type) type = 1;
+		if(_type >= this.PrintLevel)
+			StdOutput.Write(/*BotOS.Logging.GetCurrentTimeString() + " - " + */boLOGTYPESTRING[_type] + " - " + _val);
+			//print(BotOS.Logging.GetCurrentTimeString() + " - " + boLOGTYPESTRING[_type] + " - " + _val);
+		if(_type >= this.WriteLevel) {
+			var tlog = fileOpen((mlLOGLOCATION + _log + ".log"), 2);
+			tlog.writeLine(BotOS.Logging.GetCurrentTimeString() + "\t - " + boLOGTYPESTRING[_type] + "\t - " + _val);
+			tlog.close();
+		}
+	}
+	
+	function BotOSLog_clear() {}
+	
+	function BotOSLog_closelogs() {
+		for(var i = 0; i<this.Logs.length; i++) {
+			if(typeof(this.LogFiles[_log]) != "object") continue;
+			this.LogFiles[this.Logs[i]].close();
+		}
+	}
+}
+
+BotOS.Logging.Log = function (_log, _print, _write) {
+	
+	this.InitializeLog = Log_initlog;
+	this.Initialize = Log_initlog;
+	this.Write = Log_write;
+	this.Clear = Log_clear;
+	this.CloseLogs - Log_closelogs;
+	this.WriteException = Log_writeexception;
+	
+	this.Log = _log;
+	this.LogHandle = null
+	this.LogLevel = 0;
+	this.PrintLevel = 0;
+	this.WriteLevel = 0;
+	
+	if(!isNaN(_print))
+		this.PrintLevel = _print;
+	if(!isNaN(_write))
+		this.WriteLevel = _write;
+
+	function Log_initlog () {
+		print(this.Log);
+		this.LogHandle = fileOpen(this.Log, 1);
+		print(this.LogHandle);
+		this.LogHandle.writeLine(this.Log + " - Log File Initialized at: " + BotOS.Logging.GetCurrentTimeString());
+		this.LogHandle.close();
+	}
+	
+	function Log_write(_val, _type) {
+		if(!_type) _type = 1;
+		if(_type >= this.PrintLevel) {
+			if(_val.length > 150) {
+				var lines = Math.ceil(_val.length / 150);
+				if(lines > 5) lines = 5;
+				for(var i = 0; i < lines; i++) {
+					print(_val.slice(i*150, i*150+150));
+				}
+			}
+			else
+				print( boLOGTYPESTRING[_type] + " - " + _val);
+		}
+		if(_type >= this.WriteLevel) {
+			print(this.Log);
+			this.LogHandle = fileOpen(this.Log, 2);
+			print(this.LogHandle);
+			this.LogHandle.writeLine(BotOS.Logging.GetCurrentTimeString() + "\t - " + boLOGTYPESTRING[_type] + "\t - " + _val);
+			this.LogHandle.close();
+		}
+	}
+
+	function Log_writeexception (e, _type) {
+		if(!_type) _type = 5;
+		if(!(e instanceof Error)) 
+		{
+			this.Write("Exception Occured - However an invalid exception was passed to BotOS.Logging.Log.WriteException", _type);
+			return;
+		}
+		this.Write("Exception Occured - details below", _type);
+		this.Write("Name: " + e.name, _type);
+		this.Write("Error code: " + e.number, _type);
+		this.Write("Message: " + e.message, _type);
+		this.Write("lineNumber: " + e.lineNumber, _type);
+		this.Write("fileName: " + e.fileName, _type);
+		var estack = e.stack;
+		if(!(estack instanceof Array)) {
+			estack = estack.split("\n");
+			estack.pop();
+			estack.pop();
+			estack.reverse();
+		}
+
+		for(var i = 0; i < estack.length; i++) {
+			this.Write("Stack Trace -> function[" + (i+1) + "]: " + estack[i], _type);
+		}
+		if(e.inner) {
+			this.Write("Inner Exceptions Attached - details below", _type);
+			var einner = e.inner;
+			while(einner) {
+				this.Write("Name: " + einner.name, _type);
+				this.Write("Error code: " + einner.number, _type);
+				this.Write("Message: " + einner.message, _type);
+				this.Write("lineNumber: " + einner.lineNumber, _type);
+				this.Write("fileName: " + einner.fileName, _type);
+				var einstack = einner.stack;
+				if(!(einstack instanceof Array)) {
+					einstack = einstack.split("\n");
+					einstack.pop();
+					einstack.pop();
+					einstack.reverse();
+				}
+					
+				for(var i = 0; i < einstack.length; i++) {
+					this.Write("Stack Trace -> function[" + (i+1) + "]: " + einstack[i], _type);
+				}
+				einner = einner.inner;
+			}
+
+		}
+	}
+	
+	function Log_clear() {}
+	
+	function Log_closelogs() {
+		this.LogHandle.close();
+	}
+}
+	
+	
+BotOS.Logging.Log2 = function () {
+	
+	this.InitializeLogs = Log_initlogs;
+	this.Write = Log_write;
+	this.Clear = Log_clear;
+	this.CloseLogs - Log_closelogs;
+	
+	this.Logs = [mlLOGPOTIONS, mlLOGMOVEMENT, mlLOGTASKS, mlLOGAI];
+	this.LogFiles = new Object();
+
+	function oLog_initlogs () {
+		for(var i = 0; i<this.Logs.length; i++) {
+			this.LogFiles[this.Logs[i]] = fileOpen((mlLOGLOCATION + this.Logs[i] + ".log"), 1);
+			this.LogFiles[this.Logs[i]].writeLine(this.Logs[i] + " Log File Initialized at: " + BotOS.Logging.GetCurrentTimeString());
+		}
+	}
+	
+	function oLog_write(_log, _val) {
+		this.LogFiles[_log].writeLine(BotOS.Logging.GetCurrentTimeString() + "\t - " + _val);
+	}
+	
+	function oLog_clear() {}
+	
+	function oLog_closelogs() {
+		for(var i = 0; i<this.Logs.length; i++) {
+			if(typeof(this.LogFiles[_log]) != "object") continue;
+			this.LogFiles[this.Logs[i]].close();
+		}
+	}
+}
+		
+BotOS.Logging.GetCurrentTimeString = function() {
+	var _now = new Date();
+	return (_now.getHours() + ":" + _now.getMinutes() + ":" + _now.getSeconds() + ":" + _now.getMilliseconds());
+}

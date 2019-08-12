@@ -1,0 +1,25 @@
+function plugPickup(instname) {
+	this.temp = oPlugin;
+	this.temp("PickupCheck", mlPLUGINBYTIME, 1000, "Pickup", "1.1", "Hellek", instname);
+	delete this.temp;
+	
+	this.PickupCheck = function () {
+		if(itemCountTotal("key") < 6) {
+			AI.needkeys = true;
+		} else {
+			AI.needkeys = false;
+		}
+		
+		if(locateItem(me, "tbk", 100) && itemCountTotal("tbk") < 15) {
+			AI.needtsc = true;
+		} else {
+			AI.needtsc = false;
+		}
+		
+		if(locateItem(me, "ibk", 100) && itemCountTotal("ibk") < 15) {
+			AI.needisc = true;
+		} else {
+			AI.needisc = false;
+		}
+	}
+}

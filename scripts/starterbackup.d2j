@@ -1,0 +1,189 @@
+/*
+	njaguar's uber game creator scriptzor
+
+ --- CREATE GAME ---
+GAME NAME - 1: 432,162 : 158,20
+PASSWORD - 1: 432,217 : 158,20
+HELL RADIO - 6: 698,381 : 16,16
+NIGHTMARE RADIO - 6: 555,381 : 16,16
+NORMAL RADIO - 6: 430,381 : 16,16
+
+ --- JOIN GAME ---
+GAME NAME - 1: 432,148 : 155,20
+GAME PASS - 1: 606,148 : 155,20
+GAME LISTBOX - 4: 432,393 : 160,173
+GAME DETAILS BOX - 4: 609,393 : 143,194
+*/
+
+var gamename = "paulzor";
+var gamepass = "123";
+var difficulty = 1; // nightmare
+
+
+var CreateGameTimeout = 30000;		// wait 30 seconds before attempting to create a new game
+var GameCreateDelay = 10000;			// wait 10 seconds between game creates
+
+// SYSTEM VARIABLES
+var editboxes = [ [1,432,162,158,20],[1,432,217,158,20]	];
+var radiobuttons = [ [6,698,381,16,16], [6,555,381,16,16], [6,430,381,16,16] ];
+// CREATE and CREATE GAME
+var buttons = [ [6,533,469,120,20], [6,594,433,172,32]];
+var chatbox = [4,28,410,354,298];
+
+// Join Game Selection Button  
+var JoinGameSelectButton   =  [6, 652, 469, 120, 20];  
+var JoinGame_ConfirmButton =  [6, 594, 433, 172, 32];  
+var JoinGame_NamePassList  = [[1, 432, 148, 155, 20], [1, 606, 148, 155, 20]];
+
+var total_games = 0;
+var total_failed = 0;
+var LastGameAttempt = 0;
+var debug_mode = true;
+
+function dprint(txt) {
+	var f;
+	if(debug_mode) {
+		f=fileOpen("output/starter.log",2);
+		if(f) {
+			f.writeLine(txt);
+//			f.close();
+		}
+	}
+//	wait_for_controls();
+	wait_for_chat_control();
+	if(debug_mode) {
+//		f=fileOpen("output/starter.log",2);
+		if(f) {
+//			f.writeLine("wait_for_chat_controls() finished");
+			f.close();
+		}
+	}
+	print(txt);
+	sendDDE(1,"mIRC","command","","/echo 4 njaguar " + txt);
+}
+
+function main() {
+	var LastGameStarted = -1;
+
+//	clickLadder();
+	while(1) {
+		LastGameStarted = me.gamestarttime;
+		if(createGame(gamename + (++total_games), gamepass)) {
+			while(1) {
+				now = getTickCount();
+
+				if(now - LastGameAttempt > CreateGameTimeout && me.gamestarttime==LastGameStarted) {
+					dprint("Last Game Creation timed out. Attempting to create another game in 10 seconds.");
+					total_failed++;
+					delay(10000);
+					break;
+				} else if(me.gamestarttime != LastGameStarted) {
+//					wait_for_controls();
+//					delay(100); // wait slightly before outputting text
+					wait_for_chat_control();
+					dprint("Game End Detected! Elapsed time: " + ((now-LastGameAttempt)/1000) + " seconds");
+					dprint("Waiting " + (GameCreateDelay/1000) + " seconds before starting next game.");
+					delay(GameCreateDelay);
+					break;
+				}
+				delay(50);
+			}
+		} else {
+			dprint("Failed to find a control for game creation. Waiting 10 seconds and trying again.");
+			delay(10000);
+		}
+	}
+
+}
+
+function wait_for_chat_control() {
+	while(!getControl(chatbox[0],chatbox[1],chatbox[2],chatbox[3],chatbox[4])) delay(50);
+}
+
+function wait_for_controls() {
+	while(!getControl()) delay(50);
+}
+
+function createGame(name, pass) {
+//	total_games++;
+
+	if(!find_and_click_control(buttons[0])) return false;	
+	delay(50);
+	if(!find_control_and_set_text(editboxes[0], name)) return false;
+//	delay(500);
+	if(!find_control_and_set_text(editboxes[1], pass)) return false;
+//	delay(500);
+	if(!find_and_click_control(radiobuttons[difficulty])) return false;	
+//	delay(500);
+	if(!find_and_click_control(buttons[1])) return false;	
+	LastGameAttempt = getTickCount();
+	
+	dprint("Game #" + total_games + " Created, " + total_failed + " fails so far. Now waiting for game to start...");
+	return true;
+}
+
+// function from TDW
+function JoinGame(name, pass) {  
+     if(!find_and_click_control(JoinGameSelectButton)) return false;       
+     delay(500);  
+     if(!find_control_and_set_text(JoinGame_NamePassList[0], name)) return false;  
+     delay(500);  
+     if ((pass != null) && (pass != "")) {  
+          if (!find_control_and_set_text(JoinGame_NamePassList[1], pass))  
+               return false;  
+          delay(500);  
+     }  
+     if(!find_and_click_control(JoinGame_ConfirmButton)) return false;       
+     LastGameAttempt = getTickCount();  
+       
+     dprint("Game Joined, now waiting for game entry to complete...");  
+     return true;  
+}
+
+function find_and_click_control(arr) {
+	if((control = find_control_by_properties(arr)) != null) {
+		control.click();
+		return true;
+	}
+	return false;
+}
+
+function find_control_and_set_text(arr, str) {
+	if((control = find_control_by_properties(arr)) != null) {
+		control.setText(str);
+		return true;
+	}
+	return false;
+}
+
+function find_control_by_properties(arr) {
+	control = getControl(arr[0],arr[1],arr[2],arr[3],arr[4]);
+//	if(control) do {
+//		if(control.type==arr[0] && control.x==arr[1] && control.y==arr[2] && control.xsize==arr[3] && control.ysize==arr[4]) return control;
+//	} while(control.getNext());
+	return control; //0;
+}
+
+function find_control_by_name(str) {
+	control = getControl();
+	if(control) do {
+		if(control.text == str) return control;
+	} while(control.getNext());
+	return 0;
+}
+
+function clickLadder() {
+	c = find_control_by_name("LADDER");
+	if(c) {
+		c.click();
+		delay(100);
+		c = find_control_by_name("EXPANSION HARDCORE LADDER");
+		if(c) {
+			c.click();
+		} else {
+			print("Could not find EXPANSION HARDCORE LADDER button.");
+		}
+	} else {
+		print("Could not find LADDER button.");
+	}
+}

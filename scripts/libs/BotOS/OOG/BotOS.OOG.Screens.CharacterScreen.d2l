@@ -1,0 +1,81 @@
+//##################################################
+//######   BotOS Framework - Out of Game    ########
+//##################################################
+/*
+----------------------------------------------------*/
+/*----------------------------------------------------
+Copyright (C) 2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This program is free software; You can redistrubute freely as long as this
+header stays intact. Modifications may be done as long as permission is 
+granted by the author, Matt Lanteigne.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+----------------------------------------------------
+*/
+
+
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.OOG) != 'function') {
+	BotOS.OOG = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+if(typeof(BotOS.OOG.Controls) != 'function') {
+	BotOS.OOG.Controls = function () {
+		throw new BotOS.NamespaceException("BotOS.OOG.Controls Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+
+include("BotOS/OOG/BotOS.OOG.Screen.d2l");
+
+BotOS.OOG.Controls.CharacterScreen = function (init) {
+	//we inherit from Screen since the screen is a control itself 
+	BotOS.OOG.Screen.call(this, null, "Login Screen");
+
+	var boc = BotOS.OOG.Controls;
+
+	this.Add(new boc.CreateNewCharacterButton(), "CreateNewCharacterButton");
+	this.Add(new boc.ConvertCharacterButton(), "ConvertCharacterButton");
+	this.Add(new boc.DeleteCharacterButton(), "DeleteCharacterButton");
+	this.Add(new boc.ExitButton(), "ExitButton");
+	this.Add(new boc.OKButton(), "OKButton");
+	this.Add(new boc.CharacterScrollBar(), "CharacterScrollBar");
+
+	this.Slots = new Array();
+	this.Slots.push(1);
+	this.Slots.push( new boc.CharacterControl(1) );
+	this.Slots.push( new boc.CharacterControl(2) );
+	this.Slots.push( new boc.CharacterControl(3) );
+	this.Slots.push( new boc.CharacterControl(4) );
+	this.Slots.push( new boc.CharacterControl(5) );
+	this.Slots.push( new boc.CharacterControl(6) );
+	this.Slots.push( new boc.CharacterControl(7) );
+	this.Slots.push( new boc.CharacterControl(8) );
+	
+	if (init) this.Initialize();
+
+	//need to override out Init function so we can init the Character Controls
+	this.Initialize = function () {
+		for(var prop in this.Controls) {
+			this.Controls[prop].Get();
+		}
+		for(var i = 1; i < 9; i++) {
+			this.Slots[i].Get();
+		}
+	}
+}
+BotOS.OOG.Controls.CharacterScreen.prototype = new BotOS.OOG.Screen;
+
+
+

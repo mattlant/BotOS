@@ -1,0 +1,20 @@
+function LoadSkill()
+{
+	me.overhead("Loading Paladin Skills");
+
+	var cList = new Array(
+	
+// Skill Name           Type       Element    Scope      Special   Weight   Mana   Range
+	   
+["Attack",			    gMelee,    gPhys,     gSingle,   gNone,    .8,      0,	   gShort  ],
+["Sacrifice",           gMelee,    gPhys,     gSingle,   gNone,    1,       0,	   gShort  ],
+["Smite",               gShield,   gPhys,     gSingle,   gNone,    1,       0,     gShort  ],
+["Holy Bolt",           gSpell,    gUndead,   gSingle,   gNone,    1,       0,     gMedium ],
+["Charge",              gMelee,    gPhys,     gSingle,   gNone,    1,       0,     gMedium ],
+["Vengance",            gMelee,    gMagic,    gSingle,   gNone,    1,       0,     gShort  ],
+["Blessed Hammer",      gSpell,    gMagic,    gWide,     gNone,    1,       0,     gMedium ],
+["Fist of the Heavens", gSpell,    gLight,    gWide,     gNone,    1,       0,     gLong   ]
+
+);
+	return cList;
+}

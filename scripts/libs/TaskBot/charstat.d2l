@@ -1,0 +1,115 @@
+var statl = new Array();
+
+statl[0] = "statstr";
+statl[1] = "stateng";
+statl[2] = "statdex";
+statl[3] = "statvit";
+
+var inifile = "NONE";
+
+switch(me.classid)
+{
+	case 4: var inifile = "MF_BARB.INI";
+}
+
+function plugMLAutoAssign(instname)
+{
+	this.temp = oPlugin;
+	this.temp("CheckLevel", mlPLUGINBYTIME, 5000,"Auto Skill/Stat Assignment", "0.0.2", "mattlant", instname);
+	delete this.temp;
+
+	this.clvl = me.getStat(12);
+
+	this.CheckLevel = function(){
+		if(inifile == "NONE") return;
+		if (this.clvl != me.getStat(12))
+		{
+			print("assigning stats");
+			//we'v gained a level now start stat assignment
+			var nlvl = me.getStat(12);
+
+			var statarray = Ele_ReadIniSection("settings/" + inifile, "Level " + nlvl);
+			print("Statarray.length: " + statarray.length);
+			for(var ii = 0; ii < statarray.length; ii++)
+			{
+				print(statarray[ii][0].substr(0,4));
+				print(statarray[ii][0] + "test");
+				if(statarray[ii][0].substr(0,4) == "stat")
+				{
+					print("in stat");
+					for(var jj = 0; jj<4; jj++)
+					{
+						print("about to check statl" + jj);
+						if(statl[jj] == statarray[ii][0].substr(0,7))
+						{
+							print("statl checked out ok, about to assign");
+							for(var ww = 0; ww < parseInt(statarray[ii][1]); ww++){
+								me.useStatPoint(jj);
+								delay(100);
+								print("assigned " + statarray[ii][0]);
+							}
+						}
+					}
+				}
+				else if(statarray[ii][0].substr(0,5) == "skill"){
+					if(parseInt(statarray[ii][1])){
+						me.useSkillPoint(parseInt(statarray[ii][1]));
+						delay(100);
+						print("Assigned skill #: " + statarray[ii][1]);
+					}
+				}
+			}
+			this.clvl = me.getStat(12);
+		}
+	}
+}
+
+function CharStatsTrigger()
+{
+
+
+	if (clvl != me.getStat(12))
+	{
+		print("assigning stats");
+		//we'v gained a level now start stat assignment
+		var nlvl = me.getStat(12);
+
+		var statarray = Ele_ReadIniSection("settings/" + inifile, "Level " + nlvl);
+		print("Statarray.length: " + statarray.length);
+		for(var ii = 0; ii < statarray.length; ii++)
+		{
+			print(statarray[ii][0].substr(0,4));
+			print(statarray[ii][0] + "test");
+			if(statarray[ii][0].substr(0,4) == "stat")
+			{
+				print("in stat");
+				for(var jj = 0; jj<4; jj++)
+				{
+					print("about to check statl" + jj);
+					if(statl[jj] == statarray[ii][0].substr(0,7))
+					{
+						print("statl checked out ok, about to assign");
+						for(var ww = 0; ww < parseInt(statarray[ii][1]); ww++){
+							useStatPoint(jj);
+							delay(100);
+							print("assigned " + statarray[ii][0]);
+						}
+					}
+				}
+			}
+			else if(statarray[ii][0].substr(0,5) == "skill"){
+				if(parseInt(statarray[ii][1])){
+					useSkillPoint(parseInt(statarray[ii][1]));
+					delay(100);
+					print("Assigned skill #: " + statarray[ii][1]);
+				}
+			}
+		}
+
+	}
+
+	clvl = me.getStat(12);
+}
+
+
+

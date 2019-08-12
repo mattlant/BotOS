@@ -1,0 +1,18 @@
+Text	Type	X	Y	XSize	YSize	visible	disabled	Extended Text
+CREATE	6	533	469	120	20	false	false	undefined
+CHANNEL	6	535	490	80	20	false	true	undefined
+JOIN	6	652	469	120	20	false	false	undefined
+LADDER	6	614	490	80	20	false	true	undefined
+QUIT	6	693	490	80	20	false	false	undefined
+null	2	145	69	510	60	false	false	undefined
+null	9	145	69	510	60	false	false	undefined
+ENTER CHAT	6	27	480	120	20	false	false	undefined
+HELP	6	146	480	120	20	false	false	undefined
+biatch	4	143	588	230	87	false	false	biatch,Level 1 Sorceress,Last Difficulty Setting Completed:,None
+Battle.net News Updates	4	28	138	354	60	false	false	Battle.net News Updates
+null	5	400	390	10	314	false	false	undefined
+Wednesday, December 17, 2003	4	28	410	354	298	false	false	Wednesday, December 17, 2003,The 1.13 patch for Warcraft III Reign of Chaos and The Frozen,Throne has been released! 1.13 possesses the Orc Campaign,Acts II and III for The Frozen Throne, and for both Reign of,Chaos and Frozen Throne 1.13 supports binding your email,address to your Battle.net account so you can recover your,password.,,Tuesday, November 04, 2003,Diablo II accounts/CD keys tied to the use of a map-hack,program are now subject to being disabled without warning.,Map-hacks violate Battle.net's Terms of Use Agreement; we'll,continue to take action to keep Battle.net safe and fun for all,players.,,Tuesday, October 28, 2003,It's a whole new ladder for Diablo II players! The 1.10 patch,requires new ladder-specific characters if you want to,participate on the ladder. It's a brand-new world for,ladder-climbers, free from the pollution of high-level,characters and their godly items! So get out there and stake,your claim on the ladder!,,Tuesday, October 28, 2003,Automated Account Recovery is now available in Diablo II 1.10.
+null	2	84	52	147	68	false	false	undefined
+null	2	415	447	373	373	false	false	undefined
+	4	447	398	290	269	false	false	
+null	2	726	52	147	68	false	false	undefined

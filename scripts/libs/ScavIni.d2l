@@ -1,0 +1,163 @@
+/*******************************************************************************
+*                                                                              *
+*                                   ScavIni                                    *
+*                                    v0.1                                      *
+*                                                                              *
+* ---------------------------------------------------------------------------- *
+* Copyright (C) 2003 Jan Onno Tuinenga (Scavenger) - tha_scavenger@hotmail.com *
+* ---------------------------------------------------------------------------- *
+*                                                                              *
+* This program is free software; you can redistribute it and/or modify         *
+* it under the terms of the GNU General Public License as published by         *
+* the Free Software Foundation; either version 2 of the License, or            *
+* (at your option) any later version.                                          *
+*                                                                              *
+* This program is distributed in the hope that it will be useful,              *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of               *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
+* GNU General Public License for more details.                                 *
+*                                                                              *
+*******************************************************************************/
+
+/* 
+Very simple ini reader/writer
+
+Example:
+
+var ini = new ScavIni("settings/myinifile.ini");
+print(ini["sectionname"]["fieldname"]);
+ini["sectionname"]["fieldname"] = "some value here";
+ini.Save("settings/myinifile.ini");
+
+to make it print debug info, pass a function which accepts a string as parameter 
+as second param to the constructor or the save function. or just pass print there
+example:
+
+var ini = new ScavIni("settings/myinifile.ini", print);
+
+
+if you want to add a new section do it like this:
+ini["newsectionname"] = new Object();
+
+now you can fill that section with fields:
+ini["newsectionname"]["anewfieldhere"] = "a value";
+
+*/
+
+function ScavIni(filename, __debug_print)
+{
+	var file = fileOpen(filename, 0);
+	if (!file)
+		return null;
+	
+	var RegTrimLeft = /^\s*/;
+	var RegTrimRight = /\s*$/;
+	var RegSection = /^\[([^\]]*)\]/;
+	var RegField = /(^[a-zA-Z0-9_]+)(\s*)(=)(\s*)(.*$)/
+	var RegComments = /;.*$/
+	var CurrentSection = "";
+	
+	var lineno = 0;
+	var line = "";
+	var full_line;
+	var m = null;
+	
+	while(!file.eof) {
+		lineno++;
+		full_line = file.readLine();
+		line = full_line;
+		
+		if (!line.length)
+			continue;
+		
+		// remove leading and trailing whitespace and comments
+		line = line.replace(RegComments, "");
+		line = line.replace(RegTrimLeft, "");
+		line = line.replace(RegTrimRight, "");
+		
+		if (!line.length)
+			continue;
+		
+		m = line.match(RegSection);
+		
+		if (m && m.length == 2) {
+			var section = m[1];
+			section = section.replace(RegTrimLeft, "");
+			section = section.replace(RegTrimRight, "");
+			if (!section.length) {
+				if (__debug_print)
+					__debug_print("Skipping empty section at line " + lineno);
+				
+				continue;
+			}
+			
+			CurrentSection = section.toLowerCase();
+			if (!this[CurrentSection])
+				this[CurrentSection] = new Object();
+			
+			continue;
+		}
+		
+		m = line.match(RegField);
+		if (m && m.length == 6) {
+			var key = m[1].toLowerCase();
+			key = key.replace(RegTrimLeft, "");
+			key = key.replace(RegTrimRight, "");
+			var val = m[5];
+			val = val.replace(RegTrimLeft, "");
+			val = val.replace(RegTrimRight, "")
+			
+			if (!key.length) {
+				if (__debug_print)
+					__debug_print("Error at line " + lineno + " in " + filename + ": Skipping field with no key set");
+				continue;
+			}
+			
+			if (!CurrentSection.length) {
+				if (__debug_print)
+					__debug_print("Found field outside section at line " + lineno);
+				continue
+			}
+			
+			this[CurrentSection][key] = val;
+			continue;
+		}
+		
+		if (__debug_print)
+			__debug_print("Unknown syntax at line " + lineno + " in settings file");
+	}
+	if (__debug_print)
+		__debug_print("Settings loaded");
+
+	file.close();
+
+	this.Save = function(filename, __debug_print)
+	{
+		if (!filename) {
+			if (__debug_print)
+				__debug_print("Cannot save file without filename");
+			return false;
+		}
+		var file = fileOpen(filename, 1);
+		if (!file) {
+			if (__debug_print)
+				__debug_print("Failed to open file for saving");
+			return false;
+		}
+		
+		for (var k in this) {
+			if (typeof(this[k]) != "function") {
+				file.writeLine("");
+				file.writeLine("[" + k + "]");
+				for (var f in this[k])
+					file.writeLine(f + " = " + this[k][f]);
+			}
+		}
+		file.close();
+		
+		if (__debug_print)
+			__debug_print("Settings saved");
+		
+		return true;
+	}
+}

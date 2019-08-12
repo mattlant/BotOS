@@ -1,0 +1,127 @@
+var IsOpening = false;
+var IsOpeningDoor = false;
+
+function plugChests(instname) {
+	this.temp = oPlugin;
+	this.temp("CheckChests", mlPLUGINBYTIME, 500,"Chests", "1.2", "Hellek", instname);
+	delete this.temp;
+	
+	var Chest = null;
+	var p = null;
+	var knownchests = new Array();
+	//knownchests.push(0);
+	
+	this.CheckChests = function () {
+		if(IsOpening) return;
+		if(AI.HPPcnt < 50) return;
+		Chest = getUnit(2);
+		p = 440;
+		
+		do {
+ //   		print("DOING LOOP");
+			if(!IsOpening && Chest && Chest.mode == 0 && isValidChest(Chest.classid) && !checkarray(Chest.gid)) {
+				print("Loop");
+				if (!getBaseStat(4, Chest.classid, D2JSP_BASE_OBJECTS_LOCKABLE) || (getBaseStat(4, Chest.classid, D2JSP_BASE_OBJECTS_LOCKABLE) && itemCountTotal("key") > 1)) {
+					if(BotOS.Pathing.Pather.DiagShortcut(Chest.x, Chest.y, me.x, me.y) > 30 || !BotOS.Pathing.CheckLOS(me.x, me.y, Chest.x, Chest.y)) continue;
+//					print("Chest classid: " + Chest.classid);
+					knownchests[Chest.gid] = true;
+					Log.Write(mlLOGGENERAL, "Opening chest at: "+Chest.x+"/"+Chest.y, boLOGCRITICALINFO);
+					new oTaskInteract(p--, "InteractObject", {OObject:copyUnit(Chest), Mode:Chest.mode}).Insert();
+					new oTaskCommon(p--, "SetVariable", {Var:"IsOpening", Val:"false"}).Insert();
+					IsOpening=true;
+					break;
+				}
+			}
+		} while (Chest && Chest.getNext());		
+	}
+	
+	function checkarray(id) {
+		if(knownchests[id]) return true;
+		return false;
+	}
+}
+
+/*
+shrine classids:
+2 = portal
+81 = skill
+*/
+
+
+function isValidChest(cid) {
+	if(getBaseStat(4, cid, D2JSP_BASE_OBJECTS_OPERATEFN) == 4) {
+		print("returning true");
+		return true;
+	}
+
+	return false;
+}
+
+
+
+
+function plugDoors(instname) {
+	this.temp = oPlugin;
+	this.temp("OpenDoors", mlPLUGINBYTIME, 300,"Doors", "0.0.1", "Hellek, ripped some code from Darien", instname);
+	delete this.temp;
+	
+	var door = null;
+	var mon = null;
+	var p = null;
+	var knowndoors = new Array();
+	
+	this.OpenDoors = function () {
+		if(IsOpeningDoor) return;
+		door = returnClosestDoor(me,25,null,0);
+		if(door && !checkdoorarray(door.gid)) {
+			Log.Write(mlLOGGENERAL, "Opening door", boLOGINFO);
+			p = 640;
+			knowndoors.push(door.gid);
+			new oTaskInteract(p--, "InteractObject", {OObject:copyUnit(door), Mode:door.mode, Door:true}).Insert();
+			new oTaskCommon(p--, "SetVariable", {Var:"IsOpeningDoor", Val:"false"}).Insert();
+			IsOpeningDoor=true;
+		}
+	}
+	
+	function checkdoorarray(id) {
+		if(id in knowndoors) return true;
+		return false;
+	}
+}
+
+function returnClosestDoor(parent, range, name, mode) { 
+	var closest_dist = range;
+	var objs = getUnit(2,name,mode);
+	var closestOBJ = false;
+
+	if (objs) do {
+		// - allow searching for specific monster type
+		if (ValidDoorObject(objs)) {
+			Log.Write(mlLOGGENERAL, "Door valid", boLOGINFO);
+			distance = getDistance(parent,objs);
+			if (distance < closest_dist && distance < range) {
+				closest_dist = distance;
+				var closestOBJ = copyUnit(objs);
+			}
+		}
+	}while(objs && objs.getNext(name,mode));
+
+	if (closestOBJ) return (closestOBJ);
+	else return false;
+}
+
+
+//Changed to use getBaseSTats for objects.
+function ValidDoorObject(thing) { 
+	
+	if(!thing) return false;
+    if(!getBaseStat(4, thing.classid, D2JSP_BASE_OBJECTS_ISDOOR)) return false;
+	if(thing.mode == 2) return false;
+	if(thing.mode == 5) return false;
+	if(getDistance(me,thing) > 6) return false;
+	return true;	
+}
+
+//function getRange (obj1, obj2) {
+//        return (parseInt (Math.sqrt (Math.pow (obj1.x-obj2.x, 2) + Math.pow (obj1.y-obj2.y, 2))));
+//}

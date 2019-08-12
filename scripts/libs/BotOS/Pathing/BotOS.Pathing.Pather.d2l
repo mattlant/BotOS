@@ -1,0 +1,1008 @@
+//##################################################
+//####   Matts Pathing Framework Library 3.0   #####
+//####     Part of the BotOS framework         #####
+//##################################################
+/*
+
+Copyright (C) 2003-2004 Matt Lanteigne aka mattlant <mattlant@hotmail.com>
+
+----------------------------------------------------
+
+This is free software; You can redistrubute freely as long as this
+header stays intact. Modifications for personal use may be made. Modifications
+for distribution to others is prohibited without written consent from
+the author.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTIBILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
+
+Any and all code is subject to change at any time.
+----------------------------------------------------
+
+
+Thanks go out to Knaar, who started the whole thing with his initial d2Map
+that i used as a template. The code to access collision info has been added
+to the core now, but still Knaar deserves a lot of credit here. If it
+wasnt for him, i would never have been led down this path (no pun intended)
+Thanks to Wolf for the collision info
+Thanks to Gshock for some EXCELLENT ideas
+Thanks to Darien for a great amount of testing
+Thanks to Froggy for pointing out some stuff that i screwed up
+BIG THANKS to TDW for some thoughts and ideas on area linkage
+----------------------------------------------------
+----------------------------------------------------
+
+
+
+If you appreciate our work, please donate :)
+
+https://www.paypal.com/xclick/business=mattlant%40rogers.com&item_name=mattlant+Donations&no_note=1&tax=0&currency_code=USD
+
+
+*/
+
+
+// TODO: When finding destination areas coords, use getroom with coord and area, then use findclosest walkable on it. Maybe, dunno yet.
+// THIS IS PEFECT. I can get that room and use findclosest walkable method of room objects on it :)
+
+
+//_info has these properties:
+//.Logger = BotOS.Logging.Log to use (part of the BotOS.Logging namespace)
+//.Pathable = a reference to an object that inherits BotOS.Pathing.Pathable
+//.PathToMap = true to have the pather add the path into the collision data.
+//useful for dumping the data to a file.
+
+if(typeof(BotOS) != 'function'){
+	BotOS = function () {
+		throw new BotOS.NamespaceException("BotOS Cannot be instantiated", 1, "mlMap.d2l");
+	}
+}
+if(typeof(BotOS.Pathing) != 'function') {
+	BotOS.Pathing = function () {
+		throw new BotOS.NamespaceException("BotOS.Pathing Cannot be instantiated", 1, "mlMap.d2l");
+	}
+
+}
+
+BotOS.Pathing.CrossAreaOffset = 30;
+
+BotOS.Pathing.Pather = function(_info) {
+
+	if(!_info) return;
+
+	var Pathable;
+	var Logger;
+
+	//pather property
+	this.Pathable setter = function (value) {
+		if(!(value instanceof BotOS.Pathing.Pathable))
+			throw new BotOS.ArgumentException("Pather.Pathable -> A BotOS.Pathing.Pathable class is required", 1, "BotOS.Pathing.Pathable.d2l");
+		Pathable = value;
+	}
+	this.Pathable getter = function() { return Pathable; }
+
+	//logger property - only need to set it
+	this.Logger setter = function (value) {
+		if(!(value instanceof BotOS.Logging.Log || !value)) 
+			throw new BotOS.ArgumentException("Pather.Logger requires a valid BotOS.Logging.Log object to be passed or a *null* value", 1, "BotOS.Linear.Mover.d2l");
+		Logger = value;
+	}
+
+	//change eventually
+	this.Pathable = _info.Pathable;
+	this.PathToMap = _info.PathToMap;
+	this.Logger = _info.Logger;
+	
+	this.AreaOverride = null;
+	this.Path = new Array();
+
+
+	this.FindPath = Pather_findpath;
+	this.GoToArea = Pather_gotoarea;  		//all encompassing function, does everything for you
+//	this.FindAreaPath = Pather_findareapath;  	//used to find a LinkPath
+//	this.NextAreaLinkAction = Pather_nextaction;  	//used to process the next action for an AreaLink array
+	this.FindPathToArea = Pather_FindPathToArea;
+	this.FindExplorePath = Pather_findexplorepath;
+	this.getMapExit = Pather_getmapexit;
+	this.getRoomExits = Pather_getroomexits;
+	this.FindPathToWarp = Pather_findpathtowarp;
+	this.getLevelWarpXY = Pather_getlevelwarpxy;
+	this.FindPathToRoom = Pather_findpathtoroom;
+	this.FindPathAlongPoints = Pather_findpathalongpoints;
+
+
+
+	//////////////////////////////////////////////////////////////////////
+	// FindPathToArea(level, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// Finds a path from the current level to the given level
+	// returns: path on success, false on failure
+	// requires initialized map: Yes
+	//////////////////////////////////////////////////////////////////////
+	function Pather_FindPathToArea(_area, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	{
+		//print(Pathable.Name);
+		//Pathable.Dump(1);
+		//Exception Checking
+		if(!(this.Pathable instanceof BotOS.Pathing.Map))
+			throw new BotOS.PathingException("Pather.FindPathToArea -> A BotOS.Pathing.Map class is required for FIndPathToLevel", 1, "Pather.d2l");
+		if(!(this.Pathable.IsInitialized))
+			throw new BotOS.PathingException("Pather.FindPathToArea -> A BotOS.Pathing.Map must be initialized in order to use it in the Pather", 1, "Pather.d2l");
+		if(!BotOS.Pathing.IsValidArea(_area))
+			throw new BotOS.ArgumentException("Pather.FindPathToArea -> Area passed is not a valid area", 1, "Pather.d2l");
+		if(!BotOS.Variable.IsNumber(_sx) || !BotOS.Variable.IsNumber(_sy)) 		//basic check for illegal coordinates
+			throw new BotOS.ArgumentException("Pather.FindPathToArea -> Not enough coordinates or invalid coords", 1, "Pather.d2l");
+		if(!this.Pathable.IsWalkable(_sx, _sy))
+			throw new BotOS.ArgumentException("Pather.FindPathToArea -> The start coord's are not walkable or out of range", 1, "Pather.d2l");
+		
+		//quick fix for now. Need to change to have start area and dest area
+		if(_area == me.area) return true;
+
+		//Check if the area is attached OR we link to it
+		var links = this.Pathable.AreaLinks;
+ //   	print(links.toSource());
+
+		//Ok, now we need to figure out if we attach directly, or through a warp
+		var link = null;
+		for(var i = 0; i < links.length; i++) {
+ //   		print("linkloop");
+			if(_area == links[i].Area) {
+				link = links[i];
+			}
+		}
+		if(!link)
+			throw new BotOS.PathingException("Pather.FindPathToArea -> The destination area does not link to the current area", 1, "Pather.d2l");
+		
+		if(!link.Tiles && !link.Rooms && link.Object.Nothing) {
+			//ok, we have a contingeous area
+		}
+		else if(link.Tiles) {
+			//we have tiles to path to
+			//possibley have to loopp thru the the tile nums, but doubt it, should only return 1 or dupes of that one.
+			var warps = getPresetUnits(this.Pathable.Number, 5, null, link.Rooms); //thanks TDW, I can now see you requested this func. Its perfect :D
+			if(!warps)
+				throw new BotOS.PathingException("Pather.FindPathToArea -> A warp was needed to path to, but we could not find the warp (1)", 1, "Pather.d2l");
+			//we now have our warp, sp path to it
+			
+			var coords = this.Pathable.FindClosestWalkable(warps[0].x + warps[0].roomx*5, warps[0].y + warps[0].roomy*5);
+			try {
+			   return this.FindPath(_sx, _sy, coords.x, coords.y, _dist, _reduc, _algo, _fh, _factor, _square);
+			}
+			catch(e) {
+				throw new BotOS.PathingException("Pather.FindPathToLevel -> Error occured while finding a path (inner)", 1, "Pather.d2l", e);
+			}
+		}
+		else if(true) {
+
+		}
+/*
+BotOS.Pathing.AreaLink = function(_area, _tiles, _rooms, _object) {
+	this.Area = _area;
+	this.Tiles = _tiles;
+	this.Rooms = _rooms;
+	this.Object = _object;
+	if(!this.Object) { 
+		this.Object = new Object();
+		this.Object.Nothing = true;
+	}
+}*/
+		
+		var sL = new Array;
+		var ld;
+
+		// get exit coordinates of given level
+
+		if(Logger)
+			Logger.Write("Current Level Dims: " + this.Pathable.Areas[0].x + ", " + this.Pathable.Areas[0].MaxX 
+						  + ", " + this.Pathable.Areas[0].y + ", " + this.Pathable.Areas[0].MaxY, boLOGINFO);
+		//get exit coords of current level
+		for (var w = 0; w < 4; w++) {
+			sL[w] = this.getMapExit(w, this.Pathable, this.Pathable.Areas[0]);
+		}
+		
+		//setup an alias
+		var tra = this.Pathable.Areas;
+		for(var i = 0; i < tra.length; i++) {
+			if(tra[i].Number == _area)
+				ld = {minx:tra[i].x, miny:tra[i].y, maxx:tra[i].MaxX, maxy:tra[i].MaxY};
+		}
+		if(!ld)
+			throw new BotOS.PathingException("Pather.FindPathToLevel -> The destination area does not seem to be attached in the Pathable reference", 1, "Pather.d2l");
+
+		if(Logger) {
+			Logger.Write("Dest Level Dims: " + ld.minx + ", " + ld.maxx + ", " + ld.miny + ", " + ld.maxy, boLOGINFO);
+			Logger.Write("Current Level Dims: " + this.Pathable.Areas[0].x + ", " + this.Pathable.Areas[0].MaxX 
+							  + ", " + this.Pathable.Areas[0].y + ", " + this.Pathable.Areas[0].MaxY, boLOGINFO);
+		}
+		if(Logger) {
+			Logger.Write("this.Area.Number: " + this.Pathable.Number, boLOGINFO);
+			Logger.Write("Destination.Area.Number: " + _area, boLOGINFO);
+		}
+
+		if(sL[mlNORTH].x && sL[mlNORTH].y) 
+		{
+			var sX = sL[mlNORTH].x; var sY = sL[mlNORTH].y - 100;
+			if(sX > ld.minx && sX < ld.maxx && sY > ld.miny && sY < ld.maxy) 
+			{
+				try {
+					//WE FOUND IT
+    				print("Found Dest Coords sX, sY: " + sX + ", " + sY, boLOGINFO);
+					//y - 15
+					var destcoords = this.Pathable.FindClosestWalkable(sL[mlNORTH].x, sL[mlNORTH].y - BotOS.Pathing.CrossAreaOffset);
+ //   				print("destcolloffset: " + (destcoords.x-this.Pathable.x) + ", " + (destcoords.y-this.Pathable.y), boLOGCRITICALINFO);
+					this.Pathable.CollisionData[destcoords.y-this.Pathable.y][destcoords.x-this.Pathable.x] |= 0x400000;
+					var temppath = this.FindPath(_sx, _sy, destcoords.x, destcoords.y, _dist, _reduc, _algo, _fh, _factor, _square);
+					if(!temppath) return null;
+					return this.Path;
+				}
+				catch (e) {
+					throw new BotOS.PathingException("Pather.FindPathToLevel -> Error occured while finding a path (inner)", 1, "Pather.d2l", e);
+				}
+			}
+		}
+		if(sL[mlEAST].x && sL[mlEAST].y) {
+			print("In EAST");
+			var sX = sL[mlEAST].x + 100; var sY = sL[mlEAST].y;
+			//print(ld.minx, ld.miny, ld.maxx, ld.maxy, sX, sY)
+			if(sX > ld.minx && sX < ld.maxx && sY > ld.miny && sY < ld.maxy) {
+				try {
+					//WE FOUND IT
+ //   				print("Found Dest Coords sX, sY: " + sX + ", " + sY, boLOGINFO);
+					//x + 15
+					var destcoords = this.Pathable.FindClosestWalkable(sL[mlEAST].x + BotOS.Pathing.CrossAreaOffset, sL[mlEAST].y);
+//					print("destcolloffset: " + (destcoords.x-this.Pathable.x) + ", " + (destcoords.y-this.Pathable.y), boLOGCRITICALINFO);
+					this.Pathable.CollisionData[destcoords.y-this.Pathable.y][destcoords.x-this.Pathable.x] |= 0x400000;
+					var temppath = this.FindPath(_sx, _sy, destcoords.x, destcoords.y, _dist, _reduc, _algo, _fh, _factor, _square);
+					if(!temppath) return null;
+					return this.Path;
+				}
+				catch (e) {
+					throw new BotOS.PathingException("Pather.FindPathToLevel -> Error occured while finding a path (inner)", 1, "Pather.d2l", e);
+				}
+			}
+		}
+		if(sL[mlSOUTH].x && sL[mlSOUTH].y) {
+			var sX = sL[mlSOUTH].x; var sY = sL[mlSOUTH].y + 100;
+			if(sX > ld.minx && sX < ld.maxx && sY > ld.miny && sY < ld.maxy) {
+				try {
+					//WE FOUND IT
+					//y + 15
+  //  				print("Found Dest Coords sX, sY: " + sX + ", " + sY, boLOGINFO);
+					var destcoords = this.Pathable.FindClosestWalkable(sL[mlSOUTH].x, sL[mlSOUTH].y + BotOS.Pathing.CrossAreaOffset);
+//					print("destcolloffset: " + (destcoords.x-this.Pathable.x) + ", " + (destcoords.y-this.Pathable.y), boLOGCRITICALINFO);
+					this.Pathable.CollisionData[destcoords.y-this.Pathable.y][destcoords.x-this.Pathable.x] |= 0x400000;
+					var temppath = this.FindPath(_sx, _sy, destcoords.x, destcoords.y, _dist, _reduc, _algo, _fh, _factor, _square);
+					if(!temppath) return null;
+					return this.Path;
+				}
+				catch (e) {
+					throw new BotOS.PathingException("Pather.FindPathToLevel -> Error occured while finding a path (inner)", 1, "Pather.d2l", e);
+				}
+			}
+		}
+		if(sL[mlWEST].x && sL[mlWEST].y) {
+			var sX = sL[mlWEST].x - 100; var sY = sL[mlWEST].y;
+			if(sX > ld.minx && sX < ld.maxx && sY > ld.miny && sY < ld.maxy) {
+				try {
+					//WE FOUND IT
+ //   				print("Found Dest Coords sX, sY: " + sX + ", " + sY, boLOGINFO);
+					//x - 15
+					var destcoords = this.Pathable.FindClosestWalkable(sL[mlWEST].x - BotOS.Pathing.CrossAreaOffset, sL[mlWEST].y);
+ //   				print("destcolloffset: " + (destcoords.x-this.Pathable.x) + ", " + (destcoords.y-this.Pathable.y), boLOGCRITICALINFO);
+					this.Pathable.CollisionData[destcoords.y-this.Pathable.y][destcoords.x-this.Pathable.x] |= 0x400000;
+					var temppath = this.FindPath(_sx, _sy, destcoords.x, destcoords.y, _dist, _reduc, _algo, _fh, _factor, _square);
+					if(!temppath) return null;
+					return this.Path;
+				}
+				catch (e) {
+					throw new BotOS.PathingException("Pather.FindPathToLevel -> Error occured while finding a path (inner)", 1, "Pather.d2l", e);
+				}
+			}
+		}
+
+		throw new BotOS.PathingException("Pather.FindPathToLevel -> Could not get a matching area exit for path generation", 1, "Pather.d2l");
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.getMapExit(direction)
+	// -------------------------------------------------------------------
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function Pather_getmapexit(_d, _ardata, _arcoords) {
+		if(_d < 0 || _d > 3) return false;
+
+		var ec = new Array();
+		var notdoneexit = false;
+		var count = 0;
+		var avgcoord = 0;
+
+		if(_d == 0) { //NORTH 	Scan for white space
+			for (var x = _arcoords.x; x < _arcoords.MaxX; x++){
+//				this.Area.CollisionData[_arcoords.y - this.Area.y][x - this.Area.x] |= 0x400000;
+				if(_ardata.IsWalkable(x, _arcoords.y)){
+					ec[ec.length] = {x:x, y:_arcoords.y};
+					notdoneexit = true;
+					continue;
+				}
+				else if (notdoneexit) {
+					if (ec.length < 4){ //Too small
+						notdoneexit = false;
+						ec.length = 0;
+						continue;
+					}
+					break;
+				}
+			}
+			if (ec.length < 4) return false; //exit because we didnt find an exit
+			for(var i = 0; i < ec.length; i++) avgcoord += ec[i].x;
+			return _ardata.FindClosestWalkable(Math.floor(avgcoord / ec.length), _arcoords.y+6);
+		}
+		if(_d == 1) { //EAST 	Scan for white space
+			for (var y = _arcoords.y; y < _arcoords.MaxY; y++){
+//				this.Area.CollisionData[y - this.Area.y][_arcoords.MaxX - this.Area.x] |= 0x400000;
+				if(_ardata.IsWalkable(_arcoords.MaxX, y)){
+					ec[ec.length] = {x:_arcoords.MaxX, y:y};
+					notdoneexit = true;
+					continue;
+				}
+				else if (notdoneexit) {
+					if (ec.length < 4){ //Too small
+						notdoneexit = false;
+						ec.length = 0;
+						continue;
+					}
+					break;
+				}
+			}
+			if (ec.length < 4) return false; //exit because we didnt find an exit
+			for(var i = 0; i < ec.length; i++) avgcoord += ec[i].y;
+			return _ardata.FindClosestWalkable(_arcoords.MaxX-6, Math.floor(avgcoord / ec.length));
+		}
+		if(_d == 2) { //South	Scan for white space
+			for (var x = _arcoords.x; x < _arcoords.MaxX; x++){
+//				this.Area.CollisionData[_arcoords.MaxY - this.Area.y][x - this.Area.x] |= 0x400000;
+				if(_ardata.IsWalkable(x, _arcoords.MaxY)){
+					ec[ec.length] = {x:x, y:_arcoords.MaxY};
+					notdoneexit = true;
+					continue;
+				}
+				else if (notdoneexit) {
+					if (ec.length < 4){ //Too small
+						notdoneexit = false;
+						ec.length = 0;
+						continue;
+					}
+					break;
+				}
+			}
+			if (ec.length < 4) return false; //exit because we didnt find an exit
+			for(var i = 0; i < ec.length; i++) avgcoord += ec[i].x;
+			return _ardata.FindClosestWalkable(Math.floor(avgcoord / ec.length), _arcoords.MaxY-6);
+		}
+		if(_d == 3) { //West 	Scan for white space
+			for (var y = _arcoords.y; y < _arcoords.MaxY; y++){
+//				this.Area.CollisionData[y - this.Area.y][_arcoords.x - this.Area.x] |= 0x400000;
+				if(_ardata.IsWalkable(_arcoords.x, y)){
+					ec[ec.length] = {x:_arcoords.x, y:y};
+					notdoneexit = true;
+					continue;
+				}
+				else if (notdoneexit) {
+					if (ec.length < 4){ //Too small
+						notdoneexit = false;
+						ec.length = 0;
+						continue;
+					}
+					break;
+				}
+			}
+			if (ec.length < 4) return false; //exit because we didnt find an exit
+			for(var i = 0; i < ec.length; i++) avgcoord += ec[i].y;
+			return _ardata.FindClosestWalkable(_arcoords.x+6, Math.floor(avgcoord / ec.length));
+		}
+	}
+
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.getRoomExits()
+	// -------------------------------------------------------------------
+	// returns: A bit field denoting which directions a room can go.
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function Pather_getroomexits(_room) {
+		var ec = 0;
+		var notdoneexit = false;
+
+		var cannorth = 1;
+		var caneast = 2;
+		var cansouth = 4;
+		var canwest = 8;
+
+		var rminx = _room.x*5;
+		var rmaxx = rminx+_room.getStat(11);
+		var rminy = _room.y*5;
+		var rmaxy = rminy+_room.getStat(12);
+		//print(rminx, rmaxx, rminy, rmaxy);
+
+		for (var x = rminx; x < rmaxx; x++){
+			if(this.IsWalkable(x, rminy)){
+				ec++;
+				notdoneexit = true;
+				continue;
+			}
+			else if (notdoneexit) {
+				if (ec < 3){ //Too small
+					notdoneexit = false;
+					ec = 0;
+					continue;
+				}
+				break;
+			}
+		}
+		if (ec < 3) cannorth = 0; //exit because we didnt find an exit
+
+		ec = 0;
+		notdoneexit = false;
+		count = 0;
+		for (var y = rminy; y < rmaxy; y++){
+			if(this.IsWalkable(rmaxx-1, y)){
+				ec++;
+				notdoneexit = true;
+				continue;
+			}
+			else if (notdoneexit) {
+				if (ec < 3){ //Too small
+					notdoneexit = false;
+					ec = 0;
+					continue;
+				}
+				break;
+			}
+		}
+		if (ec < 3) caneast = 0; //exit because we didnt find an exit
+
+		ec = 0;
+		notdoneexit = false;
+		count = 0;
+		for (var x = rminx; x < rmaxx; x++){
+			if(this.IsWalkable(x, rmaxy-1)){
+				ec++;
+				notdoneexit = true;
+				continue;
+			}
+			else if (notdoneexit) {
+				if (ec < 3){ //Too small
+					notdoneexit = false;
+					ec = 0;
+					continue;
+				}
+				break;
+			}
+		}
+		if (ec < 3) cansouth = 0; //exit because we didnt find an exit
+
+		ec = 0;
+		notdoneexit = false;
+		count = 0;
+		for (var y = rminy; y < rmaxy; y++){
+			if(this.IsWalkable(rminx, y)){
+				ec++;
+				notdoneexit = true;
+				continue;
+			}
+			else if (notdoneexit) {
+				if (ec < 3){ //Too small
+					notdoneexit = false;
+					ec = 0;
+					continue;
+				}
+				break;
+			}
+		}
+		if (ec < 3) canwest = 0; //exit because we didnt find an exit
+		var retval = 0;
+		retval = retval | cannorth;
+		retval = retval | caneast;
+		retval = retval | cansouth;
+		retval = retval | canwest;
+		return retval;
+	}
+
+
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindPathToWarp(warptype, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	// TODO:change to use specific warp numbers
+	//////////////////////////////////////////////////////////////////////
+	function Pather_findpathtowarp(warptype, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	{
+		if(!BotOS.Variable.IsNumber(warptype) || warptype < 0 || warptype > 10)
+			throw new BotOS.ArgumentException("Pather.FindPathToWarp -> Invalid Warp type passed", 1, "Pather.d2l");
+		if(!BotOS.Variable.IsNumber(_sx) || !BotOS.Variable.IsNumber(_sy)) 		//basic check for illegal coordinates
+			throw new BotOS.ArgumentException("Pather.FindPathToWarp -> Invalid Start Coordinates", 1, "Pather.d2l");
+		if(!this.Pathable.IsWalkable(_sx, _sy))
+			throw new BotOS.ArgumentException("Pather.FindPathToWarp -> The start coord's are not walkable or out of range", 1, "Pather.d2l");
+		
+		var dx = null,dy = null;
+		if(warptype == mlWARPWAYPOINT)
+		{
+			var wpflag = false;
+			for (var w = 0; w < this.Pathable.PresetUnits.length; w++)
+			{
+				for (var a = 0; a < mlWAYPOINTS.length; a++)
+				{
+					if(this.Pathable.PresetUnits[w].id == mlWAYPOINTS[a])
+					{
+						//we've found a waypoint
+						dx = this.Pathable.PresetUnits[w].x + this.Pathable.PresetUnits[w].roomx*5 ;
+						dy = this.Pathable.PresetUnits[w].y + this.Pathable.PresetUnits[w].roomy*5 ;
+						wpflag = true;
+						break;
+					}
+				}
+			}
+			if(!wpflag)
+			{
+				throw new BotOS.PathingException("Pather.FindPathToWarp -> Could not find a waypoint", 1, "Pather.d2l");
+			}
+
+		}
+		else if(warptype != mlWARPNONE) {
+			try{
+				var tcoord = this.getLevelWarpXY(warptype);
+				if(!tcoord)
+					return false;
+				dx = tcoord.x;
+				dy = tcoord.y;
+			}
+			catch(e) {
+				throw new BotOS.PathingException("Pather.FindPathToWarp -> Problem finding the warp. (Inner)", 1, "Pather.d2l", e);
+			}
+		}
+
+		return this.FindPath(_sx, _sy, dx, dy, _dist, _reduc, _algo, _fh, _factor, _square);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.getLevelWarpXY(warptype, level)
+	// -------------------------------------------------------------------
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function Pather_getlevelwarpxy(warptype, level)
+	{
+		
+		print("In mlmap:Pather_getlevelwarpxy");
+		var twarps = new Array();
+		var foundwarp = false;
+
+		for (var p = 0; p < this.Area.PresetUnits.length; p++) {
+			if(this.Pathable.PresetUnits[p].type == 5) twarps[twarps.length] = this.Pathable.PresetUnits[p];
+		}
+
+
+		if(twarps.length == 0) {
+			throw new BotOS.PathingException("Pather.GetLevelWarpXY -> No matching warp found", 1, "Pather.d2l");
+		}
+
+		for (var p = 0; p < twarps.length; p++)
+		{
+			print("twarpinfo: id: " + twarps[p].id + " x: " + twarps[p].x + " y: " + twarps[p].y);
+			if (WARPS[twarps[p].id] == warptype)
+			{
+				print("chosen twarpinfo: id: " + twarps[p].id + " x: " + twarps[p].x + " y: " + twarps[p].y);
+				foundwarp = true;
+				break;
+			}
+		}
+
+		if (!foundwarp) {
+			throw new BotOS.PathingException("Pather.GetLevelWarpXY -> No warp found", 1, "Pather.d2l");
+		}
+
+		var tcwarp = this.Pathable.FindClosestWalkable(twarps[p].x, twarps[p].y);
+		if(!tcwarp) {
+			throw new BotOS.PathingException("Pather.GetLevelWarpXY -> Found warp but could not find a coord near it (Internal Error)", 1, "Pather.d2l");
+		}
+
+		mlprint("Out mlmap:Pather_getlevelwarpxy - normal");
+		return tcwarp
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindPathToRoom(room, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// Finds a path to a room
+	// room argument can be a single room number or an array of room numbers
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function Pather_findpathtoroom(rooms, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	{
+		var tc, trooms = getRoom();
+		outofhere:
+		if(trooms) do {
+			if(rooms instanceof Array) {
+				for(var i = 0; i<rooms.length; i++) {
+					if(rooms[i] == trooms.number) {
+						tc = this.FindClosestWalkable(trooms.x*5+this.roomsizex/2, trooms.y*5+this.roomsizey/2);
+						break outofhere;
+					}
+				}
+			}
+			else if(rooms == trooms.number) {
+				tc = this.FindClosestWalkable(trooms.x*5+this.roomsizex/2, trooms.y*5+this.roomsizey/2);
+				break;
+			}
+		} while(trooms.getNext());
+
+		if(!tc) {
+			mlprint("mlMap:mlFindPathToRoom - Could not find room coordinates");
+			this.LastError = ("mlMap:mlFindPathToRoom - Could not find room coordinates");
+			return false;
+		}
+		return this.FindPath(_sx, _sy, tc.x, tc.y, _dist, _reduc, _algo, _fh, _factor, _square);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindPathAlongPoints(points, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// Finds a path along the given points
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function Pather_findpathalongpoints(points, _sx, _sy, _dist, _reduc, _algo, _fh, _factor, _square)
+	{
+		if(!(points instanceof Array) || !points.length) {
+			mlprint("mlMap:FindPathAlongPoints - Invalid points argument passed to function");
+			this.LastError = ("mlMap:FindPathAlongPoints - Invalid points argument passed to function");
+			return false;
+		}
+		for (var i =0; i<points.length; i++) {
+			if(!this.IsWalkable(points[i].x, points[i].y)) {
+				mlprint("mlMap:FindPathAlongPoints - One of points is out of range or not walkable");
+				this.LastError = ("mlMap:FindPathAlongPoints - One of points is out of range or not walkable");
+				return false;
+			}
+		}
+
+		var fp = new Array();
+		var tpath = this.FindPath(_sx, _sy, points[0].x, points[0].y, _dist, _reduc, _algo, _fh, _factor, _square)
+		if(!tpath) return false;
+		fp = fp.concat(tpath);
+		if(points.length >1) {
+			for(var i = 1; i<points.length; i++) {
+				tpath = this.FindPath(points[i-1].x, points[i-1].y, points[i].x, points[i].y, _dist, _reduc, _algo, _fh, _factor, _square)
+				if(!tpath) return false;
+				fp = fp.concat(tpath);
+			}
+		}
+		return fp;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindExplorePath(_sx, _sy, _dx, _dy, _type, _dist, _reduc, _algo, _fh)
+	// -------------------------------------------------------------------
+	// Use this function to find an optimized exploration path in the currently
+	// initialized area
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	// types: mlEXPLORECIRCULAR, mlEXPLOREBIDIRECTIONAL, mlEXPLORERANDOM
+	// 06-29-2003
+	//////////////////////////////////////////////////////////////////////
+	function Pather_findexplorepath(_sx, _sy, _dx, _dy, _type, _percent, _excluderooms, _dist, _reduc, _algo, _fh, _factor, _square) {
+
+		//Debug
+		for(var y = 0; y<this.RoomGrid.length; y++) {
+			for( var x = 0; x<this.RoomGrid[y].length; x++) {
+				if(this.RoomGrid[x][y])
+					print("Room " + x + ", " + y + " Coords: " + this.RoomGrid[x][y].x +
+						", " + this.RoomGrid[x][y].y);
+			}
+		}
+
+		//find start room
+		expoutloop1: for(var ry = 0; ry<this.RoomGrid.length; ry++) {
+			for( var rx = 0; rx<this.RoomGrid[ry].length; rx++) {
+				if(this.RoomGrid[rx][ry] && _sx > this.RoomGrid[rx][ry].x && _sx < this.RoomGrid[rx][ry].x+this.roomsizex &&
+					_sy > this.RoomGrid[rx][ry].y && _sy < this.RoomGrid[rx][ry].y+this.roomsizey) {}
+
+			}
+		}
+
+		var startx = 0, endx = this.RoomGrid.length-1;
+		var starty = 0, endy = this.RoomGrid[0].length-1;
+
+		for(var i = 0; i<4; i++) {
+
+
+		}
+
+	}
+
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.GoToArea(_area, _dx, _dy, _dist, _reduc, _algo, _fh, _factor, _square)
+	// -------------------------------------------------------------------
+	// returns: True when the character reaches target area/xy
+	// Does NOT require an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function Pather_gotoarea(_area, _dx, _dy, _dist, _reduc, _algo, _fh, _factor, _square) {
+
+
+
+
+
+	}
+
+
+
+	//////////////////////////////////////////////////////////////////////
+	// oMap.FindPath(_sx, _sy, _dx, _dy, _dist, _reduc, _algo, _fh)
+	// -------------------------------------------------------------------
+	// returns: path on success, assigns the path to this.Path; false on failure
+	// requires an initialized map
+	//////////////////////////////////////////////////////////////////////
+	function Pather_findpath(_sx, _sy, _dx, _dy, _dist, _reduc, _algo, _fh, _factor, _square) {
+
+		
+//		print("In mlmap:Pather_findpath");
+
+		if(arguments.length < 4 || isNaN(_sx) || isNaN(_sy) || isNaN(_dx) || isNaN(_dy)) 		//basic check for illegal coordinates
+			throw new BotOS.ArgumentException("Pather.FindPath -> Not enough coordinates or invalid coords", 1, "Pather.d2l");
+		if(!this.Pathable.IsWalkable(_sx, _sy) || !this.Pathable.IsWalkable(_dx, _dy))
+			throw new BotOS.ArgumentException("Pather.FindPath -> Either the start or end coord's are not walkable or out of range", 1, "Pather.d2l");
+		
+		if(typeof(_reduc) != "number" || _reduc < 0) _reduc = mlREDUCEWALK;
+		if(typeof(_algo) != "number" || _algo < 0 || _algo > 1) _algo = mlASTAR;
+		if(typeof(_factor) != "number" || _fh < 0) _factor = 1;
+		if(typeof(_fh) != "number" || _fh < 0 || _fh > FORWARDHEURISTICS.length-1) _fh=mlFHMAXDXDY;
+
+		//added in 06-30-2003 for auto use teleport and overiding reduction if no teleport skill
+		if(me.classid == 1 && _reduc == mlREDUCESORC && (mlInTown(me) || me.getSkill("Teleport") < 1)) {
+			_reduc = mlREDUCEWALK;
+			_dist = 5;
+		}
+		if(me.classid != 1 && _reduc == mlREDUCESORC) {
+			_reduc = mlREDUCEWALK;
+			_dist = 5;
+		}
+		this.UseTeleport = _reduc;
+
+		if(this.Pathable.Low2) _dist = Math.floor(_dist/2);
+
+		if(_algo) {
+			var oq = new BotOS.Arrays.FIFO();
+			_fh = 0;
+		}
+		else var oq = new BotOS.Arrays.Heap("f", mlHEAPLOW);
+
+		var minx = this.Pathable.x, miny = this.Pathable.y, maxx = this.Pathable.MaxX, maxy = this.Pathable.MaxY;
+		var width = this.Pathable.Width, height = this.Pathable.Height;
+		//var width = this.Pathable.MaxX-this.Pathable.x, height = this.Pathable.MaxY-this.Pathable.y;
+
+		var AreaData = this.Pathable.CollisionData;
+
+		var ptd = new Array(), fp = new Array();
+
+		if(this.Pathable.Low2)
+			var dx = Math.floor((_dx - minx)/2), dy = Math.floor((_dy - miny)/2), sx = Math.floor((_sx - minx)/2), sy = Math.floor((_sy - miny)/2);
+		else
+			var dx = _dx - minx, dy = _dy - miny, sx = _sx - minx, sy = _sy - miny;
+
+ //   	print(dx, dy, sx, sy);
+ //   	print(AreaData[dy][dx], AreaData[sy][sx]);
+ //   	var pathbit = 0x10000 << _algo;
+ //   	AreaData[dy][dx] |= pathbit;
+ //   	AreaData[sy][sx] |= pathbit;
+		//delay(500000);
+		var newg, cx = 0, cy = 0, node, _done = false;
+
+		//node grid array used to hold references
+		var ng = new Array();
+		ng.length = height+1;
+		for(var i = 0; i<ng.length; i++){
+			ng[i] = new Array();
+			ng[i].length = width+1;
+		}
+
+		//starting and ending node's
+		var enode = new BotOS.Pathing.Pather.Node(dx, dy);
+		var snode = new BotOS.Pathing.Pather.Node(sx, sy, false, true, -1, 0, BotOS.Pathing.Pather[FORWARDHEURISTICS[_fh]](dx, dy, sx, sy)*_factor);
+		snode.f = snode.h;
+		ng[snode.y][snode.x] = snode;
+		oq.Insert(snode);
+
+		//pdis = new oTerminal(100, 30, 40, 40, 6, 0);
+		var vxvy = 0;
+		var cnode;
+		var stime = new Date();
+		while (node = oq.Remove())
+		{
+			//updateterminal(AreaData, node.x, node.y);
+
+			if(node.x == enode.x && node.y == enode.y) {   //Found the destination
+				_done = true;
+				this.LastScore = node.f;
+				if(_reduc == 99)
+					return node.f;
+
+				//BUILD PATH USING REFRENCED PARENTS
+				//var donebuild = false;
+				ptd.push(node);
+				if (ptd[ptd.length-1].parent!=-1) do {
+					ptd.push(ptd[ptd.length-1].parent);
+					if (ptd[ptd.length-1].parent==-1)
+						break;
+				} while (1);
+
+				//Adding pathing
+				if(!this.Pathable.Low2) {
+					for (var p = 0; p<ptd.length; p++){
+						for (var px = -1; px < 2; px++) {
+							for (var py = -1; py < 2; py++) {
+								if((px*py) && (!px && !py)) continue; //continue if diagonal or same coordinate
+								if(!this.Pathable.IsWalkable(ptd[p].x+px+this.Pathable.x, ptd[p].y+py+this.Pathable.y)) {
+									ptd[p].x+=(px*(-1));
+									ptd[p].y+=(py*(-1));
+								}
+							}
+						}
+					}
+				}
+
+				if(this.PathToMap) {
+					var pathbit = 0x10000 << _algo;
+					//var pathbit = 0x10000 << _fh-1;
+					for (var i = 0; i<ptd.length; i++) {
+						AreaData[ptd[i].y][ptd[i].x] |= pathbit;
+					}
+				}
+
+				//reverse the path now so we can work with it from start and reduce the points
+				var vecanglelast = 0;
+				var vecanglenew = 0;
+				var vecdistance;
+				for (var d=ptd.length-1; d>=0; d--) {
+					if (d == ptd.length-1 && d) {		//add first point always
+						fp.push(ptd[d]);
+						if(!_reduc) vecanglelast = getAngle(fp[fp.length-1].x, fp[fp.length-1].y, ptd[d-1].x, ptd[d-1].y);
+						else vecanglelast = 0;
+						continue;
+					}
+
+					if (d == 0) {				//add last point always
+						fp.push(ptd[d]);
+						break;
+					}
+
+					if(!_reduc)	vecanglenew = getAngle(fp[fp.length-1].x, fp[fp.length-1].y, ptd[d].x, ptd[d].y);
+					else vecanglenew = 0;
+					vecdistance = BotOS.Pathing.Pather.Euclidian(fp[fp.length-1].x, fp[fp.length-1].y, ptd[d].x, ptd[d].y);
+
+					if(vecanglenew != vecanglelast || vecdistance > _dist) {
+						fp.push(ptd[d]);
+						if(!_reduc)	vecanglelast = getAngle(fp[fp.length-1].x, fp[fp.length-1].y, ptd[d-1].x, ptd[d-1].y);
+						else vecanglelast = 0;
+						continue;
+					}
+				}
+				this.Path = new Array();
+				//Put the offset back in and move to path
+				if(this.Pathable.Low2) {
+					for (var d = 0; d<fp.length; d++)
+						this.Path[d] = {x:(fp[d].x*2) + minx, y:(fp[d].y*2) + miny}
+				}
+				else {
+					for (var d = 0; d<fp.length; d++)
+						this.Path[d] = {x:fp[d].x + minx, y:fp[d].y + miny}
+				}
+				runGC();
+//				print("OUT mlmap FindPath");
+				return this.Path;
+
+			}
+			else {  		// look for adjacent blocks that we attach to and add them to open
+				for(var vy = -1; vy < 2; vy++) {
+					for(var vx=-1; vx < 2; vx++)	{
+						if(!(vx || vy) || (vx && vy && !_square)) continue; //continue if we are on the current node
+						cx = node.x+vx; cy = node.y+vy;
+						vxvy = vx*vy;
+						//check for map edge
+						if(cy < 0 || cy > height || cx < 0 || cx > width) continue;
+
+						//check for walkability and small diagonal gaps that cant be passed
+						if (AreaData[cy][cx] & 1) continue;
+						//CHANGED 02-10-2004 as a test (commented out extra checks)
+						if (_square && vxvy && (AreaData[cy][node.x] & 1) && (AreaData[node.y][cx] & 1)) continue;
+						//if ((AreaData[cy][cx+1] & 1) || (AreaData[cy][cx-1] & 1) ||
+						//	(AreaData[cy+1][cx] & 1) || (AreaData[cy-1][cx] & 1)) continue;
+						//if (((AreaData[cy][cx+1] & 1) && (AreaData[cy][cx-1] & 1)) ||
+						//	((AreaData[cy+1][cx] & 1) && (AreaData[cy-1][cx] & 1))) continue;
+
+						newg = node.g + SCORE[Math.abs(vxvy)];
+
+						cnode = ng[cy][cx];
+
+						if(!cnode) {
+							cnode = new BotOS.Pathing.Pather.Node(cx,cy,false,false,node,newg,BotOS.Pathing.Pather[FORWARDHEURISTICS[_fh]](dx, dy, cx, cy)*_factor);
+							ng[cy][cx] = cnode;
+						}
+						else {
+							if (cnode.g > newg){
+								cnode.closed = false;
+								cnode.g = newg;
+								cnode.parent = node;
+							}
+							else continue;
+						}
+						cnode.f = cnode.g + cnode.h;
+
+						if(!cnode.open) {
+							cnode.open = true;
+							oq.Insert(cnode);
+							//AreaData[cnode.y][cnode.x] |= 0x200000;
+						}
+					}
+				}
+				node.open = false;	node.closed = true;
+				//AreaData[node.y][node.x] |= 0x100000;
+			}
+		}
+		throw new BotOS.PathingException("Pather.mlFindPath -> Could not find a path to destination", 1, "Pather.d2l");
+		return false;
+	}
+
+	function Pather_findscore(x1, y1, x2, y2)
+	{
+		return this.FindPath(x1, y1, x2, y2, 0, 99, 0, 5, 1);
+	}
+
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// Forward Heuristics functions - DO NOT TOUCH
+// -------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////
+BotOS.Pathing.Pather.Manhattan = function(x1, y1, x2, y2) {
+	return Math.abs(x2-x1) + Math.abs(y2-y1);
+}
+BotOS.Pathing.Pather.Euclidian = function(x1, y1, x2, y2) {
+	return Math.floor(Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)));
+}
+BotOS.Pathing.Pather.EuclidianNoSqrt = function(x1, y1, x2, y2) {
+	return Math.floor((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+}
+BotOS.Pathing.Pather.NoFH = function() {
+	return 0;
+}
+BotOS.Pathing.Pather.DiagShortcut = function(x1, y1, x2, y2) {
+	var dy = Math.abs(y2-y1);
+	var dx = Math.abs(x2-x1);
+	if (dy <= dx) return dy*0.414 + dx; else return dx*0.414 + dy;
+}
+BotOS.Pathing.Pather.MaxDxDy = function(x1, y1, x2, y2) {
+	var dy = Math.abs(y2-y1);
+	var dx = Math.abs(x2-x1);
+	return (dx>dy)?dx:dy;
+}
+
+//this is the Node for pathfinding. May simplify later for optimal usage
+BotOS.Pathing.Pather.Node = function(_x, _y, _o, _c, _p, _g, _h){
+	this.x = _x;
+	this.y = _y;
+	this.open = _o;
+	this.closed = _c;
+	this.parent = _p;
+	this.g = _g;	//cost to dest, will be either euclidean or manhattan, latter being the quicker
+	this.h = _h;	//total cost
+	this.f;	//cost so far
+}
+
+

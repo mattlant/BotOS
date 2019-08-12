@@ -1,0 +1,34 @@
+
+var ingamespamdelay = 2000;
+
+var spamfile = "ingamemessages.spm";
+
+function main () {
+
+	var spam = readspam ();
+
+	delay(2000);
+
+	for(var i = 0; i < spam.length; i++) {
+		say(spam[i][0]);
+		delay(spam[i][1]);
+	}
+
+	quit();
+
+}
+
+function readspam () {
+	var tspam = new Array();
+	var file = fileOpen("settings/" + spamfile, 0);
+	while(!file.eof) {
+		var line = file.readLine();
+		if(!line.length) continue;
+		if(line == "/END") break;
+		var delay = parseInt(file.readLine());
+		tspam.push([line, delay]);
+	}
+	file.close();
+	return tspam;
+}
+
