@@ -1,4 +1,4 @@
-# BotOS
+# BotOS (2003) - A Javascript Real-Time Task Kernel botting system for d2jsp
 
 _This project is from ~2003 and is provided for historical purposes only._
 
